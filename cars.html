@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Cars</title>
+
+  <style>
+    body { margin:0; font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif; background:#eeeeee; }
+    .wrap { min-height:100vh; padding:20px; box-sizing:border-box; }
+    .topbar { display:flex; justify-content:space-between; align-items:center; gap:12px; }
+    .title { font-size:28px; font-weight:700; }
+    .btn { border:none; border-radius:12px; padding:10px 14px; background:#999; cursor:pointer; }
+    .filters { margin:14px 0; display:flex; gap:12px; flex-wrap:wrap; }
+    .pill { background:#fff; border-radius:999px; padding:8px 12px; font-size:13px; }
+    .grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap:14px; }
+    .card { background:#d9d9d9; border-radius:16px; padding:14px; display:flex; flex-direction:column; gap:8px; }
+    .card h3 { margin:0; font-size:18px; }
+    .muted { color:#333; font-size:14px; }
+    .link { text-decoration:none; color:black; background:#bdbdbd; padding:8px 10px; border-radius:12px; width:fit-content; }
+    #status { margin:10px 0; color:#444; }
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+    <div class="topbar">
+      <div class="title">Available Cars</div>
+      <div style="display:flex; gap:10px;">
+        <button class="btn" onclick="window.location.href='home.html'">Home</button>
+        <button class="btn" id="logout">Logout</button>
+      </div>
+    </div>
+
+    <div class="filters">
+      <div class="pill" id="pillWhere">Where: (any)</div>
+      <div class="pill" id="pillPickup">Pick Up: (any)</div>
+      <div class="pill" id="pillDropoff">Drop Off: (any)</div>
+    </div>
+
+    <div id="status">Loading cars…</div>
+    <div id="carGrid" class="grid"></div>
+  </div>
+
+  <script src="js/config.js"></script>
+  <script src="js/cars.js"></script>
+</body>
+</html>
