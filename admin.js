@@ -60,6 +60,7 @@ function escapeHtml(s) {
     .replace(/&/g, "&amp;").replace(/</g, "&lt;")
     .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
+
 function updateButtons() {
   if (createBtn) {
     createBtn.disabled = !currentTableKey || creating;
@@ -85,6 +86,7 @@ async function api(path, opts = {}) {
     const err = new Error(data.error || `Request failed: ${res.status}`);
     err.status = res.status;
     err.data = data;
+    err.path = path;
     throw err;
   }
   return data;
@@ -95,7 +97,7 @@ async function getDeleteInfo(tableKey, id) {
 }
 
 function formatDeleteWarning(info, fallbackId = null) {
-  if (!info) return "Could not check delete rules.";
+  if (!info) return "Could not check delete rules (server has no can-delete endpoint yet).";
   if (info.canDelete) return "OK to delete.";
 
   const parts = [info.reason || "Cannot delete."];
@@ -105,12 +107,12 @@ function formatDeleteWarning(info, fallbackId = null) {
       .join(" | ");
     parts.push(`Delete these first → ${pretty}`);
   } else if (fallbackId) {
-    parts.push(`(Tip) Hover the delete link for ID ${fallbackId} to see what must be deleted first.`);
+    parts.push(`(Tip) This row is protected. Resolve linked rows first.`);
   }
   return parts.join(" ");
 }
 
-// ✅ NEW: deterministic PK names by tableKey
+// Deterministic PK names per table
 function pkForTable(tableKey, columns, rows) {
   const map = {
     users: ["User ID", "userId", "UserID"],
@@ -121,13 +123,18 @@ function pkForTable(tableKey, columns, rows) {
   const candidates = map[tableKey] || ["id", "ID"];
   const keys = columns?.length ? columns : (rows?.[0] ? Object.keys(rows[0]) : []);
 
-  // return first matching candidate
   for (const c of candidates) {
     if (keys.includes(c)) return c;
   }
-
-  // fallback (rare)
   return keys[0] || null;
+}
+
+function findRowByRowId(rowId) {
+  if (!rowId || rowId === "new") return null;
+  const pk = pkForTable(currentTableKey, currentColumns, currentRows);
+  if (!pk) return null;
+  const numId = Number(rowId);
+  return currentRows.find(r => String(r[pk]) === String(numId)) || null;
 }
 
 if (logoutBtn) {
@@ -210,6 +217,19 @@ function rowHtml(row, cols, pkName) {
   return tr;
 }
 
+function paintDeleteLink(a, infoOrNull) {
+  // yellow highlight if blocked or unknown
+  if (!infoOrNull || infoOrNull.canDelete === false) {
+    a.style.background = "#fef08a";
+    a.style.borderRadius = "6px";
+    a.style.padding = "2px 4px";
+  } else {
+    a.style.background = "transparent";
+    a.style.padding = "";
+    a.style.borderRadius = "";
+  }
+}
+
 function attachDeleteHoverTooltips() {
   const deleteLinks = document.querySelectorAll('a[data-action="delete"]');
   deleteLinks.forEach((a) => {
@@ -223,21 +243,19 @@ function attachDeleteHoverTooltips() {
       if (checked && !window.event?.shiftKey) return;
       checked = true;
 
-      try {
-        const tr = a.closest("tr");
-        const rowId = tr?.getAttribute("data-rowid");
-        if (!rowId || rowId === "new") { a.title = "Not applicable."; return; }
+      const tr = a.closest("tr");
+      const rowId = tr?.getAttribute("data-rowid");
+      if (!rowId || rowId === "new") { a.title = "Not applicable."; return; }
 
+      try {
         const info = await getDeleteInfo(currentTableKey, rowId);
         a.title = formatDeleteWarning(info, rowId);
-
-        if (!info.canDelete) {
-          a.style.background = "#fef08a";
-          a.style.borderRadius = "6px";
-          a.style.padding = "2px 4px";
-        }
-      } catch {
-        a.title = "Could not check delete rules.";
+        paintDeleteLink(a, info);
+      } catch (err) {
+        // ✅ KEY FIX: even if /can-delete doesn't exist, show yellow + useful hint
+        a.title = `Cannot check delete rules yet (missing /can-delete on server for ${currentTableKey}). Try deleting linked sales first if this row is referenced.`;
+        paintDeleteLink(a, null);
+        console.warn("Hover can-delete check failed:", err?.status, err?.message);
       }
     });
   });
@@ -298,7 +316,6 @@ if (saveBtn) {
     try {
       if (!currentTableKey) return;
 
-      const pkName = pkForTable(currentTableKey, currentColumns, currentRows);
       const rowSelector = creating ? `tr[data-rowid="new"]` : `tr[data-rowid="${editingRowId}"]`;
       const tr = document.querySelector(rowSelector);
       if (!tr) return;
@@ -362,8 +379,24 @@ async function onActionClick(e) {
     if (action === "delete") {
       if (!rowid) return;
 
-      const info = await getDeleteInfo(currentTableKey, rowid);
-      if (!info.canDelete) {
+      // ✅ attempt can-delete check; if missing, still allow a clearer message
+      let info = null;
+      try {
+        info = await getDeleteInfo(currentTableKey, rowid);
+      } catch (err) {
+        // If the server doesn't have can-delete for this table, show guidance instead of "wrong ID column"
+        if (err?.status === 404) {
+          alert(
+            `Delete rules check is missing on the server for "${currentTableKey}".\n\n` +
+            `If this row is involved in a sale, delete the sale first.\n` +
+            `Then try deleting the vehicle/user again.`
+          );
+          return;
+        }
+        throw err;
+      }
+
+      if (info && info.canDelete === false) {
         alert(formatDeleteWarning(info, rowid));
         return;
       }
@@ -375,14 +408,33 @@ async function onActionClick(e) {
     }
   } catch (err) {
     console.error("ACTION ERROR:", err);
-    if (err?.status === 404) {
-      alert(`Delete failed: ${err.message}\n\nThis usually means the UI used the wrong ID column.\nWith this updated admin.js it should be fixed — hard refresh (Cmd+Shift+R).`);
+
+    // ✅ FIX: do NOT assume "wrong id column" just because 404 happened.
+    // Only show that message if we cannot find this row locally by PK.
+    if (err?.status === 404 && action === "delete") {
+      const localRow = findRowByRowId(rowid);
+      if (!localRow) {
+        alert(
+          `Delete failed: ${err.message}\n\n` +
+          `This row isn't found in the table data the UI loaded.\n` +
+          `Hard refresh (Cmd+Shift+R) and try again.`
+        );
+      } else {
+        alert(
+          `Delete failed: ${err.message}\n\n` +
+          `The server says it can't find this row, even though the UI has it.\n` +
+          `This usually means the server route is different than the UI expects.\n` +
+          `Check that your server has DELETE /admin/${currentTableKey}/${rowid}.`
+        );
+      }
       return;
     }
+
     if (err?.status === 409) {
       alert(err?.data?.error || err.message || "Cannot delete due to references. Hover delete for details.");
       return;
     }
+
     alert(`Error: ${err.message || "Request failed"}`);
   }
 }
