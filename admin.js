@@ -1,7 +1,6 @@
 const API_BASE = "https://server-side-zqaz.onrender.com";
 const SESSION_MS = 12 * 60 * 60 * 1000; // 12 hours
 
-// ---------- Session Guard ----------
 function requireSession() {
   const email = localStorage.getItem("userEmail");
   const loggedInAt = Number(localStorage.getItem("loggedInAt") || "0");
@@ -11,7 +10,6 @@ function requireSession() {
     window.location.replace("index.html");
     throw new Error("No session");
   }
-
   if (Date.now() - loggedInAt > SESSION_MS) {
     localStorage.removeItem("userEmail");
     localStorage.removeItem("loggedInAt");
@@ -19,43 +17,21 @@ function requireSession() {
     window.location.replace("index.html");
     throw new Error("Session expired");
   }
-
   if (isAdmin !== 1) {
     window.location.replace("home.html");
     throw new Error("Not an admin");
   }
-
   return email;
 }
-
 const userEmail = requireSession();
 
-// ---------- Safe DOM helpers ----------
-function $(id) {
-  return document.getElementById(id) || null;
-}
-function warnMissing(id) {
-  console.error(`admin.js: Missing element id="${id}" in admin.html`);
-}
-function elOrWarn(id) {
-  const el = $(id);
-  if (!el) warnMissing(id);
-  return el;
-}
-function safeShow(el, display = "block") {
-  if (el) el.style.display = display;
-}
-function safeHide(el) {
-  if (el) el.style.display = "none";
-}
-function safeSetText(el, txt) {
-  if (el) el.textContent = txt;
-}
-function safeSetHTML(el, html) {
-  if (el) el.innerHTML = html;
-}
+function $(id) { return document.getElementById(id) || null; }
+function warnMissing(id) { console.error(`admin.js: Missing element id="${id}" in admin.html`); }
+function elOrWarn(id) { const el = $(id); if (!el) warnMissing(id); return el; }
+function safeShow(el, display = "block") { if (el) el.style.display = display; }
+function safeSetText(el, txt) { if (el) el.textContent = txt; }
+function safeSetHTML(el, html) { if (el) el.innerHTML = html; }
 
-// ---------- UI Elements ----------
 const statusEl = elOrWarn("status");
 const adminArea = elOrWarn("adminArea");
 const tableLinksEl = elOrWarn("tableLinks");
@@ -65,45 +41,39 @@ const saveBtn = elOrWarn("saveBtn");
 const createBtn = elOrWarn("createBtn");
 const logoutBtn = elOrWarn("logoutBtn");
 
-// ---------- State ----------
 let currentTableKey = null;
 let currentRows = [];
 let currentColumns = [];
 let editingRowId = null;
 let creating = false;
 
-// ---------- Helpers ----------
 function normalizeCol(col) {
   return String(col || "").trim().toLowerCase().replace(/\s+/g, " ");
 }
 function isLockedIdColumn(col) {
   const c = normalizeCol(col);
-  return c === "user id" || c === "vehicle id" || c === "sale id";
+  return c === "user id" || c === "vehicle id" || c === "sale id" ||
+         c === "userid" || c === "vehicleid" || c === "saleid";
 }
 function escapeHtml(s) {
   return String(s ?? "")
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
+    .replace(/&/g, "&amp;").replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
 function updateButtons() {
   if (createBtn) {
     createBtn.disabled = !currentTableKey || creating;
     createBtn.title = creating ? "Finish creating the current entry first" : "";
   }
-  if (saveBtn) {
-    saveBtn.disabled = !(creating || editingRowId !== null);
-  }
+  if (saveBtn) saveBtn.disabled = !(creating || editingRowId !== null);
 }
 
-// ---------- API ----------
 async function api(path, opts = {}) {
   const res = await fetch(`${API_BASE}${path}`, {
     ...opts,
     headers: {
       "Content-Type": "application/json",
-      "X-User-Email": userEmail, // ✅ A) include user email header
+      "X-User-Email": userEmail,
       ...(opts.headers || {}),
     },
   });
@@ -120,7 +90,6 @@ async function api(path, opts = {}) {
   return data;
 }
 
-// ---------- Delete dependency check ----------
 async function getDeleteInfo(tableKey, id) {
   return await api(`/admin/${tableKey}/${id}/can-delete`, { method: "GET" });
 }
@@ -129,9 +98,7 @@ function formatDeleteWarning(info, fallbackId = null) {
   if (!info) return "Could not check delete rules.";
   if (info.canDelete) return "OK to delete.";
 
-  const parts = [];
-  parts.push(info.reason || "Cannot delete.");
-
+  const parts = [info.reason || "Cannot delete."];
   if (Array.isArray(info.mustDeleteFirst) && info.mustDeleteFirst.length) {
     const pretty = info.mustDeleteFirst
       .map((b) => `${b.tableKey}: [${(b.ids || []).join(", ")}]`)
@@ -140,11 +107,29 @@ function formatDeleteWarning(info, fallbackId = null) {
   } else if (fallbackId) {
     parts.push(`(Tip) Hover the delete link for ID ${fallbackId} to see what must be deleted first.`);
   }
-
   return parts.join(" ");
 }
 
-// ---------- Logout ----------
+// ✅ NEW: deterministic PK names by tableKey
+function pkForTable(tableKey, columns, rows) {
+  const map = {
+    users: ["User ID", "userId", "UserID"],
+    vehicles: ["Vehicle ID", "vehicleId", "VehicleID"],
+    sales: ["Sale ID", "saleId", "SaleID"],
+  };
+
+  const candidates = map[tableKey] || ["id", "ID"];
+  const keys = columns?.length ? columns : (rows?.[0] ? Object.keys(rows[0]) : []);
+
+  // return first matching candidate
+  for (const c of candidates) {
+    if (keys.includes(c)) return c;
+  }
+
+  // fallback (rare)
+  return keys[0] || null;
+}
+
 if (logoutBtn) {
   logoutBtn.addEventListener("click", () => {
     localStorage.removeItem("userEmail");
@@ -154,21 +139,16 @@ if (logoutBtn) {
   });
 }
 
-// ---------- Load admin meta ----------
 async function loadAdminMeta() {
   const meta = await api("/admin/meta", { method: "GET" });
 
   if (tableLinksEl) tableLinksEl.innerHTML = "";
   meta.forEach((t) => {
     if (!tableLinksEl) return;
-
     const link = document.createElement("a");
     link.textContent = t.label;
     link.href = "#";
-    link.onclick = (e) => {
-      e.preventDefault();
-      loadTable(t.key, t.label);
-    };
+    link.onclick = (e) => { e.preventDefault(); loadTable(t.key, t.label); };
     tableLinksEl.appendChild(link);
   });
 
@@ -184,7 +164,6 @@ async function loadAdminMeta() {
   updateButtons();
 }
 
-// ---------- Load table ----------
 async function loadTable(key, label) {
   currentTableKey = key;
   creating = false;
@@ -201,13 +180,6 @@ async function loadTable(key, label) {
   safeSetText(statusEl, `${currentRows.length} row(s) loaded.`);
   updateButtons();
   renderTable();
-}
-
-// ---------- Render ----------
-function guessPkName(rows, columns) {
-  const candidates = ["User ID", "Vehicle ID", "Sale ID"];
-  const keys = columns?.length ? columns : (rows[0] ? Object.keys(rows[0]) : []);
-  return candidates.find((k) => keys.includes(k)) || keys[0] || null;
 }
 
 function rowHtml(row, cols, pkName) {
@@ -231,13 +203,9 @@ function rowHtml(row, cols, pkName) {
   });
 
   tr += `<td>`;
-  if (isNew) {
-    tr += `<a href="#" data-action="cancelCreate">cancel</a>`;
-  } else if (isEditing) {
-    tr += `<a href="#" data-action="cancelEdit">cancel</a>`;
-  } else {
-    tr += `<a href="#" data-action="edit">edit</a> | <a href="#" data-action="delete" title="Hover to see delete rules">delete</a>`;
-  }
+  if (isNew) tr += `<a href="#" data-action="cancelCreate">cancel</a>`;
+  else if (isEditing) tr += `<a href="#" data-action="cancelEdit">cancel</a>`;
+  else tr += `<a href="#" data-action="edit">edit</a> | <a href="#" data-action="delete" title="Hover to see delete rules">delete</a>`;
   tr += `</td></tr>`;
   return tr;
 }
@@ -258,10 +226,7 @@ function attachDeleteHoverTooltips() {
       try {
         const tr = a.closest("tr");
         const rowId = tr?.getAttribute("data-rowid");
-        if (!rowId || rowId === "new") {
-          a.title = "Not applicable.";
-          return;
-        }
+        if (!rowId || rowId === "new") { a.title = "Not applicable."; return; }
 
         const info = await getDeleteInfo(currentTableKey, rowId);
         a.title = formatDeleteWarning(info, rowId);
@@ -291,7 +256,7 @@ function renderTable() {
     return;
   }
 
-  const pkName = guessPkName(currentRows, currentColumns);
+  const pkName = pkForTable(currentTableKey, currentColumns, currentRows);
   const cols = currentColumns;
 
   let html = `<table><thead><tr>`;
@@ -312,16 +277,13 @@ function renderTable() {
   updateButtons();
 }
 
-// ---------- Create ----------
 if (createBtn) {
   createBtn.addEventListener("click", () => {
     if (!currentTableKey) return;
-
     if (!currentRows.length) {
       alert("This table is empty. Add at least one row using phpMyAdmin once, or ask to add a schema/meta endpoint so Create works on empty tables.");
       return;
     }
-
     if (creating) return;
 
     creating = true;
@@ -331,22 +293,18 @@ if (createBtn) {
   });
 }
 
-// ---------- Save ----------
 if (saveBtn) {
   saveBtn.addEventListener("click", async () => {
     try {
       if (!currentTableKey) return;
 
-      const rowSelector = creating
-        ? `tr[data-rowid="new"]`
-        : `tr[data-rowid="${editingRowId}"]`;
-
+      const pkName = pkForTable(currentTableKey, currentColumns, currentRows);
+      const rowSelector = creating ? `tr[data-rowid="new"]` : `tr[data-rowid="${editingRowId}"]`;
       const tr = document.querySelector(rowSelector);
       if (!tr) return;
 
       const inputs = [...tr.querySelectorAll("input[data-col]")];
       const payload = {};
-
       inputs.forEach((inp) => {
         const col = inp.getAttribute("data-col");
         if (isLockedIdColumn(col)) return;
@@ -354,15 +312,9 @@ if (saveBtn) {
       });
 
       if (creating) {
-        await api(`/admin/${currentTableKey}`, {
-          method: "POST",
-          body: JSON.stringify(payload),
-        });
+        await api(`/admin/${currentTableKey}`, { method: "POST", body: JSON.stringify(payload) });
       } else {
-        await api(`/admin/${currentTableKey}/${editingRowId}`, {
-          method: "PUT",
-          body: JSON.stringify(payload),
-        });
+        await api(`/admin/${currentTableKey}/${editingRowId}`, { method: "PUT", body: JSON.stringify(payload) });
       }
 
       creating = false;
@@ -377,7 +329,6 @@ if (saveBtn) {
   });
 }
 
-// ---------- Actions ----------
 async function onActionClick(e) {
   e.preventDefault();
 
@@ -424,6 +375,10 @@ async function onActionClick(e) {
     }
   } catch (err) {
     console.error("ACTION ERROR:", err);
+    if (err?.status === 404) {
+      alert(`Delete failed: ${err.message}\n\nThis usually means the UI used the wrong ID column.\nWith this updated admin.js it should be fixed — hard refresh (Cmd+Shift+R).`);
+      return;
+    }
     if (err?.status === 409) {
       alert(err?.data?.error || err.message || "Cannot delete due to references. Hover delete for details.");
       return;
@@ -432,15 +387,11 @@ async function onActionClick(e) {
   }
 }
 
-// ---------- Boot (NEVER TOUCHES .style DIRECTLY) ----------
 (async function boot() {
   try {
     updateButtons();
-
-    // safely show if present
     safeShow(adminArea, "block");
     safeShow(logoutBtn, "inline-block");
-
     safeSetText(statusEl, "Loading admin dashboard…");
     await loadAdminMeta();
   } catch (e) {
