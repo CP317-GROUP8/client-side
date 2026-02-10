@@ -53,7 +53,6 @@ function normalizeCol(col) {
   return String(col || "").trim().toLowerCase().replace(/\s+/g, " ");
 }
 
-// lock these from editing (auto-increment IDs)
 function isLockedIdColumn(col) {
   const c = normalizeCol(col);
   return c === "user id" || c === "vehicle id" || c === "sale id";
@@ -67,13 +66,9 @@ function escapeHtml(s) {
     .replace(/"/g, "&quot;");
 }
 
-// keep button state consistent everywhere
 function updateButtons() {
-  // Create: disabled only while actively creating a new entry, or if no table selected
   createBtn.disabled = !currentTableKey || creating;
   createBtn.title = creating ? "Finish creating the current entry first" : "";
-
-  // Save: enabled only while creating OR editing
   saveBtn.disabled = !(creating || editingRowId !== null);
 }
 
@@ -83,7 +78,7 @@ async function api(path, opts = {}) {
     ...opts,
     headers: {
       "Content-Type": "application/json",
-      "X-User-Email": userEmail, // ✅ A) REQUIRED FOR ADMIN ROUTES
+      "X-User-Email": userEmail,
       ...(opts.headers || {}),
     },
   });
@@ -92,23 +87,21 @@ async function api(path, opts = {}) {
   console.log("API RESPONSE:", path, { status: res.status, data });
 
   if (!res.ok) {
-    // normalize error message
-    const msg = data.error || `Request failed: ${res.status}`;
-    const err = new Error(msg);
-    err.data = data;
+    const err = new Error(data.error || `Request failed: ${res.status}`);
     err.status = res.status;
+    err.data = data;
     throw err;
   }
 
   return data;
 }
 
-// ---------- Delete Dependency Check (Tooltip + Block) ----------
+// ---------- Delete Dependency Check ----------
 async function getDeleteInfo(tableKey, id) {
   return await api(`/admin/${tableKey}/${id}/can-delete`, { method: "GET" });
 }
 
-function formatDeleteWarning(info) {
+function formatDeleteWarning(info, fallbackId = null) {
   if (!info) return "Could not check delete rules.";
   if (info.canDelete) return "OK to delete.";
 
@@ -120,6 +113,8 @@ function formatDeleteWarning(info) {
       .map((b) => `${b.tableKey}: [${(b.ids || []).join(", ")}]`)
       .join(" | ");
     parts.push(`Delete these first → ${pretty}`);
+  } else if (fallbackId) {
+    parts.push(`(Tip) Hover the delete link for ID ${fallbackId} to see what must be deleted first.`);
   }
 
   return parts.join(" ");
@@ -133,7 +128,7 @@ logoutBtn.onclick = () => {
   window.location.href = "index.html";
 };
 
-// ---------- Load Meta (table links) ----------
+// ---------- Load Meta ----------
 async function loadAdminMeta() {
   const meta = await api("/admin/meta", { method: "GET" });
 
@@ -149,7 +144,6 @@ async function loadAdminMeta() {
     tableLinksEl.appendChild(link);
   });
 
-  // reset view
   currentTableKey = null;
   currentRows = [];
   currentColumns = [];
@@ -181,6 +175,12 @@ async function loadTable(key, label) {
 }
 
 // ---------- Render ----------
+function guessPkName(rows, columns) {
+  const candidates = ["User ID", "Vehicle ID", "Sale ID"];
+  const keys = columns?.length ? columns : (rows[0] ? Object.keys(rows[0]) : []);
+  return candidates.find((k) => keys.includes(k)) || keys[0] || null;
+}
+
 function rowHtml(row, cols, pkName) {
   const isNew = row.__new === true;
   const isEditing = !isNew && editingRowId !== null && row[pkName] == editingRowId;
@@ -192,7 +192,6 @@ function rowHtml(row, cols, pkName) {
     const val = isNew ? "" : (row[col] ?? "");
 
     if (isNew || isEditing) {
-      // ✅ Lock auto-increment IDs
       if (isLockedIdColumn(col)) {
         tr += `<td><input data-col="${escapeHtml(col)}" value="${escapeHtml(val)}" disabled style="background:#f3f3f3;color:#666;"></td>`;
       } else {
@@ -209,29 +208,29 @@ function rowHtml(row, cols, pkName) {
   } else if (isEditing) {
     tr += `<a href="#" data-action="cancelEdit">cancel</a>`;
   } else {
-    // ✅ Delete will get tooltip + yellow warning on hover
-    tr += `<a href="#" data-action="edit">edit</a> | <a href="#" data-action="delete" title="Hover to check delete rules">delete</a>`;
+    tr += `<a href="#" data-action="edit">edit</a> | <a href="#" data-action="delete" title="Hover to see delete rules">delete</a>`;
   }
   tr += `</td></tr>`;
 
   return tr;
 }
 
-function guessPkName(rows, columns) {
-  const candidates = ["User ID", "Vehicle ID", "Sale ID"];
-  const keys = columns?.length ? columns : (rows[0] ? Object.keys(rows[0]) : []);
-  return candidates.find((k) => keys.includes(k)) || keys[0] || null;
-}
-
 function attachDeleteHoverTooltips() {
   const deleteLinks = document.querySelectorAll('a[data-action="delete"]');
 
   deleteLinks.forEach((a) => {
-    let loaded = false;
+    let checked = false;
+
+    // Reset styling each render
+    a.style.background = "transparent";
+    a.style.padding = "";
+    a.style.borderRadius = "";
+    a.style.cursor = "pointer";
 
     a.addEventListener("mouseenter", async () => {
-      if (loaded) return;
-      loaded = true;
+      // We allow re-checking if needed by holding shift (nice for debugging)
+      if (checked && !window.event?.shiftKey) return;
+      checked = true;
 
       try {
         const tr = a.closest("tr");
@@ -242,13 +241,16 @@ function attachDeleteHoverTooltips() {
         }
 
         const info = await getDeleteInfo(currentTableKey, rowId);
-        a.title = formatDeleteWarning(info);
+        a.title = formatDeleteWarning(info, rowId);
 
-        // ✅ Yellow warning if NOT deletable
         if (!info.canDelete) {
           a.style.background = "#fef08a"; // yellow
           a.style.borderRadius = "6px";
           a.style.padding = "2px 4px";
+        } else {
+          a.style.background = "transparent";
+          a.style.padding = "";
+          a.style.borderRadius = "";
         }
       } catch (e) {
         a.title = "Could not check delete rules.";
@@ -277,23 +279,18 @@ function renderTable() {
   cols.forEach((c) => (html += `<th>${escapeHtml(c)}</th>`));
   html += `<th>Actions</th></tr></thead><tbody>`;
 
-  if (creating) {
-    html += rowHtml({ __new: true }, cols, pkName);
-  }
-
+  if (creating) html += rowHtml({ __new: true }, cols, pkName);
   currentRows.forEach((r) => (html += rowHtml(r, cols, pkName)));
 
   html += `</tbody></table>`;
   tableContainerEl.innerHTML = html;
 
-  // Attach row actions
   document.querySelectorAll("[data-action]").forEach((el) => {
     el.addEventListener("click", onActionClick);
   });
 
-  // ✅ Hover tooltips for delete
+  // ✅ Hover tooltips every render
   attachDeleteHoverTooltips();
-
   updateButtons();
 }
 
@@ -306,7 +303,7 @@ createBtn.onclick = () => {
     return;
   }
 
-  if (creating) return; // already creating
+  if (creating) return;
 
   creating = true;
   editingRowId = null;
@@ -332,7 +329,7 @@ saveBtn.onclick = async () => {
 
     inputs.forEach((inp) => {
       const col = inp.getAttribute("data-col");
-      if (isLockedIdColumn(col)) return; // never send auto-increment IDs
+      if (isLockedIdColumn(col)) return;
       payload[col] = inp.value;
     });
 
@@ -367,51 +364,62 @@ async function onActionClick(e) {
   const tr = e.target.closest("tr");
   const rowid = tr?.getAttribute("data-rowid");
 
-  if (action === "edit") {
-    creating = false;
-    editingRowId = Number(rowid);
-    updateButtons();
-    renderTable();
-    return;
-  }
+  try {
+    if (action === "edit") {
+      creating = false;
+      editingRowId = Number(rowid);
+      updateButtons();
+      renderTable();
+      return;
+    }
 
-  if (action === "cancelEdit") {
-    editingRowId = null;
-    updateButtons();
-    renderTable();
-    return;
-  }
+    if (action === "cancelEdit") {
+      editingRowId = null;
+      updateButtons();
+      renderTable();
+      return;
+    }
 
-  if (action === "cancelCreate") {
-    creating = false;
-    updateButtons();
-    renderTable();
-    return;
-  }
+    if (action === "cancelCreate") {
+      creating = false;
+      updateButtons();
+      renderTable();
+      return;
+    }
 
-  if (action === "delete") {
-    if (!rowid) return;
-    if (!confirm("Delete this row?")) return;
+    if (action === "delete") {
+      if (!rowid) return;
 
-    try {
-      // ✅ C) BLOCK DELETE if server says you can't
+      // ✅ Always check first (this is what gives you the "delete these first" info)
       const info = await getDeleteInfo(currentTableKey, rowid);
+
       if (!info.canDelete) {
-        alert(formatDeleteWarning(info));
+        // Show full guidance here
+        alert(formatDeleteWarning(info, rowid));
         return;
       }
 
+      if (!confirm("Delete this row?")) return;
+
       await api(`/admin/${currentTableKey}/${rowid}`, { method: "DELETE" });
       await loadTable(currentTableKey, tableTitleEl.textContent);
-    } catch (err) {
-      // if server returns 409, show its guidance
-      if (err.status === 409 && err.data) {
-        alert(formatDeleteWarning(err.data));
-      } else {
-        alert(`Delete failed: ${err.message}`);
-      }
-      console.error("DELETE ERROR:", err);
     }
+  } catch (err) {
+    // ✅ Don’t allow “Uncaught (in promise)” — always show a friendly message
+    console.error("ACTION ERROR:", err);
+
+    if (err.status === 409) {
+      // If server sent only a reason string, still guide the user
+      const msg =
+        err?.data?.error ||
+        err.message ||
+        "Cannot delete because it is referenced. Hover the delete link to see what must be deleted first.";
+
+      alert(msg);
+      return;
+    }
+
+    alert(`Error: ${err.message || "Request failed"}`);
   }
 }
 
