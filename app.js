@@ -48,6 +48,10 @@ async function api(path, opts = {}) {
   });
 
   const data = await res.json().catch(() => ({}));
+
+  // DEBUG: log every API response (helpful right now)
+  console.log("API RESPONSE:", path, { status: res.status, data });
+
   if (!res.ok) throw new Error(data.error || `Request failed: ${res.status}`);
   return data;
 }
@@ -61,7 +65,6 @@ function escapeHtml(s) {
 }
 
 function guessPkName(rows, columns) {
-  // Primary key column names in your schema:
   const candidates = ["User ID", "Vehicle ID", "Sale ID"];
   const keys = columns?.length ? columns : (rows[0] ? Object.keys(rows[0]) : []);
   return candidates.find((k) => keys.includes(k)) || keys[0] || null;
@@ -78,25 +81,44 @@ async function handleCredentialResponse(response) {
       headers: {},
     });
 
-    // backend returns { token, user }
-    token = data.token;
-    localStorage.setItem("token", token);
+    // DEBUG: show the exact auth response in console + on screen
+    console.log("AUTH RESPONSE:", data);
+    statusEl.textContent = "AUTH RESPONSE: " + JSON.stringify(data);
 
-    const u = data.user;
+    // Support BOTH response formats:
+    // 1) { token, user }
+    // 2) flat user object
+    const u = data.user || data;
+
+    // token may be in data.token; only store if present
+    if (data.token) {
+      token = data.token;
+      localStorage.setItem("token", token);
+    }
+
     logoutBtn.style.display = "inline-block";
-    statusEl.textContent = `Welcome, ${u.firstName} ${u.lastName} (${u.email})`;
+
+    // Robust field extraction (handles different naming styles)
+    const first = u.firstName ?? u["First Name"] ?? "";
+    const last = u.lastName ?? u["Last Name"] ?? "";
+    const email = u.email ?? u["Email Address"] ?? "";
+    const adminVal = Number(u.administrator ?? u["Administrator"] ?? 0);
+
+    // If still empty, show something readable
+    const displayName = `${first} ${last}`.trim() || "(name missing)";
+    statusEl.textContent = `Welcome, ${displayName}${email ? ` (${email})` : ""}`;
 
     // Show admin dashboard only if admin
-    if (Number(u.administrator) === 1) {
+    if (adminVal === 1) {
       adminArea.style.display = "block";
       await loadAdminMeta();
     } else {
       adminArea.style.display = "none";
-      // optional: make it clearer for interns
       statusEl.textContent += " — (Not an admin)";
     }
   } catch (err) {
     statusEl.textContent = `Error: ${err.message}`;
+    console.error("LOGIN ERROR:", err);
   }
 }
 window.handleCredentialResponse = handleCredentialResponse;
@@ -129,7 +151,7 @@ async function loadTable(key, label) {
   const data = await api(`/admin/${key}`, { method: "GET", headers: {} });
 
   currentRows = Array.isArray(data.rows) ? data.rows : [];
-  currentColumns = currentRows[0] ? Object.keys(currentRows[0]) : []; // if empty table, no columns
+  currentColumns = currentRows[0] ? Object.keys(currentRows[0]) : [];
 
   createBtn.disabled = false;
 
@@ -168,7 +190,6 @@ function rowHtml(row, cols, pkName) {
 function renderTable() {
   if (!currentTableKey) return;
 
-  // If a table is empty, show a friendly message + allow Create
   if (!currentRows.length) {
     tableContainerEl.innerHTML = `
       <div class="muted" style="margin-top:10px;">
@@ -202,11 +223,7 @@ function renderTable() {
 createBtn.onclick = () => {
   if (!currentTableKey) return;
 
-  // if table was empty, we need columns; easiest is to reload table after create is clicked
   if (!currentRows.length) {
-    // We can't render inputs without knowing columns; ask backend for one row structure.
-    // For now, just tell the user to create rows via a table that already has columns.
-    // (If you want, we can add an endpoint that returns editable columns per table.)
     alert("This table is empty. Add at least one row using phpMyAdmin once, or ask me to add a schema/meta endpoint so Create works on empty tables.");
     return;
   }
@@ -257,6 +274,7 @@ saveBtn.onclick = async () => {
     await loadTable(currentTableKey, tableTitleEl.textContent);
   } catch (e) {
     alert(`Save failed: ${e.message}`);
+    console.error("SAVE ERROR:", e);
   }
 };
 
@@ -300,12 +318,11 @@ async function onActionClick(e) {
       await loadTable(currentTableKey, tableTitleEl.textContent);
     } catch (err) {
       alert(`Delete failed: ${err.message}`);
+      console.error("DELETE ERROR:", err);
     }
   }
 }
 
-// Boot: if token exists, try to load admin meta.
-// IMPORTANT: Only show admin UI if /admin/meta succeeds (meaning token valid + admin).
 (async function boot() {
   if (!token) return;
 
@@ -313,12 +330,11 @@ async function onActionClick(e) {
     statusEl.textContent = "Token found. Checking admin access...";
     await loadAdminMeta();
 
-    // If this succeeded, you're admin.
     adminArea.style.display = "block";
     logoutBtn.style.display = "inline-block";
     statusEl.textContent = "Admin session active. Select a table above.";
-  } catch {
-    // token invalid or not admin
+  } catch (e) {
+    console.log("BOOT ERROR:", e);
     localStorage.removeItem("token");
     token = null;
     adminArea.style.display = "none";
