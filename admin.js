@@ -1,6 +1,4 @@
 const API_BASE = "https://server-side-zqaz.onrender.com";
-
-// Session duration: must have logged in recently
 const SESSION_MS = 12 * 60 * 60 * 1000; // 12 hours
 
 // ---------- Session Guard ----------
@@ -34,8 +32,14 @@ const userEmail = requireSession();
 
 // ---------- Safe DOM helpers ----------
 function $(id) {
-  const el = document.getElementById(id);
-  if (!el) console.error(`admin.js: Missing element with id="${id}" in admin.html`);
+  return document.getElementById(id) || null;
+}
+function warnMissing(id) {
+  console.error(`admin.js: Missing element id="${id}" in admin.html`);
+}
+function elOrWarn(id) {
+  const el = $(id);
+  if (!el) warnMissing(id);
   return el;
 }
 function safeShow(el, display = "block") {
@@ -47,16 +51,19 @@ function safeHide(el) {
 function safeSetText(el, txt) {
   if (el) el.textContent = txt;
 }
+function safeSetHTML(el, html) {
+  if (el) el.innerHTML = html;
+}
 
-// ---------- UI Elements (safe) ----------
-const statusEl = $("status");
-const adminArea = $("adminArea");
-const tableLinksEl = $("tableLinks");
-const tableTitleEl = $("tableTitle");
-const tableContainerEl = $("tableContainer");
-const saveBtn = $("saveBtn");
-const createBtn = $("createBtn");
-const logoutBtn = $("logoutBtn");
+// ---------- UI Elements ----------
+const statusEl = elOrWarn("status");
+const adminArea = elOrWarn("adminArea");
+const tableLinksEl = elOrWarn("tableLinks");
+const tableTitleEl = elOrWarn("tableTitle");
+const tableContainerEl = elOrWarn("tableContainer");
+const saveBtn = elOrWarn("saveBtn");
+const createBtn = elOrWarn("createBtn");
+const logoutBtn = elOrWarn("logoutBtn");
 
 // ---------- State ----------
 let currentTableKey = null;
@@ -96,7 +103,7 @@ async function api(path, opts = {}) {
     ...opts,
     headers: {
       "Content-Type": "application/json",
-      "X-User-Email": userEmail,
+      "X-User-Email": userEmail, // ✅ A) include user email header
       ...(opts.headers || {}),
     },
   });
@@ -139,12 +146,12 @@ function formatDeleteWarning(info, fallbackId = null) {
 
 // ---------- Logout ----------
 if (logoutBtn) {
-  logoutBtn.onclick = () => {
+  logoutBtn.addEventListener("click", () => {
     localStorage.removeItem("userEmail");
     localStorage.removeItem("loggedInAt");
     localStorage.removeItem("isAdmin");
     window.location.href = "index.html";
-  };
+  });
 }
 
 // ---------- Load admin meta ----------
@@ -154,6 +161,7 @@ async function loadAdminMeta() {
   if (tableLinksEl) tableLinksEl.innerHTML = "";
   meta.forEach((t) => {
     if (!tableLinksEl) return;
+
     const link = document.createElement("a");
     link.textContent = t.label;
     link.href = "#";
@@ -171,7 +179,7 @@ async function loadAdminMeta() {
   creating = false;
 
   safeSetText(tableTitleEl, "Select a table above.");
-  if (tableContainerEl) tableContainerEl.innerHTML = "";
+  safeSetHTML(tableContainerEl, "");
   safeSetText(statusEl, "Admin session active.");
   updateButtons();
 }
@@ -306,7 +314,7 @@ function renderTable() {
 
 // ---------- Create ----------
 if (createBtn) {
-  createBtn.onclick = () => {
+  createBtn.addEventListener("click", () => {
     if (!currentTableKey) return;
 
     if (!currentRows.length) {
@@ -318,15 +326,14 @@ if (createBtn) {
 
     creating = true;
     editingRowId = null;
-
     updateButtons();
     renderTable();
-  };
+  });
 }
 
 // ---------- Save ----------
 if (saveBtn) {
-  saveBtn.onclick = async () => {
+  saveBtn.addEventListener("click", async () => {
     try {
       if (!currentTableKey) return;
 
@@ -367,7 +374,7 @@ if (saveBtn) {
       alert(`Save failed: ${e.message}`);
       console.error("SAVE ERROR:", e);
     }
-  };
+  });
 }
 
 // ---------- Actions ----------
@@ -417,7 +424,7 @@ async function onActionClick(e) {
     }
   } catch (err) {
     console.error("ACTION ERROR:", err);
-    if (err.status === 409) {
+    if (err?.status === 409) {
       alert(err?.data?.error || err.message || "Cannot delete due to references. Hover delete for details.");
       return;
     }
@@ -425,23 +432,15 @@ async function onActionClick(e) {
   }
 }
 
-// ---------- Boot ----------
+// ---------- Boot (NEVER TOUCHES .style DIRECTLY) ----------
 (async function boot() {
-  updateButtons();
-
-  // If admin.html is missing required elements, stop here.
-  const required = ["status", "adminArea", "tableLinks", "tableTitle", "tableContainer", "saveBtn", "createBtn", "logoutBtn"];
-  const missing = required.filter((id) => !document.getElementById(id));
-  if (missing.length) {
-    console.error("admin.js: admin.html is missing these IDs:", missing);
-    alert("admin.html is missing required elements. Open DevTools Console to see missing IDs.");
-    return;
-  }
-
-  safeShow(adminArea, "block");
-  safeShow(logoutBtn, "inline-block");
-
   try {
+    updateButtons();
+
+    // safely show if present
+    safeShow(adminArea, "block");
+    safeShow(logoutBtn, "inline-block");
+
     safeSetText(statusEl, "Loading admin dashboard…");
     await loadAdminMeta();
   } catch (e) {
