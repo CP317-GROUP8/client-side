@@ -29,11 +29,22 @@ function isLockedIdColumn(col) {
   const c = normalizeCol(col);
   return c === "user id" || c === "vehicle id" || c === "sale id";
 }
+
+// ✅ NEW: lock Availability ONLY when creating a new Vehicle
+function isVehicleCreateLockedColumn(col) {
+  // Only apply during create on vehicles table
+  if (!(creating && currentTableKey === "vehicles")) return false;
+  const c = normalizeCol(col);
+  return c === "availability";
+}
+
+// keep button state consistent everywhere
 function updateButtons() {
   createBtn.disabled = !currentTableKey || creating;
   createBtn.title = creating ? "Finish creating the current entry first" : "";
   saveBtn.disabled = !(creating || editingRowId !== null);
 }
+
 function escapeHtml(s) {
   return String(s ?? "")
     .replace(/&/g, "&amp;")
@@ -41,6 +52,7 @@ function escapeHtml(s) {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;");
 }
+
 function pkForTable(tableKey, columns, rows) {
   const map = {
     users: ["User ID"],
@@ -66,7 +78,6 @@ function formatDeleteWarning(info) {
   return parts.join(" ");
 }
 
-// highlight helper
 function highlightLink(linkEl, message) {
   if (!linkEl) return;
   linkEl.style.background = "#fef08a";
@@ -102,7 +113,7 @@ logoutBtn?.addEventListener("click", () => {
   statusEl && (statusEl.textContent = "Logged out.");
 });
 
-// ---------- API (strict: throws on non-OK) ----------
+// ---------- API ----------
 async function api(path, opts = {}) {
   const res = await fetch(`${API_BASE}${path}`, {
     ...opts,
@@ -126,7 +137,7 @@ async function api(path, opts = {}) {
   return data;
 }
 
-// ✅ can-delete: 409 is expected and should return JSON instead of throwing
+// ✅ can-delete: 409 returns JSON instead of throwing
 async function getDeleteInfo(tableKey, id) {
   const path = `/admin/${tableKey}/${id}/can-delete`;
   const res = await fetch(`${API_BASE}${path}`, {
@@ -202,12 +213,23 @@ function rowHtml(row, cols, pkName) {
   let tr = `<tr data-rowid="${escapeHtml(rowIdAttr)}">`;
 
   cols.forEach((col) => {
-    const val = isNew ? "" : (row[col] ?? "");
+    // ✅ Default Availability to "1" on new Vehicle rows (and grey it out)
+    let val = isNew ? "" : (row[col] ?? "");
+
+    if (isNew && currentTableKey === "vehicles" && normalizeCol(col) === "availability") {
+      val = "1";
+    }
 
     if (isNew || isEditing) {
+      // lock auto-increment IDs always
       if (isLockedIdColumn(col)) {
         tr += `<td><input data-col="${escapeHtml(col)}" value="${escapeHtml(val)}" disabled style="background:#f3f3f3;color:#666;"></td>`;
-      } else {
+      }
+      // ✅ NEW: lock Availability during Vehicle creation
+      else if (isVehicleCreateLockedColumn(col)) {
+        tr += `<td><input data-col="${escapeHtml(col)}" value="${escapeHtml(val)}" disabled style="background:#f3f3f3;color:#666;"></td>`;
+      }
+      else {
         tr += `<td><input data-col="${escapeHtml(col)}" value="${escapeHtml(val)}"></td>`;
       }
     } else {
@@ -264,7 +286,6 @@ function attachDeleteHoverWarnings() {
 }
 
 function renderSalesCreateForm() {
-  // only show when creating sales
   if (!(currentTableKey === "sales" && creating)) return "";
 
   return `
@@ -281,7 +302,7 @@ function renderSalesCreateForm() {
         </label>
         <div style="display:flex; align-items:flex-end; gap:10px;">
           <span style="color:#666; font-size:13px;">
-            (Price will be pulled from Vehicle Table automatically)
+            (Price pulled from Vehicle Table automatically)
           </span>
         </div>
       </div>
@@ -292,7 +313,6 @@ function renderSalesCreateForm() {
 function renderTable() {
   if (!currentTableKey) return;
 
-  // If Sales table: show special create form when creating
   const createForm = renderSalesCreateForm();
 
   if (!currentRows.length) {
@@ -313,7 +333,6 @@ function renderTable() {
   cols.forEach((c) => (html += `<th>${escapeHtml(c)}</th>`));
   html += `<th>Actions</th></tr></thead><tbody>`;
 
-  // only add inline new-row for NON-sales tables
   if (creating && currentTableKey !== "sales") {
     html += rowHtml({ __new: true }, cols, pkName);
   }
@@ -353,13 +372,11 @@ saveBtn?.addEventListener("click", async () => {
   try {
     if (!currentTableKey) return;
 
-    // Sales not editable; create-only + delete
     if (currentTableKey === "sales" && editingRowId !== null) {
-      alert("Sales are not editable. Delete the sale and create a new one instead.");
+      alert("Sales are not editable. Delete and recreate instead.");
       return;
     }
 
-    // ✅ CREATE SALE (special flow)
     if (currentTableKey === "sales" && creating) {
       const userId = Number(document.getElementById("saleUserId")?.value);
       const vehicleId = Number(document.getElementById("saleVehicleId")?.value);
@@ -384,7 +401,6 @@ saveBtn?.addEventListener("click", async () => {
       return;
     }
 
-    // normal create/edit for other tables
     const pkName = pkForTable(currentTableKey, currentColumns, currentRows);
     const rowSelector = creating ? `tr[data-rowid="new"]` : `tr[data-rowid="${editingRowId}"]`;
     const tr = tableContainerEl.querySelector(rowSelector);
@@ -396,6 +412,8 @@ saveBtn?.addEventListener("click", async () => {
     inputs.forEach((inp) => {
       const col = inp.getAttribute("data-col");
       if (isLockedIdColumn(col)) return;
+      // ✅ Do not send Availability when creating Vehicles
+      if (creating && currentTableKey === "vehicles" && normalizeCol(col) === "availability") return;
       payload[col] = inp.value;
     });
 
@@ -433,13 +451,11 @@ async function onActionClick(e) {
     if (action === "edit") {
       if (!rowid) return;
 
-      // Sales immutable
       if (currentTableKey === "sales") {
-        alert("Sales are not editable. Delete the sale and create a new one instead.");
+        alert("Sales are not editable. Delete and recreate instead.");
         return;
       }
 
-      // ✅ USERS: allow edit even if can-delete would block delete
       if (currentTableKey === "users") {
         creating = false;
         editingRowId = Number(rowid);
@@ -448,15 +464,12 @@ async function onActionClick(e) {
         return;
       }
 
-      // ✅ VEHICLES: block edit if involved in sale (same as delete)
       if (currentTableKey === "vehicles") {
         const info = await getDeleteInfo("vehicles", rowid);
         if (!info.canDelete) {
           const msg = formatDeleteWarning(info);
           alert(msg);
-
-          // highlight EDIT link (not delete)
-          highlightLink(e.target, msg);
+          highlightLink(e.target, msg); // highlight EDIT
           return;
         }
 
@@ -467,7 +480,6 @@ async function onActionClick(e) {
         return;
       }
 
-      // fallback
       creating = false;
       editingRowId = Number(rowid);
       updateButtons();
@@ -498,9 +510,7 @@ async function onActionClick(e) {
       if (!info.canDelete) {
         const msg = formatDeleteWarning(info);
         alert(msg);
-
-        // highlight delete link on blocked deletes
-        highlightLink(e.target, msg);
+        highlightLink(e.target, msg); // highlight DELETE
         return;
       }
 
