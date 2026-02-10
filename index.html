@@ -12,31 +12,32 @@
     body {
       margin: 0;
       min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
       font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
       background: #f6f7f9;
+      padding: 24px;
+    }
+
+    .wrap {
+      max-width: 1000px;
+      margin: 0 auto;
     }
 
     .card {
-      width: 360px;
       background: white;
       padding: 24px;
       border-radius: 12px;
       box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-      text-align: center;
     }
 
-    h1 {
-      margin-bottom: 8px;
+    .row {
+      display: flex;
+      gap: 16px;
+      align-items: center;
+      flex-wrap: wrap;
     }
 
-    p {
-      margin-top: 0;
-      color: #666;
-      font-size: 14px;
-    }
+    h1 { margin: 0 0 8px; }
+    p { margin: 0; color: #666; font-size: 14px; }
 
     #status {
       margin-top: 16px;
@@ -44,34 +45,111 @@
       color: #444;
       word-break: break-word;
     }
+
+    a {
+      color: #1463ff;
+      cursor: pointer;
+      text-decoration: underline;
+    }
+
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      margin-top: 12px;
+      background: #fff;
+    }
+
+    th, td {
+      border: 1px solid #ddd;
+      padding: 8px;
+      font-size: 14px;
+      vertical-align: top;
+    }
+
+    th {
+      background: #f5f5f5;
+      text-align: left;
+    }
+
+    input {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 6px;
+    }
+
+    .btn {
+      padding: 8px 12px;
+      border-radius: 8px;
+      border: 1px solid #1463ff;
+      background: #1463ff;
+      color: white;
+      cursor: pointer;
+    }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .muted { color: #666; font-size: 14px; }
+    hr { border: none; border-top: 1px solid #eee; margin: 16px 0; }
   </style>
 </head>
 <body>
+  <div class="wrap">
 
-  <div class="card">
-    <h1>Welcome</h1>
-    <p>Sign up or log in using your Google account</p>
+    <!-- LOGIN CARD -->
+    <div class="card">
+      <h1>Welcome</h1>
+      <p>Sign up or log in using your Google account</p>
 
-    <!-- Google Sign-In config -->
-    <div id="g_id_onload"
-         data-client_id="338952355189-kifevvua8bpk9bn6sp8dqbrthb79h8f5.apps.googleusercontent.com"
-         data-callback="handleCredentialResponse"
-         data-auto_prompt="false">
+      <div class="row" style="margin-top: 16px;">
+        <!-- Google Sign-In config -->
+        <div id="g_id_onload"
+             data-client_id="338952355189-kifevvua8bpk9bn6sp8dqbrthb79h8f5.apps.googleusercontent.com"
+             data-callback="handleCredentialResponse"
+             data-auto_prompt="false">
+        </div>
+
+        <!-- Google Sign-In button -->
+        <div class="g_id_signin"
+             data-type="standard"
+             data-size="large"
+             data-theme="outline"
+             data-text="signin_with"
+             data-shape="rectangular">
+        </div>
+
+        <button class="btn" id="logoutBtn" style="display:none;">Logout</button>
+      </div>
+
+      <div id="status"></div>
     </div>
 
-    <!-- Google Sign-In button -->
-    <div class="g_id_signin"
-         data-type="standard"
-         data-size="large"
-         data-theme="outline"
-         data-text="signin_with"
-         data-shape="rectangular">
+    <!-- ADMIN DASHBOARD -->
+    <div id="adminArea" class="card" style="margin-top:16px; display:none;">
+      <h2 style="margin:0 0 8px;">Admin Dashboard</h2>
+      <div class="muted">Click a table to view entries. Use edit/create/delete to manage records.</div>
+
+      <hr />
+
+      <div id="tableLinks" class="row"></div>
+
+      <hr />
+
+      <div class="row" style="justify-content: space-between;">
+        <div id="tableTitle" style="font-weight:600;">Select a table above.</div>
+        <div class="row">
+          <button class="btn" id="createBtn" disabled>Create</button>
+          <button class="btn" id="saveBtn" disabled>Save</button>
+        </div>
+      </div>
+
+      <div id="tableContainer"></div>
     </div>
 
-    <div id="status"></div>
   </div>
 
-  <!-- Your frontend logic -->
   <script src="app.js"></script>
 </body>
 </html>
