@@ -70,6 +70,11 @@ function guessPkName(rows, columns) {
   return candidates.find((k) => keys.includes(k)) || keys[0] || null;
 }
 
+// NEW: ID fields should never be editable (auto-increment)
+function isIdColumn(col) {
+  return col === "User ID" || col === "Vehicle ID" || col === "Sale ID";
+}
+
 // Called by Google Identity Services
 async function handleCredentialResponse(response) {
   statusEl.textContent = "Signing you in...";
@@ -104,7 +109,6 @@ async function handleCredentialResponse(response) {
     const email = u.email ?? u["Email Address"] ?? "";
     const adminVal = Number(u.administrator ?? u["Administrator"] ?? 0);
 
-    // If still empty, show something readable
     const displayName = `${first} ${last}`.trim() || "(name missing)";
     statusEl.textContent = `Welcome, ${displayName}${email ? ` (${email})` : ""}`;
 
@@ -167,8 +171,14 @@ function rowHtml(row, cols, pkName) {
 
   cols.forEach((col) => {
     const val = isNew ? "" : (row[col] ?? "");
+
     if (isNew || isEditing) {
-      tr += `<td><input data-col="${escapeHtml(col)}" value="${escapeHtml(val)}"></td>`;
+      // NEW: never allow editing ID columns (auto-increment)
+      if (isIdColumn(col)) {
+        tr += `<td><input data-col="${escapeHtml(col)}" value="${escapeHtml(val)}" disabled></td>`;
+      } else {
+        tr += `<td><input data-col="${escapeHtml(col)}" value="${escapeHtml(val)}"></td>`;
+      }
     } else {
       tr += `<td>${escapeHtml(val)}</td>`;
     }
@@ -238,7 +248,6 @@ saveBtn.onclick = async () => {
   try {
     if (!currentTableKey) return;
 
-    const pkName = guessPkName(currentRows, currentColumns);
     const rowSelector = creating
       ? `tr[data-rowid="new"]`
       : `tr[data-rowid="${editingRowId}"]`;
@@ -248,8 +257,10 @@ saveBtn.onclick = async () => {
 
     const inputs = [...tr.querySelectorAll("input[data-col]")];
     const payload = {};
+
     inputs.forEach((inp) => {
       const col = inp.getAttribute("data-col");
+      if (isIdColumn(col)) return; // NEW: never send auto-increment IDs
       payload[col] = inp.value;
     });
 
