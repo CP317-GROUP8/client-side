@@ -17,6 +17,26 @@ const saveBtn = document.getElementById("saveBtn");
 const createBtn = document.getElementById("createBtn");
 const logoutBtn = document.getElementById("logoutBtn");
 
+function normalizeCol(col) {
+  return String(col || "").trim().toLowerCase().replace(/\s+/g, " ");
+}
+
+// lock these from editing (auto-increment IDs)
+function isLockedIdColumn(col) {
+  const c = normalizeCol(col);
+  return c === "user id" || c === "vehicle id" || c === "sale id";
+}
+
+// keep button state consistent everywhere
+function updateButtons() {
+  // Create: disabled only while actively creating a new entry, or if no table selected
+  createBtn.disabled = !currentTableKey || creating;
+  createBtn.title = creating ? "Finish creating the current entry first" : "";
+
+  // Save: enabled only while creating OR editing
+  saveBtn.disabled = !(creating || editingRowId !== null);
+}
+
 logoutBtn.onclick = () => {
   localStorage.removeItem("token");
   token = null;
@@ -26,8 +46,14 @@ logoutBtn.onclick = () => {
   tableLinksEl.innerHTML = "";
   tableTitleEl.textContent = "Select a table above.";
   tableContainerEl.innerHTML = "";
-  createBtn.disabled = true;
-  saveBtn.disabled = true;
+
+  currentTableKey = null;
+  currentRows = [];
+  currentColumns = [];
+  editingRowId = null;
+  creating = false;
+
+  updateButtons();
 
   statusEl.textContent = "Logged out.";
 };
@@ -65,15 +91,6 @@ function guessPkName(rows, columns) {
   const candidates = ["User ID", "Vehicle ID", "Sale ID"];
   const keys = columns?.length ? columns : (rows[0] ? Object.keys(rows[0]) : []);
   return candidates.find((k) => keys.includes(k)) || keys[0] || null;
-}
-
-// Robust ID-field lock (auto-increment / not editable)
-function normalizeCol(col) {
-  return String(col || "").trim().toLowerCase().replace(/\s+/g, " ");
-}
-function isLockedIdColumn(col) {
-  const c = normalizeCol(col);
-  return c === "user id" || c === "vehicle id" || c === "sale id";
 }
 
 // Called by Google Identity Services
@@ -132,26 +149,21 @@ async function loadAdminMeta() {
     tableLinksEl.appendChild(link);
   });
 
-  // reset UI state
+  // reset state when loading meta
+  currentTableKey = null;
   creating = false;
   editingRowId = null;
 
-  createBtn.disabled = true;
-  saveBtn.disabled = true;
-  createBtn.title = "";
   tableTitleEl.textContent = "Select a table above.";
   tableContainerEl.innerHTML = "";
+
+  updateButtons();
 }
 
 async function loadTable(key, label) {
   currentTableKey = key;
-  editingRowId = null;
   creating = false;
-
-  // ensure buttons reset for a new table
-  createBtn.disabled = false;
-  saveBtn.disabled = true;
-  createBtn.title = "";
+  editingRowId = null;
 
   tableTitleEl.textContent = label;
 
@@ -160,6 +172,7 @@ async function loadTable(key, label) {
   currentRows = Array.isArray(data.rows) ? data.rows : [];
   currentColumns = currentRows[0] ? Object.keys(currentRows[0]) : [];
 
+  updateButtons();
   renderTable();
 }
 
@@ -174,9 +187,9 @@ function rowHtml(row, cols, pkName) {
     const val = isNew ? "" : (row[col] ?? "");
 
     if (isNew || isEditing) {
+      // IMPORTANT: use DISABLED to prevent editing AND to grey out visually
       if (isLockedIdColumn(col)) {
-        // read-only ID field (auto increment)
-        tr += `<td><input data-col="${escapeHtml(col)}" value="${escapeHtml(val)}" readonly></td>`;
+        tr += `<td><input data-col="${escapeHtml(col)}" value="${escapeHtml(val)}" disabled style="background:#f3f3f3;color:#666;"></td>`;
       } else {
         tr += `<td><input data-col="${escapeHtml(col)}" value="${escapeHtml(val)}"></td>`;
       }
@@ -229,6 +242,9 @@ function renderTable() {
   document.querySelectorAll("[data-action]").forEach((el) => {
     el.addEventListener("click", onActionClick);
   });
+
+  // keep buttons correct after re-render
+  updateButtons();
 }
 
 createBtn.onclick = () => {
@@ -239,17 +255,13 @@ createBtn.onclick = () => {
     return;
   }
 
-  // NEW: if already creating, do nothing
+  // If already creating, ignore
   if (creating) return;
 
   creating = true;
   editingRowId = null;
 
-  // NEW: grey out Create while creating
-  createBtn.disabled = true;
-  createBtn.title = "Finish creating the current entry first";
-
-  saveBtn.disabled = false;
+  updateButtons();
   renderTable();
 };
 
@@ -264,6 +276,8 @@ saveBtn.onclick = async () => {
     const tr = document.querySelector(rowSelector);
     if (!tr) return;
 
+    // NOTE: disabled inputs won't appear in querySelectorAll if filtered incorrectly,
+    // but we intentionally skip IDs anyway.
     const inputs = [...tr.querySelectorAll("input[data-col]")];
     const payload = {};
 
@@ -287,14 +301,10 @@ saveBtn.onclick = async () => {
       });
     }
 
-    saveBtn.disabled = true;
     creating = false;
     editingRowId = null;
 
-    // NEW: re-enable Create after saving
-    createBtn.disabled = false;
-    createBtn.title = "";
-
+    updateButtons();
     await loadTable(currentTableKey, tableTitleEl.textContent);
   } catch (e) {
     alert(`Save failed: ${e.message}`);
@@ -310,40 +320,27 @@ async function onActionClick(e) {
   const rowid = tr?.getAttribute("data-rowid");
 
   if (action === "edit") {
+    // editing an existing row
     creating = false;
     editingRowId = Number(rowid);
-    saveBtn.disabled = false;
 
-    // If you start editing, Create should be available again
-    createBtn.disabled = false;
-    createBtn.title = "";
-
+    updateButtons();
     renderTable();
     return;
   }
 
   if (action === "cancelEdit") {
     editingRowId = null;
-    saveBtn.disabled = true;
 
-    // If not creating, Create should remain enabled
-    if (!creating) {
-      createBtn.disabled = false;
-      createBtn.title = "";
-    }
-
+    updateButtons();
     renderTable();
     return;
   }
 
   if (action === "cancelCreate") {
     creating = false;
-    saveBtn.disabled = true;
 
-    // NEW: re-enable Create on cancel
-    createBtn.disabled = false;
-    createBtn.title = "";
-
+    updateButtons();
     renderTable();
     return;
   }
@@ -365,6 +362,8 @@ async function onActionClick(e) {
 }
 
 (async function boot() {
+  updateButtons();
+
   if (!token) return;
 
   try {
@@ -381,5 +380,7 @@ async function onActionClick(e) {
     adminArea.style.display = "none";
     logoutBtn.style.display = "none";
     statusEl.textContent = "Session expired or not admin. Please sign in again.";
+  } finally {
+    updateButtons();
   }
 })();
