@@ -22,16 +22,53 @@ document.getElementById("pillWhere").textContent = `Where: ${where || "(any)"}`;
 document.getElementById("pillPickup").textContent = `Pick Up: ${pickup || "(any)"}`;
 document.getElementById("pillDropoff").textContent = `Drop Off: ${dropoff || "(any)"}`;
 
+function firstNonEmpty(...vals) {
+  for (const v of vals) {
+    if (v === null || v === undefined) continue;
+    const s = String(v).trim();
+    if (s.length > 0) return s;
+  }
+  return null;
+}
+
+// Normalize server response into a consistent shape
 function normalizeCar(car) {
-  return {
-    id: car.vehicleId ?? car.id ?? car["Vehicle ID"],
-    manufacturer: car.manufacturer ?? car.Manufacturer ?? car["Manufacturer"] ?? "Unknown",
-    model: car.model ?? car.Model ?? car["Model"] ?? "",
-    type: car.vehicleType ?? car.vehicle_type ?? car["Vehicle Type"] ?? "—",
-    drivetrain: car.drivetrain ?? car.Drivetrain ?? car["Drivetrain"] ?? "—",
-    price: car.price ?? car.Price ?? car["Price"] ?? null,
-    availability: car.availability ?? car.Availability ?? car["Availability"],
-  };
+  const id = car.vehicleId ?? car.id ?? car["Vehicle ID"];
+
+  const manufacturer = firstNonEmpty(
+    car.manufacturer,
+    car.Manufacturer,
+    car["Manufacturer"]
+  ) || "Unknown";
+
+  const model = firstNonEmpty(
+    car.model,
+    car.Model,
+    car["Model"]
+  ) || "";
+
+  // IMPORTANT: handle lots of possible keys + blank strings
+  const type = firstNonEmpty(
+    car.type,                // if backend returns AS type
+    car.vehicleType,         // if backend returns AS vehicleType
+    car.vehicletype,         // sometimes keys get lowercased by mistake
+    car.vehicle_type,
+    car["Vehicle Type"],     // if backend returns raw column name
+    car["Vehicle type"]
+  ) || "—";
+
+  const drivetrain = firstNonEmpty(
+    car.drivetrain,
+    car.Drivetrain,
+    car["Drivetrain"]
+  ) || "—";
+
+  const priceRaw = car.price ?? car.Price ?? car["Price"];
+  const price = priceRaw === null || priceRaw === undefined || String(priceRaw).trim() === ""
+    ? null
+    : Number(priceRaw);
+
+  return { id, manufacturer, model, type, drivetrain, price };
 }
 
 async function loadCars() {
@@ -43,22 +80,22 @@ async function loadCars() {
     const data = await res.json().catch(() => []);
     if (!res.ok) throw new Error(data.error || "Could not load cars");
 
+    // DEBUG: see exactly what the API returns
+    console.log("RAW /cars response:", data);
+
     const cars = Array.isArray(data) ? data.map(normalizeCar) : [];
 
     grid.innerHTML = "";
     status.textContent = `${cars.length} available cars found`;
 
-    cars.forEach((raw) => {
-      const c = normalizeCar(raw);
+    cars.forEach((c) => {
+      const priceText =
+        c.price === null || Number.isNaN(c.price)
+          ? "—"
+          : `$${c.price.toLocaleString()}`;
 
       const card = document.createElement("div");
       card.className = "card";
-
-      const priceText =
-        c.price === null || c.price === undefined || c.price === ""
-          ? "—"
-          : `$${Number(c.price).toLocaleString()}`;
-
       card.innerHTML = `
         <h3>${c.manufacturer} ${c.model}</h3>
         <div class="muted">Type: ${c.type}</div>
@@ -68,11 +105,9 @@ async function loadCars() {
           <button class="link book" data-book="${encodeURIComponent(c.id)}">Book</button>
         </div>
       `;
-
       grid.appendChild(card);
     });
 
-    // Wire up all Book buttons
     grid.querySelectorAll("[data-book]").forEach((btn) => {
       btn.addEventListener("click", async () => {
         const vehicleId = btn.getAttribute("data-book");
@@ -94,16 +129,16 @@ async function bookCar(vehicleId) {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "X-User-Email": userEmail, // behind-the-scenes link to your user row
+        "X-User-Email": userEmail,
       },
     });
 
     const data = await res.json().catch(() => ({}));
+    console.log("BOOK response:", data);
+
     if (!res.ok) throw new Error(data.error || "Booking failed");
 
     status.textContent = `Booked! Sale ID #${data.saleId} — Vehicle #${data.vehicleId} — Price $${Number(data.priceSoldAt).toLocaleString()}`;
-
-    // Refresh list so booked car disappears
     await loadCars();
   } catch (err) {
     status.textContent = `Error: ${err.message}`;

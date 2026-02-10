@@ -8,9 +8,10 @@
   <style>
     body { margin:0; font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif; background:#eeeeee; }
     .wrap { min-height:100vh; padding:20px; box-sizing:border-box; }
-    .topbar { display:flex; justify-content:space-between; align-items:center; gap:12px; }
+    .topbar { display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; }
     .title { font-size:28px; font-weight:700; }
     .btn { border:none; border-radius:12px; padding:10px 14px; background:#999; cursor:pointer; }
+    .btn:hover { filter: brightness(0.95); }
     .filters { margin:14px 0; display:flex; gap:12px; flex-wrap:wrap; }
     .pill { background:#fff; border-radius:999px; padding:8px 12px; font-size:13px; }
     .grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap:14px; }
@@ -32,7 +33,7 @@
       font-size: 14px;
     }
 
-    /* NEW: blue "Book" link/button */
+    /* blue "Book" link/button */
     .book {
       background: transparent;
       color: #2563eb;
@@ -43,16 +44,22 @@
     .book:hover { color:#1d4ed8; }
 
     #status { margin:10px 0; color:#444; }
+    .note { margin-top:6px; font-size:13px; color:#555; }
   </style>
 </head>
 
 <body>
   <div class="wrap">
     <div class="topbar">
-      <div class="title">Available Cars</div>
-      <div style="display:flex; gap:10px;">
+      <div>
+        <div class="title">Available Cars</div>
+        <div class="note">Click <b>Book</b> to reserve a vehicle (no payment step yet).</div>
+      </div>
+
+      <div style="display:flex; gap:10px; align-items:center;">
         <button class="btn" onclick="window.location.href='home.html'">Home</button>
-        <button class="btn" id="logout">Logout</button>
+        <button class="btn" onclick="window.location.href='index.html'">Sign In</button>
+        <button class="btn" id="logout" aria-label="Logout">Logout</button>
       </div>
     </div>
 
@@ -66,6 +73,7 @@
     <div id="carGrid" class="grid"></div>
   </div>
 
+  <!-- IMPORTANT: cars.js must be in the same folder as cars.html -->
   <script src="cars.js"></script>
 </body>
 </html>
