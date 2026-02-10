@@ -148,23 +148,15 @@ button{
 <script>
 const API = "https://server-side-zqaz.onrender.com";
 
-/** Safely read a field even if the backend uses different names */
-function getField(obj, ...names) {
-  for (const name of names) {
-    if (obj && obj[name] !== undefined && obj[name] !== null) return obj[name];
-  }
-  return undefined;
-}
-
-/** Your per-car image mapping (you can change these files whenever) */
 const imageMap = {
-  "Toyota Corolla": "corolla.png",
-  "Toyota Highlander": "highlander.png",
-  "Dodge Challenger": "challenger.png",
-  "Dodge Charger": "charger.png",
-  "KIA K4": "kia.png",
-  "Honda Civic": "civic.png",
-  "Porsche 911": "porsche.png"
+  "Dodge Challenger | AWD": "challenger.png",
+  "KIA K4 | RWD": "kia.png",
+  "Honda Civic | RWD": "civic.png",
+  "Porsche 911 | AWD": "porsche.png",
+  "Toyota Highlander | AWD": "highlander.png",
+  "Toyota Highlander | RWD": "highlander-rwd.png",
+  "Toyota Corolla | FWD": "corolla-fwd.png",
+  "Toyota Corolla | AWD": "corolla-awd.png"
 };
 
 async function loadCars() {
@@ -175,7 +167,6 @@ async function loadCars() {
     const res = await fetch(`${API}/cars`);
     const data = await res.json();
 
-    // Some APIs return {cars:[...]} instead of [...]
     const cars = Array.isArray(data) ? data : (data.cars ?? data.vehicles ?? []);
     renderCars(cars);
   } catch (e) {
@@ -189,32 +180,32 @@ function renderCars(cars) {
   grid.innerHTML = "";
 
   cars.forEach((car) => {
-    // Normalize backend fields (handles most naming styles)
-    const manufacturer = getField(car, "manufacturer", "Manufacturer", "make", "Make") ?? "Unknown";
-    const model        = getField(car, "model", "Model") ?? "Unknown";
-    const priceRaw     = getField(car, "price", "Price", "price_per_day", "pricePerDay") ?? 0;
-    const availability = getField(car, "availability", "Availability", "available", "is_available") ?? 0;
-    const vehicleType  = getField(car, "vehicle_type", "VehicleType", "type", "Type") ?? "";
-    const drivetrain   = getField(car, "drivetrain", "Drivetrain") ?? "";
+    const vehicleId   = car["Vehicle ID"];
+    const manufacturer= car["Manufacturer"];
+    const model       = car["Model"];
+    const type        = car["Vehicle Type"];
+    const drivetrain  = car["Drivetrain"];
+    const priceRaw    = car["Price"];
+    const availability= car["Availability"];
 
-    const name = `${manufacturer} ${model}`.trim();
-
-    const isAvailable = Number(availability) === 1 || availability === true;
+    const isAvailable = Number(availability) === 1;
     const tagClass = isAvailable ? "available" : "unavailable";
     const tagText  = isAvailable ? "Available" : "Unavailable";
 
     const priceNum = Number(priceRaw);
     const priceText = Number.isFinite(priceNum) ? `$${priceNum.toFixed(2)}/day` : `$${priceRaw}/day`;
 
-    // IMPORTANT: always show a real local placeholder if mapping not found
-    const imgFile = imageMap[name] || "placeholder.png";
+    const name = `${manufacturer} ${model}`;
+    const imgKey = `${name} | ${drivetrain}`;
+
+    const imgFile = imageMap[imgKey] || "placeholder.png";
     const imgUrl  = `./assets/cars/${imgFile}`;
 
     const card = document.createElement("div");
     card.className = "card";
 
     card.innerHTML = `
-      <img src="${imgUrl}" alt="${name}" onerror="this.src='./assets/cars/placeholder.png'">
+      <img src="${imgUrl}" alt="${imgKey}" onerror="this.src='./assets/cars/placeholder.png'">
       <div class="cardBody">
 
         <div class="titleRow">
@@ -224,7 +215,7 @@ function renderCars(cars) {
 
         <span class="tag ${tagClass}">${tagText}</span>
 
-        <p class="meta">${[vehicleType, drivetrain].filter(Boolean).join(" • ")}</p>
+        <p class="meta">${type} • ${drivetrain} • Vehicle ID: ${vehicleId}</p>
 
         <div class="cardActions">
           <a class="linkBtn viewBtn" href="#" onclick="event.preventDefault(); alert('Details page in Sprint 2');">View</a>
@@ -240,6 +231,7 @@ function renderCars(cars) {
 
 loadCars();
 </script>
+
 
 </body>
 </html>
