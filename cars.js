@@ -1,6 +1,5 @@
 const API_BASE = "https://server-side-zqaz.onrender.com";
 
-// session duration
 const SESSION_MS = 12 * 60 * 60 * 1000; // 12 hours
 
 function requireSession() {
