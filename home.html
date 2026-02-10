@@ -1,148 +1,258 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Home</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<title>Car Rental</title>
 
-  <style>
-    html, body { height: 100%; }
-    body { margin: 0; font-family: Inter, system-ui, Arial, sans-serif; background:#EEE; }
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
 
-    .page {
-      min-height: 100vh;
-      overflow-x: hidden;
-      overflow-y: auto;
-      padding: 0;
-    }
+<style>
+*{
+  box-sizing:border-box;
+  font-family:Inter,system-ui;
+}
 
-    .artboard {
-      position: relative;
-      width: 1440px;
-      height: 1024px;       
-      margin: 0 auto;
-      background: #EEEEEE;
-    }
+body{
+  margin:0;
+  background:linear-gradient(180deg,#eef2ff,#f8fafc);
+}
 
-    @media (max-width: 1440px) {
-      .page { overflow-x: auto; }
-      .artboard { margin: 0; }
-    }
+.container{
+  max-width:1400px;
+  margin:auto;
+  padding:50px 40px;
+}
 
-    .inputBox {
-      background: #FFFBFB;
-      border-radius: 10px;
-      overflow: hidden;
-      box-sizing: border-box;
-    }
-    .figmaInput {
-      width: 100%;
-      height: 100%;
-      border: none;
-      outline: none;
-      background: transparent;
-      font-size: 14px;
-      padding: 10px 12px;
-      box-sizing: border-box;
-      font-family: Inter, system-ui, Arial, sans-serif;
-    }
+header{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:30px;
+  position:relative;
+  z-index:2;
+}
 
-    input[type="date"] { color: #111; }
-    input[type="date"]::-webkit-datetime-edit { color:#111; }
-    input[type="date"]::-webkit-calendar-picker-indicator { opacity: 0.8; }
+h1{
+  font-size:52px;
+  margin:0;
+}
 
-    .carImg {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      display: block;
-    }
+.subtitle{
+  color:#555;
+  margin-top:6px;
+}
 
-    .searchBtn {
-      cursor: pointer;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      user-select:none;
-    }
+.hero{
+  position:relative;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  min-height:420px;
+  margin-bottom:40px;
+}
 
-    .sideIcon { cursor:pointer; }
-  </style>
+.searchCard{
+  background:white;
+  padding:36px;
+  border-radius:22px;
+  box-shadow:0 20px 50px rgba(0,0,0,.08);
+  max-width:760px;
+  width:100%;
+  z-index:2;
+}
+
+.searchCard h2{
+  margin-top:0;
+}
+
+.inputs{
+  display:grid;
+  grid-template-columns:1fr 1fr 1fr;
+  gap:16px;
+  margin:24px 0;
+}
+
+input{
+  height:56px;
+  border-radius:14px;
+  border:1px solid #ddd;
+  padding:0 16px;
+  font-size:16px;
+}
+
+.buttons{
+  display:flex;
+  gap:14px;
+}
+
+button{
+  padding:14px 26px;
+  border-radius:14px;
+  border:none;
+  font-size:16px;
+  cursor:pointer;
+}
+
+.primary{
+  background:#4f46e5;
+  color:white;
+}
+
+.secondary{
+  background:white;
+  border:1px solid #ccc;
+}
+
+
+.sectionTitle{
+  margin:40px 0 20px;
+  font-size:26px;
+}
+
+.cards{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:24px;
+}
+
+.card{
+  background:white;
+  border-radius:20px;
+  overflow:hidden;
+  box-shadow:0 12px 30px rgba(0,0,0,.06);
+}
+
+.card img{
+  width:100%;
+  height:200px;
+  object-fit:cover;
+  background:#ddd;
+}
+
+.cardContent{
+  padding:20px;
+}
+
+.cardContent h3{
+  margin:0;
+}
+
+.cardContent p{
+  color:#555;
+}
+
+.cardContent a{
+  color:#4f46e5;
+  text-decoration:none;
+  font-weight:600;
+}
+
+.circle{
+  position:absolute;
+  width:900px;
+  height:900px;
+  border-radius:50%;
+  background:radial-gradient(circle at 30% 30%, #a78bfa, #60a5fa 45%, transparent 70%);
+  top:-520px;
+  left:50%;
+  transform:translateX(-50%);
+  z-index:-1;
+}
+
+@media(max-width:900px){
+  .inputs{
+    grid-template-columns:1fr;
+  }
+
+  .cards{
+    grid-template-columns:1fr;
+  }
+}
+</style>
 </head>
 
 <body>
-  <div class="page">
-    <div class="artboard">
 
-      <div style="width:1531px;height:1376px;left:-47px;top:-835px;position:absolute;background:#CBCBCB;border-radius:9999px"></div>
+<div class="container">
 
-      <div style="width:757px;height:87px;left:342px;top:36px;position:absolute;color:black;font-size:64px;font-weight:400;">
-        Car Rental System Name
-      </div>
+<header>
+  <div>
+    <h1>Car Rental System</h1>
+    <div class="subtitle">Find cars, pick dates, rent instantly.</div>
+  </div>
 
-      <div style="width:602px;height:26px;left:419px;top:140px;position:absolute;background:#B7B7B7;border-radius:30px"></div>
-      <div style="width:350px;height:26px;left:544px;top:179px;position:absolute;background:#B7B7B7;border-radius:30px"></div>
+  <button class="secondary" onclick="logout()">Logout</button>
+</header>
 
-      <div style="width:535px;height:127px;left:452px;top:245px;position:absolute;background:#EEEEEE;border-radius:20px"></div>
+<section class="hero">
 
-      <div style="left:501px;top:261px;position:absolute;color:black;font-size:20px;font-weight:500">Where</div>
-      <div style="left:706px;top:261px;position:absolute;color:black;font-size:20px;font-weight:500">Pick Up</div>
-      <div style="left:872px;top:261px;position:absolute;color:black;font-size:20px;font-weight:500">Drop Off</div>
+  <div class="circle"></div>
 
-      <!-- Inputs -->
-      <div class="inputBox" style="width:156px;height:48px;left:477px;top:301px;position:absolute;">
-        <input id="whereInput" class="figmaInput" placeholder="City" />
-      </div>
+  <div class="searchCard">
+    <h2>Search Available Cars</h2>
+    <p>Enter your city and pickup/dropoff dates.</p>
 
-      <div class="inputBox" style="width:99px;height:62px;left:682px;top:294px;position:absolute;">
-        <input id="pickupInput" class="figmaInput" type="date" />
-      </div>
+    <div class="inputs">
+      <input placeholder="City">
+      <input type="date">
+      <input type="date">
+    </div>
 
-      <div class="inputBox" style="width:99px;height:62px;left:855px;top:294px;position:absolute;">
-        <input id="dropoffInput" class="figmaInput" type="date" />
-      </div>
-
-      <img src="assets/car1.png" alt="Hero car"
-           style="position:absolute; left:520px; top:400px; width:420px; height:auto; z-index:2;"/>
-
-      <div style="left:172px;top:623px;position:absolute;color:black;font-size:20px;font-weight:400">Car Model Name 1</div>
-      <div style="width:406px;height:332px;left:59px;top:651px;position:absolute;background:#D9D9D9;border-radius:16px;overflow:hidden">
-        <img class="carImg" src="assets/placeholder-car.png" alt="Car placeholder 1">
-      </div>
-
-      <div style="left:619px;top:623px;position:absolute;color:black;font-size:20px;font-weight:400">Car Model Name 2</div>
-      <div style="width:406px;height:332px;left:506px;top:651px;position:absolute;background:#D9D9D9;border-radius:16px;overflow:hidden">
-        <img class="carImg" src="assets/placeholder-car.png" alt="Car placeholder 2">
-      </div>
-
-      <div style="left:1066px;top:623px;position:absolute;color:black;font-size:20px;font-weight:400">Car Model Name 3</div>
-      <div style="width:406px;height:332px;left:953px;top:651px;position:absolute;background:#D9D9D9;border-radius:16px;overflow:hidden">
-        <img class="carImg" src="assets/placeholder-car.png" alt="Car placeholder 3">
-      </div>
-
-      <div style="width:88px;height:587px;left:1359px;top:-72px;position:absolute;background:#DCDCDC;border-radius:15px"></div>
-
-      <div class="sideIcon" id="iconHome" style="width:30px;height:30px;left:1383px;top:42px;position:absolute;overflow:hidden">
-        <div style="width:22.50px;height:25px;left:3.75px;top:2.50px;position:absolute;outline:3px #1E1E1E solid;outline-offset:-1.50px"></div>
-      </div>
-
-      <div class="sideIcon" id="iconCars" style="width:38px;height:34px;left:1379px;top:122px;position:absolute">
-        <div style="width:28.50px;height:25.50px;left:4.75px;top:4.25px;position:absolute;background:#4C4C4C"></div>
-      </div>
-
-      <div class="sideIcon" id="iconLogout" style="width:38px;height:34px;left:1379px;top:287px;position:absolute">
-        <div style="width:28.50px;height:25.50px;left:4.75px;top:4.25px;position:absolute;background:#4C4C4C"></div>
-      </div>
-
+    <div class="buttons">
+      <button class="primary">Search Cars</button>
+      <button class="secondary" onclick="location.href='cars.html'">Browse All</button>
     </div>
   </div>
 
-  <script src="js/home.js"></script>
+</section>
+
+<h2 class="sectionTitle">Featured</h2>
+
+<div class="cards">
+
+  <div class="card">
+    <img>
+    <div class="cardContent">
+      <h3>Browse Cars</h3>
+      <p>View vehicles from database.</p>
+      <a href="cars.html">Go to Cars →</a>
+    </div>
+  </div>
+
+  <div class="card">
+    <img>
+    <div class="cardContent">
+      <h3>View Details</h3>
+      <p>Select a car to see details.</p>
+      <a href="#">Open Listing →</a>
+    </div>
+  </div>
+
+  <div class="card">
+    <img>
+    <div class="cardContent">
+      <h3>Prototype Flow</h3>
+      <p>Login → Home → Cars.</p>
+      <a href="#">Try It →</a>
+    </div>
+  </div>
+
+</div>
+
+</div>
+
+<script>
+function logout(){
+  localStorage.clear();
+  location.href="index.html";
+}
+</script>
+
 </body>
 </html>
+
+
 
 
