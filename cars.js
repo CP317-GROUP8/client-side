@@ -1,17 +1,34 @@
 const API_BASE = "https://server-side-zqaz.onrender.com";
 
+const signInBtn = document.getElementById("signInBtn");
+const logoutBtn = document.getElementById("logout");
+
 function requireLogin() {
   const email = localStorage.getItem("userEmail");
-  if (!email) window.location.href = "index.html";
-  return email;
+
+  // If logged in -> hide Sign In, show Logout
+  if (email) {
+    if (signInBtn) signInBtn.style.display = "none";
+    if (logoutBtn) logoutBtn.style.display = "inline-block";
+    return email;
+  }
+
+  // If not logged in -> show Sign In, hide Logout, redirect
+  if (signInBtn) signInBtn.style.display = "inline-block";
+  if (logoutBtn) logoutBtn.style.display = "none";
+  window.location.href = "index.html";
+  return null;
 }
+
 const userEmail = requireLogin();
 
-document.getElementById("logout").addEventListener("click", () => {
-  localStorage.removeItem("userEmail");
-  localStorage.removeItem("isAdmin");
-  window.location.href = "index.html";
-});
+if (logoutBtn) {
+  logoutBtn.addEventListener("click", () => {
+    localStorage.removeItem("userEmail");
+    localStorage.removeItem("isAdmin");
+    window.location.href = "index.html";
+  });
+}
 
 const params = new URLSearchParams(window.location.search);
 const where = params.get("where") || "";
@@ -27,7 +44,7 @@ function normalizeCar(row) {
     id: row["Vehicle ID"],
     manufacturer: row["Manufacturer"] || "Unknown",
     model: row["Model"] || "",
-    type: row["Vehicle Type"] || "—",      // ✅ EXACT SQL COLUMN NAME
+    type: row["Vehicle Type"] || "—",
     drivetrain: row["Drivetrain"] || "—",
     price: row["Price"],
     availability: row["Availability"],
@@ -42,8 +59,6 @@ async function loadCars() {
     const res = await fetch(`${API_BASE}/cars`);
     const data = await res.json().catch(() => []);
     if (!res.ok) throw new Error(data.error || "Could not load cars");
-
-    console.log("RAW /cars response:", data);
 
     const cars = Array.isArray(data) ? data.map(normalizeCar) : [];
 
@@ -78,7 +93,7 @@ async function loadCars() {
       });
     });
   } catch (err) {
-    status.textContent = `Error: ${err.message}`;
+    document.getElementById("status").textContent = `Error: ${err.message}`;
   }
 }
 
@@ -92,19 +107,17 @@ async function bookCar(vehicleId) {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "X-User-Email": userEmail, // ✅ behind-the-scenes owner linking
+        "X-User-Email": userEmail,
       },
     });
 
     const data = await res.json().catch(() => ({}));
-    console.log("BOOK response:", data);
-
     if (!res.ok) throw new Error(data.error || "Booking failed");
 
     status.textContent =
       `Booked! Sale ID #${data.saleId} — Vehicle #${data.vehicleId} — Price $${Number(data.priceSoldAt).toLocaleString()}`;
 
-    await loadCars(); // refresh list so booked car disappears
+    await loadCars(); // refresh
   } catch (err) {
     status.textContent = `Error: ${err.message}`;
   }
