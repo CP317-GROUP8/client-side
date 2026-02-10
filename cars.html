@@ -21,7 +21,6 @@ body{
   padding:40px 40px;
 }
 
-/* Header */
 header{
   position:relative;
   z-index:2;
@@ -234,6 +233,8 @@ button{
 </div>
 
 <script>
+const API_BASE = "https://server-side-zqaz.onrender.com";
+
 function logout(){
   localStorage.clear();
   location.href="index.html";
@@ -243,39 +244,59 @@ function showFilter(){
   alert("Filter UI only (Sprint 1). Will be functional in Sprint 2.");
 }
 
-/* Sprint 1 mock data (replace with API fetch later) */
-const cars = [
-  { year: 2022, model: "Toyota Corolla", price: 55, available: true },
-  { year: 2021, model: "Honda Civic", price: 58, available: true },
-  { year: 2020, model: "Mazda 3", price: 52, available: false },
-  { year: 2023, model: "Tesla Model 3", price: 120, available: true },
-  { year: 2019, model: "Hyundai Elantra", price: 49, available: true },
-  { year: 2022, model: "BMW 3 Series", price: 140, available: false }
-];
+function getField(obj, ...names) {
+  for (const n of names) {
+    if (obj && obj[n] !== undefined && obj[n] !== null) return obj[n];
+  }
+  return undefined;
+}
 
-const grid = document.getElementById("carsGrid");
-
-function renderCars(){
+function renderCars(cars){
+  const grid = document.getElementById("carsGrid");
   grid.innerHTML = "";
 
-  cars.forEach((car, i) => {
-    const tagClass = car.available ? "available" : "unavailable";
-    const tagText = car.available ? "Available" : "Unavailable";
+  cars.forEach((car) => {
+    const vehicleId = getField(car, "vehicle_id", "vehicleId", "VehicleID", "id");
+    const manufacturer = getField(car, "manufacturer", "Manufacturer", "make", "Make") ?? "Unknown";
+    const model = getField(car, "model", "Model") ?? "Model";
+    const year = getField(car, "year", "Year"); // optional
+    const priceRaw = getField(car, "price", "Price", "price_per_day", "pricePerDay") ?? 0;
+    const availabilityRaw = getField(car, "availability", "Availability", "available", "is_available") ?? 0;
+    const vehicleType = getField(car, "vehicle_type", "VehicleType", "type", "Type");
+    const drivetrain = getField(car, "drivetrain", "Drivetrain");
+
+    const isAvailable = Number(availabilityRaw) === 1 || availabilityRaw === true;
+
+    const tagClass = isAvailable ? "available" : "unavailable";
+    const tagText = isAvailable ? "Available" : "Unavailable";
+
+    const priceNum = Number(priceRaw);
+    const priceText = Number.isFinite(priceNum) ? `$${priceNum.toFixed(2)}/day` : `$${priceRaw}/day`;
+
+    const title = year ? `${year} ${manufacturer} ${model}` : `${manufacturer} ${model}`;
+
+    const imgSeed = vehicleId ?? `${manufacturer}-${model}`.replace(/\s+/g, "-").toLowerCase();
+    const imgUrl = `https://picsum.photos/seed/${encodeURIComponent(imgSeed)}/600/400`;
+
+    const metaParts = [];
+    if (vehicleType) metaParts.push(vehicleType);
+    if (drivetrain) metaParts.push(drivetrain);
+    if (vehicleId !== undefined) metaParts.push(`Vehicle ID: ${vehicleId}`);
 
     const card = document.createElement("div");
     card.className = "card";
 
     card.innerHTML = `
-      <img src="https://picsum.photos/600/400?random=${i+11}" alt="Car placeholder">
+      <img src="${imgUrl}" alt="Car placeholder">
       <div class="cardBody">
         <div class="titleRow">
-          <h3 class="carTitle">${car.year} ${car.model}</h3>
-          <div class="price">$${car.price}/day</div>
+          <h3 class="carTitle">${title}</h3>
+          <div class="price">${priceText}</div>
         </div>
 
         <span class="tag ${tagClass}">${tagText}</span>
 
-        <p class="meta">A clean, simple listing card for the Sprint 1 prototype.</p>
+        <p class="meta">${metaParts.join(" • ")}</p>
 
         <div class="cardActions">
           <a class="linkBtn viewBtn" href="#" onclick="event.preventDefault(); alert('Details page in Sprint 2');">View</a>
@@ -288,7 +309,29 @@ function renderCars(){
   });
 }
 
-renderCars();
+async function loadCars(){
+  const grid = document.getElementById("carsGrid");
+  grid.innerHTML = "<div style='color:#555;'>Loading cars from database…</div>";
+
+  try {
+    const res = await fetch(`${API_BASE}/cars`);
+    const data = await res.json();
+
+    if (!res.ok) {
+      console.error("Backend error:", data);
+      grid.innerHTML = "<div style='color:#b91c1c;'>Could not load cars (server error).</div>";
+      return;
+    }
+
+    const cars = Array.isArray(data) ? data : (data.cars ?? data.vehicles ?? []);
+    renderCars(cars);
+  } catch (err) {
+    console.error(err);
+    grid.innerHTML = "<div style='color:#b91c1c;'>Could not load cars (network error).</div>";
+  }
+}
+
+loadCars();
 </script>
 </body>
 </html>
