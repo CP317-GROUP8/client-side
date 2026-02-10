@@ -1,30 +1,41 @@
 const API_BASE = "https://server-side-zqaz.onrender.com";
 
+// session duration
+const SESSION_MS = 12 * 60 * 60 * 1000; // 12 hours
+
+function requireSession() {
+  const email = localStorage.getItem("userEmail");
+  const loggedInAt = Number(localStorage.getItem("loggedInAt") || "0");
+
+  if (!email || !loggedInAt) {
+    window.location.replace("index.html");
+    throw new Error("No session");
+  }
+
+  if (Date.now() - loggedInAt > SESSION_MS) {
+    localStorage.removeItem("userEmail");
+    localStorage.removeItem("loggedInAt");
+    localStorage.removeItem("isAdmin");
+    window.location.replace("index.html");
+    throw new Error("Session expired");
+  }
+
+  return email;
+}
+
+const userEmail = requireSession();
+
 const signInBtn = document.getElementById("signInBtn");
 const logoutBtn = document.getElementById("logout");
 
-function requireLogin() {
-  const email = localStorage.getItem("userEmail");
-
-  // If logged in -> hide Sign In, show Logout
-  if (email) {
-    if (signInBtn) signInBtn.style.display = "none";
-    if (logoutBtn) logoutBtn.style.display = "inline-block";
-    return email;
-  }
-
-  // If not logged in -> show Sign In, hide Logout, redirect
-  if (signInBtn) signInBtn.style.display = "inline-block";
-  if (logoutBtn) logoutBtn.style.display = "none";
-  window.location.href = "index.html";
-  return null;
-}
-
-const userEmail = requireLogin();
+// logged in -> hide Sign In
+if (signInBtn) signInBtn.style.display = "none";
 
 if (logoutBtn) {
+  logoutBtn.style.display = "inline-block";
   logoutBtn.addEventListener("click", () => {
     localStorage.removeItem("userEmail");
+    localStorage.removeItem("loggedInAt");
     localStorage.removeItem("isAdmin");
     window.location.href = "index.html";
   });
@@ -39,15 +50,34 @@ document.getElementById("pillWhere").textContent = `Where: ${where || "(any)"}`;
 document.getElementById("pillPickup").textContent = `Pick Up: ${pickup || "(any)"}`;
 document.getElementById("pillDropoff").textContent = `Drop Off: ${dropoff || "(any)"}`;
 
+function pick(...vals) {
+  for (const v of vals) {
+    if (v === null || v === undefined) continue;
+    const s = String(v).trim();
+    if (s.length) return v;
+  }
+  return null;
+}
+
 function normalizeCar(row) {
+  const id = pick(row["Vehicle ID"], row.vehicleId, row.id);
+
+  const manufacturer = pick(row["Manufacturer"], row.manufacturer) || "Unknown";
+  const model = pick(row["Model"], row.model) || "";
+
+  const type = pick(row["Vehicle Type"], row.vehicleType, row.type) || "—";
+  const drivetrain = pick(row["Drivetrain"], row.drivetrain) || "—";
+
+  const priceVal = pick(row["Price"], row.price);
+  const priceNum = priceVal === null ? null : Number(priceVal);
+
   return {
-    id: row["Vehicle ID"],
-    manufacturer: row["Manufacturer"] || "Unknown",
-    model: row["Model"] || "",
-    type: row["Vehicle Type"] || "—",
-    drivetrain: row["Drivetrain"] || "—",
-    price: row["Price"],
-    availability: row["Availability"],
+    id,
+    manufacturer,
+    model,
+    type,
+    drivetrain,
+    price: Number.isFinite(priceNum) ? priceNum : null,
   };
 }
 
@@ -66,11 +96,7 @@ async function loadCars() {
     status.textContent = `${cars.length} available cars found`;
 
     cars.forEach((c) => {
-      const priceNum = Number(c.price);
-      const priceText =
-        c.price === null || c.price === undefined || Number.isNaN(priceNum)
-          ? "—"
-          : `$${priceNum.toLocaleString()}`;
+      const priceText = c.price === null ? "—" : `$${c.price.toLocaleString()}`;
 
       const card = document.createElement("div");
       card.className = "card";
@@ -117,7 +143,7 @@ async function bookCar(vehicleId) {
     status.textContent =
       `Booked! Sale ID #${data.saleId} — Vehicle #${data.vehicleId} — Price $${Number(data.priceSoldAt).toLocaleString()}`;
 
-    await loadCars(); // refresh
+    await loadCars();
   } catch (err) {
     status.textContent = `Error: ${err.message}`;
   }

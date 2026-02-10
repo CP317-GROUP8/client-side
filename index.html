@@ -25,7 +25,10 @@
       box-shadow: 0 10px 30px rgba(0,0,0,0.1);
       text-align: center;
     }
-    #status { margin-top: 14px; font-size: 14px; color: #444; word-break: break-word; }
+    h1 { margin-bottom: 8px; }
+    p { margin-top: 0; color: #666; font-size: 14px; }
+    #status { margin-top: 16px; font-size: 14px; color: #444; word-break: break-word; }
+
     .nav {
       margin-top: 16px;
       display: none;
@@ -34,54 +37,45 @@
       flex-wrap: wrap;
     }
     .btn {
-      display: inline-block;
-      padding: 10px 14px;
+      border: none;
       border-radius: 10px;
-      border: 1px solid #d0d7de;
-      background: #fff;
+      padding: 10px 12px;
+      background: #2563eb;
+      color: white;
       cursor: pointer;
-      text-decoration: none;
-      color: #111;
       font-size: 14px;
     }
-    .btn:hover { background: #f0f2f4; }
-    .btn.admin { border-color: #2563eb; color: #2563eb; }
-    .btn.admin:hover { background: #e8f0ff; }
-    .logout { margin-top: 12px; display: none; }
+    .btn:hover { filter: brightness(0.95); }
+    .btn.secondary { background: #6b7280; }
   </style>
 </head>
+
 <body>
   <div class="card">
     <h1>Welcome</h1>
-    <p style="margin-top:0;color:#666;font-size:14px;">Sign up or log in using your Google account</p>
+    <p>Sign up or log in using your Google account</p>
 
-    <!-- Google Sign-In config -->
     <div id="g_id_onload"
-      data-client_id="338952355189-kifevvua8bpk9bn6sp8dqbrthb79h8f5.apps.googleusercontent.com"
-      data-callback="handleCredentialResponse"
-      data-auto_prompt="false">
+         data-client_id="338952355189-kifevvua8bpk9bn6sp8dqbrthb79h8f5.apps.googleusercontent.com"
+         data-callback="handleCredentialResponse"
+         data-auto_prompt="false">
     </div>
 
-    <!-- Google Sign-In button -->
     <div class="g_id_signin"
-      data-type="standard"
-      data-size="large"
-      data-theme="outline"
-      data-text="signin_with"
-      data-shape="rectangular">
+         data-type="standard"
+         data-size="large"
+         data-theme="outline"
+         data-text="signin_with"
+         data-shape="rectangular">
     </div>
 
     <div id="status"></div>
 
-    <!-- Nav buttons shown AFTER login -->
-    <div id="nav" class="nav">
-      <a class="btn" href="home.html">Home</a>
-      <a class="btn" href="cars.html">Cars</a>
-      <a id="adminBtn" class="btn admin" href="admin.html" style="display:none;">Admin</a>
-    </div>
-
-    <div class="logout">
-      <button id="logoutBtn" class="btn">Log out</button>
+    <!-- Nav buttons only appear after login -->
+    <div class="nav" id="navArea">
+      <button class="btn secondary" onclick="window.location.href='home.html'">Home</button>
+      <button class="btn secondary" onclick="window.location.href='cars.html'">Cars</button>
+      <button class="btn" id="adminBtn" style="display:none;" onclick="window.location.href='admin.html'">Admin</button>
     </div>
   </div>
 

@@ -1,81 +1,82 @@
 const API_BASE = "https://server-side-zqaz.onrender.com";
 
-const statusEl = document.getElementById("status");
-const navEl = document.getElementById("nav");
-const adminBtn = document.getElementById("adminBtn");
-const logoutBtn = document.getElementById("logoutBtn");
+// Session duration for "must have logged in recently"
+const SESSION_MS = 12 * 60 * 60 * 1000; // 12 hours
 
-function setLoggedOut() {
+function setSession({ email, administrator }) {
+  localStorage.setItem("userEmail", email);
+  localStorage.setItem("isAdmin", String(Number(administrator) === 1 ? 1 : 0));
+  localStorage.setItem("loggedInAt", String(Date.now()));
+}
+
+function clearSession() {
   localStorage.removeItem("userEmail");
   localStorage.removeItem("isAdmin");
-  navEl.style.display = "none";
-  adminBtn.style.display = "none";
-  document.querySelector(".logout").style.display = "none";
+  localStorage.removeItem("loggedInAt");
 }
 
-function setLoggedIn(user) {
-  localStorage.setItem("userEmail", user.email);
-  localStorage.setItem("isAdmin", String(Number(user.administrator)));
-
-  navEl.style.display = "flex";
-  document.querySelector(".logout").style.display = "block";
-
-  if (Number(user.administrator) === 1) {
-    adminBtn.style.display = "inline-block";
-  } else {
-    adminBtn.style.display = "none";
-  }
+function hasValidSession() {
+  const email = localStorage.getItem("userEmail");
+  const loggedInAt = Number(localStorage.getItem("loggedInAt") || "0");
+  if (!email || !loggedInAt) return false;
+  if (Date.now() - loggedInAt > SESSION_MS) return false;
+  return true;
 }
 
-logoutBtn.onclick = () => {
-  setLoggedOut();
-  statusEl.textContent = "Logged out.";
-};
-
-async function api(path, opts = {}) {
-  const res = await fetch(`${API_BASE}${path}`, {
-    ...opts,
-    headers: {
-      "Content-Type": "application/json",
-      ...(opts.headers || {}),
-    },
-  });
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(data.error || `Request failed: ${res.status}`);
-  return data;
-}
-
-// Google callback
+// Called by Google Identity Services
 async function handleCredentialResponse(response) {
+  const statusEl = document.getElementById("status");
   statusEl.textContent = "Signing you in...";
 
   try {
-    const user = await api("/auth/google", {
+    const res = await fetch(`${API_BASE}/auth/google`, {
       method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ idToken: response.credential }),
     });
 
-    const name = `${user.firstName || ""} ${user.lastName || ""}`.trim() || "(name missing)";
-    statusEl.textContent = `Welcome, ${name} (${user.email})`;
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || "Login failed");
 
-    setLoggedIn(user);
-  } catch (e) {
-    statusEl.textContent = `Error: ${e.message}`;
+    // Backend returns: { userId, firstName, lastName, email, administrator, totalSpent }
+    const email = data.email || "";
+    const firstName = data.firstName || "";
+    const lastName = data.lastName || "";
+    const adminVal = Number(data.administrator || 0);
+
+    setSession({ email, administrator: adminVal });
+
+    statusEl.textContent = `Welcome, ${firstName} ${lastName} (${email})`;
+
+    // Show nav buttons now that you're signed in
+    document.getElementById("navArea").style.display = "block";
+
+    // Admin button only if admin
+    document.getElementById("adminBtn").style.display = adminVal === 1 ? "inline-block" : "none";
+  } catch (err) {
+    statusEl.textContent = `Error: ${err.message}`;
+    clearSession();
   }
 }
+
 window.handleCredentialResponse = handleCredentialResponse;
 
-// Boot: show nav if already signed in
+// On page load: if already logged in, show nav immediately
 (function boot() {
-  const email = localStorage.getItem("userEmail");
-  const isAdmin = Number(localStorage.getItem("isAdmin") || 0);
+  const statusEl = document.getElementById("status");
+  const navArea = document.getElementById("navArea");
+  const adminBtn = document.getElementById("adminBtn");
 
-  if (email) {
-    navEl.style.display = "flex";
-    document.querySelector(".logout").style.display = "block";
-    adminBtn.style.display = isAdmin === 1 ? "inline-block" : "none";
-    statusEl.textContent = `Signed in as ${email}`;
+  if (hasValidSession()) {
+    const email = localStorage.getItem("userEmail");
+    const isAdmin = Number(localStorage.getItem("isAdmin") || "0") === 1;
+
+    statusEl.textContent = `Session active (${email})`;
+    navArea.style.display = "block";
+    adminBtn.style.display = isAdmin ? "inline-block" : "none";
   } else {
-    setLoggedOut();
+    // If session expired, clear it
+    clearSession();
+    navArea.style.display = "none";
   }
 })();
