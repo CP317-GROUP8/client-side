@@ -31,33 +31,29 @@ function isLockedIdColumn(col) {
   return c === "user id" || c === "vehicle id" || c === "sale id";
 }
 
-// ✅ Owner ID should NEVER be editable in admin UI (create OR edit)
 function isOwnerId(col) {
   return normalizeCol(col) === "owner id";
 }
 
-// ✅ Availability should not be editable during Vehicle creation
 function isAvailability(col) {
   return normalizeCol(col) === "availability";
 }
 
-// ✅ lock specific columns depending on context
+// ✅ Availability + Owner ID should NEVER be editable in Vehicles table (create OR edit)
+function isVehicleLockedBusinessColumn(col) {
+  if (currentTableKey !== "vehicles") return false;
+  return isOwnerId(col) || isAvailability(col);
+}
+
 function isLockedColumnForContext(col) {
   if (isLockedIdColumn(col)) return true;
 
-  // Vehicles table rules:
-  if (currentTableKey === "vehicles") {
-    // Owner ID locked always (create + edit)
-    if (isOwnerId(col)) return true;
-
-    // Availability locked on create (defaults to 1)
-    if (creating && isAvailability(col)) return true;
-  }
+  // ✅ Vehicles table: lock Availability + Owner ID always
+  if (isVehicleLockedBusinessColumn(col)) return true;
 
   return false;
 }
 
-// keep button state consistent everywhere
 function updateButtons() {
   createBtn.disabled = !currentTableKey || creating;
   createBtn.title = creating ? "Finish creating the current entry first" : "";
@@ -156,7 +152,6 @@ async function api(path, opts = {}) {
   return data;
 }
 
-// ✅ can-delete: 409 returns JSON instead of throwing
 async function getDeleteInfo(tableKey, id) {
   const path = `/admin/${tableKey}/${id}/can-delete`;
   const res = await fetch(`${API_BASE}${path}`, {
@@ -234,14 +229,9 @@ function rowHtml(row, cols, pkName) {
   cols.forEach((col) => {
     let val = isNew ? "" : (row[col] ?? "");
 
-    // ✅ default Availability to 1 on new vehicle (but locked)
-    if (isNew && currentTableKey === "vehicles" && isAvailability(col)) {
-      val = "1";
-    }
-    // ✅ default Owner ID blank/NULL on create vehicle (locked)
-    if (isNew && currentTableKey === "vehicles" && isOwnerId(col)) {
-      val = "";
-    }
+    // Defaults for new vehicle (even though locked)
+    if (isNew && currentTableKey === "vehicles" && isAvailability(col)) val = "1";
+    if (isNew && currentTableKey === "vehicles" && isOwnerId(col)) val = "";
 
     if (isNew || isEditing) {
       if (isLockedColumnForContext(col)) {
@@ -265,13 +255,8 @@ function rowHtml(row, cols, pkName) {
 
 function attachDeleteHoverWarnings() {
   const deleteLinks = tableContainerEl.querySelectorAll('a[data-action="delete"]');
-
   deleteLinks.forEach((a) => {
     let checked = false;
-
-    a.style.background = "transparent";
-    a.style.padding = "";
-    a.style.borderRadius = "";
 
     a.addEventListener("mouseenter", async () => {
       if (checked && !window.event?.shiftKey) return;
@@ -289,11 +274,7 @@ function attachDeleteHoverWarnings() {
         const msg = formatDeleteWarning(info);
         a.title = msg;
 
-        if (!info.canDelete) {
-          a.style.background = "#fef08a";
-          a.style.borderRadius = "6px";
-          a.style.padding = "2px 4px";
-        }
+        if (!info.canDelete) highlightLink(a, msg);
       } catch (err) {
         console.warn("Hover can-delete check failed:", err?.status, err?.message);
         a.title = "Could not check rules.";
@@ -302,39 +283,11 @@ function attachDeleteHoverWarnings() {
   });
 }
 
-function renderSalesCreateForm() {
-  if (!(currentTableKey === "sales" && creating)) return "";
-
-  return `
-    <div style="background:#fff; padding:12px; border-radius:12px; margin:12px 0; border:1px solid #ddd;">
-      <div style="font-weight:700; margin-bottom:8px;">Create Sale (Admin)</div>
-      <div style="display:flex; gap:10px; flex-wrap:wrap;">
-        <label style="display:flex; flex-direction:column; font-size:13px;">
-          User ID
-          <input id="saleUserId" value="${escapeHtml(saleCreateUserId)}" style="padding:8px; border-radius:8px; border:1px solid #ccc; width:140px;">
-        </label>
-        <label style="display:flex; flex-direction:column; font-size:13px;">
-          Vehicle ID
-          <input id="saleVehicleId" value="${escapeHtml(saleCreateVehicleId)}" style="padding:8px; border-radius:8px; border:1px solid #ccc; width:140px;">
-        </label>
-        <div style="display:flex; align-items:flex-end; gap:10px;">
-          <span style="color:#666; font-size:13px;">
-            (Price pulled from Vehicle Table automatically)
-          </span>
-        </div>
-      </div>
-    </div>
-  `;
-}
-
 function renderTable() {
   if (!currentTableKey) return;
 
-  const createForm = renderSalesCreateForm();
-
   if (!currentRows.length) {
     tableContainerEl.innerHTML = `
-      ${createForm}
       <div class="muted" style="margin-top:10px;">
         This table currently has no rows. Click <b>Create</b> to add a new entry.
       </div>
@@ -346,14 +299,11 @@ function renderTable() {
   const pkName = pkForTable(currentTableKey, currentColumns, currentRows);
   const cols = currentColumns;
 
-  let html = `${createForm}<table><thead><tr>`;
+  let html = `<table><thead><tr>`;
   cols.forEach((c) => (html += `<th>${escapeHtml(c)}</th>`));
   html += `<th>Actions</th></tr></thead><tbody>`;
 
-  if (creating && currentTableKey !== "sales") {
-    html += rowHtml({ __new: true }, cols, pkName);
-  }
-
+  if (creating) html += rowHtml({ __new: true }, cols, pkName);
   currentRows.forEach((r) => (html += rowHtml(r, cols, pkName)));
 
   html += `</tbody></table>`;
@@ -370,12 +320,6 @@ function renderTable() {
 // ---------- create/save ----------
 createBtn?.addEventListener("click", () => {
   if (!currentTableKey) return;
-
-  if (!currentRows.length && currentTableKey !== "sales") {
-    alert("This table is empty. Add a first row in phpMyAdmin or add a meta endpoint for empty-table creates.");
-    return;
-  }
-
   if (creating) return;
 
   creating = true;
@@ -389,35 +333,6 @@ saveBtn?.addEventListener("click", async () => {
   try {
     if (!currentTableKey) return;
 
-    if (currentTableKey === "sales" && editingRowId !== null) {
-      alert("Sales are not editable. Delete and recreate instead.");
-      return;
-    }
-
-    if (currentTableKey === "sales" && creating) {
-      const userId = Number(document.getElementById("saleUserId")?.value);
-      const vehicleId = Number(document.getElementById("saleVehicleId")?.value);
-
-      if (!Number.isFinite(userId) || !Number.isFinite(vehicleId)) {
-        alert("Please enter a valid User ID and Vehicle ID.");
-        return;
-      }
-
-      await api(`/admin/sales`, {
-        method: "POST",
-        body: JSON.stringify({ userId, vehicleId }),
-      });
-
-      creating = false;
-      editingRowId = null;
-      saleCreateUserId = "";
-      saleCreateVehicleId = "";
-
-      updateButtons();
-      await loadTable("sales", tableTitleEl.textContent || "Sales Table");
-      return;
-    }
-
     const pkName = pkForTable(currentTableKey, currentColumns, currentRows);
     const rowSelector = creating ? `tr[data-rowid="new"]` : `tr[data-rowid="${editingRowId}"]`;
     const tr = tableContainerEl.querySelector(rowSelector);
@@ -428,15 +343,10 @@ saveBtn?.addEventListener("click", async () => {
 
     inputs.forEach((inp) => {
       const col = inp.getAttribute("data-col");
-
-      // never send auto-increment IDs
       if (isLockedIdColumn(col)) return;
 
-      // ✅ never send Owner ID (create + edit)
-      if (currentTableKey === "vehicles" && isOwnerId(col)) return;
-
-      // ✅ do not send Availability when creating Vehicles
-      if (creating && currentTableKey === "vehicles" && isAvailability(col)) return;
+      // ✅ never allow editing/sending Owner ID or Availability in Vehicles table
+      if (currentTableKey === "vehicles" && (isOwnerId(col) || isAvailability(col))) return;
 
       payload[col] = inp.value;
     });
@@ -466,31 +376,12 @@ saveBtn?.addEventListener("click", async () => {
 // ---------- actions ----------
 async function onActionClick(e) {
   e.preventDefault();
-
   const action = e.target.getAttribute("data-action");
   const tr = e.target.closest("tr");
   const rowid = tr?.getAttribute("data-rowid");
 
   try {
     if (action === "edit") {
-      if (!rowid) return;
-
-      if (currentTableKey === "sales") {
-        alert("Sales are not editable. Delete and recreate instead.");
-        return;
-      }
-
-      // users always editable
-      if (currentTableKey === "users") {
-        creating = false;
-        editingRowId = Number(rowid);
-        updateButtons();
-        renderTable();
-        return;
-      }
-
-      // vehicles: keep your current business rules (if you had can-delete block-on-edit)
-      // Here we allow edit, but Owner ID will remain greyed out by this file.
       creating = false;
       editingRowId = Number(rowid);
       updateButtons();
@@ -507,16 +398,12 @@ async function onActionClick(e) {
 
     if (action === "cancelCreate") {
       creating = false;
-      saleCreateUserId = "";
-      saleCreateVehicleId = "";
       updateButtons();
       renderTable();
       return;
     }
 
     if (action === "delete") {
-      if (!rowid) return;
-
       const info = await getDeleteInfo(currentTableKey, rowid);
       if (!info.canDelete) {
         const msg = formatDeleteWarning(info);
@@ -533,11 +420,7 @@ async function onActionClick(e) {
     }
   } catch (err) {
     console.error("ACTION ERROR:", err);
-    if (err?.data?.mustDeleteFirst || err?.data?.reason) {
-      alert(formatDeleteWarning(err.data));
-      return;
-    }
-    alert(`Action failed: ${err.message}`);
+    alert(err?.data ? formatDeleteWarning(err.data) : `Action failed: ${err.message}`);
   }
 }
 
