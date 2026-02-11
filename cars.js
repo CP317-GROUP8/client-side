@@ -183,7 +183,6 @@ async function bookCar(vehicleId) {
     const data = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(data.error || "Booking failed");
 
-    // ✅ Removed vehicle id from message too (Sprint 2 later)
     status.textContent =
       `Booked successfully! Sale ID #${data.saleId} — Price $${Number(data.priceSoldAt).toLocaleString()}`;
 
