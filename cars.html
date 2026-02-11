@@ -180,7 +180,6 @@ function renderCars(cars) {
   grid.innerHTML = "";
 
   cars.forEach((car) => {
-    const vehicleId   = car["Vehicle ID"];
     const manufacturer= car["Manufacturer"];
     const model       = car["Model"];
     const type        = car["Vehicle Type"];
@@ -215,7 +214,7 @@ function renderCars(cars) {
 
         <span class="tag ${tagClass}">${tagText}</span>
 
-        <p class="meta">${type} • ${drivetrain} • Vehicle ID: ${vehicleId}</p>
+        <p class="meta">${type} • ${drivetrain}</p>
 
         <div class="cardActions">
           <a class="linkBtn viewBtn" href="#" onclick="event.preventDefault(); alert('Details page in Sprint 2');">View</a>
