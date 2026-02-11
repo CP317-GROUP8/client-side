@@ -71,7 +71,7 @@ function normalizeCar(row) {
   const priceNum = priceVal === null ? null : Number(priceVal);
 
   return {
-    id, 
+    id, // internal only (for booking)
     manufacturer,
     model,
     type,
@@ -80,6 +80,14 @@ function normalizeCar(row) {
   };
 }
 
+/**
+ * IMAGE PLACEHOLDERS:
+ * Put files in: client-side/assets/cars/
+ * You can change these filenames ANYTIME.
+ *
+ * Key format: "Manufacturer Model | Drivetrain"
+ * This solves duplicates like Corolla AWD vs Corolla FWD.
+ */
 const CAR_IMAGES = {
   "Toyota Corolla | AWD": "corolla-awd.png",
   "Toyota Corolla | FWD": "corolla-fwd.png",
@@ -175,6 +183,7 @@ async function bookCar(vehicleId) {
     const data = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(data.error || "Booking failed");
 
+    // ✅ Removed vehicle id from message too (Sprint 2 later)
     status.textContent =
       `Booked successfully! Sale ID #${data.saleId} — Price $${Number(data.priceSoldAt).toLocaleString()}`;
 
@@ -185,3 +194,4 @@ async function bookCar(vehicleId) {
 }
 
 loadCars();
+
