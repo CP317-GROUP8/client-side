@@ -217,11 +217,15 @@ function renderCars(cars) {
         <p class="meta">${type} • ${drivetrain}</p>
 
         <div class="cardActions">
-         <a class="linkBtn viewBtn" href="car-details.html?id=${car["Vehicle ID"]}">View</a>
-        <a class="linkBtn bookBtn" href="car-details.html?id=${car["Vehicle ID"]}">Book</a>
+          <a class="linkBtn viewBtn" href="car-details.html?id=${car["Vehicle ID"]}">
+            View
+          </a>
 
-
+          <a class="linkBtn bookBtn" href="bookings.html?id=${car["Vehicle ID"]}">
+            Book
+          </a>
         </div>
+
 
 
       </div>
