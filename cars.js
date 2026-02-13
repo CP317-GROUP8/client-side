@@ -164,12 +164,12 @@ async function loadCars() {
     });
     
     grid.querySelectorAll("[data-book]").forEach((btn) => {
-      btn.addEventListener("click", async () => {
+      btn.addEventListener("click", () => {
         const vehicleId = btn.getAttribute("data-book");
-        // if you want booking to happen on details page only:
-        window.location.href = `car-details.html?id=${vehicleId}`;
+        window.location.href = `bookings.html?id=${vehicleId}`;
       });
     });
+    
     
     
   } catch (err) {
