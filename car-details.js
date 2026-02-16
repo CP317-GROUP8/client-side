@@ -104,7 +104,6 @@ async function loadCarDetails() {
       carImg.src = "./assets/car1.png";
     };
 
-
     loadingState.style.display = "none";
     detailsUI.style.display = "block";
   } catch (err) {

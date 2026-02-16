@@ -81,6 +81,14 @@ async function createBooking() {
   }
 }
 
+function formatDate(d){
+  if(!d) return "—";
+  // Handles "2026-02-20T00:00:00.000Z" and "2026-02-20"
+  const dateOnly = String(d).slice(0, 10);
+  return dateOnly;
+}
+
+
 async function loadMyBookings() {
   if (!listEl) return;
 
@@ -97,18 +105,26 @@ async function loadMyBookings() {
     const rows = Array.isArray(data.rows) ? data.rows : [];
     setStatus(`${rows.length} booking(s)`);
 
-    listEl.innerHTML = rows
-      .map(
-        (r) => `
-      <div style="padding:12px;border:1px solid #e5e7eb;border-radius:12px;margin:10px 0;background:#fff;">
-        <b>${r.manufacturer} ${r.model}</b><br>
-        ${r.vehicleType} • ${r.drivetrain}<br>
-        Dates: ${r.fromDate || "—"} → ${r.toDate || "—"}<br>
-        Sale ID: ${r.saleId} • Price: $${Number(r.priceSoldAt).toFixed(2)}
-      </div>
-    `
-      )
-      .join("");
+    listEl.innerHTML = rows.map((r) => `
+  <div class="bookingCard">
+    <div class="bookingTitle">
+      <b>${r.manufacturer} ${r.model}</b>
+      <span class="pill">$${Number(r.priceSoldAt).toFixed(2)}</span>
+    </div>
+
+    <div class="pillRow">
+      <span class="pill">${r.vehicleType || "—"}</span>
+      <span class="pill">${r.drivetrain || "—"}</span>
+      <span class="pill">Sale ID: ${r.saleId}</span>
+    </div>
+
+    <div class="meta">
+      <div><b>Dates:</b> ${formatDate(r.fromDate)} → ${formatDate(r.toDate)}</div>
+    </div>
+
+    <div class="muted">Booked successfully ✅</div>
+  </div>
+`).join("");
   } catch (err) {
     setStatus(`Error: ${err.message}`, true);
   }
