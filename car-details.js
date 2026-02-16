@@ -41,7 +41,8 @@ const statusText = document.getElementById("statusText");
 
 // reuse same image map logic if you want
 function getCarImage(manufacturer, model, drivetrain) {
-  const key = `${manufacturer} ${model} | ${drivetrain}`.trim();
+  const name = `${manufacturer} ${model}`.trim(); // ✅ NO drivetrain here
+
   const map = {
     "Toyota Corolla": drivetrain === "AWD" ? "corolla-awd.png" : "corolla-fwd.png",
     "Toyota Highlander": drivetrain === "AWD" ? "highlander-awd.png" : "highlander-rwd.png",
@@ -51,8 +52,9 @@ function getCarImage(manufacturer, model, drivetrain) {
     "Porsche 911": "porsche.png",
   };
 
-  return `./assets/cars/${map[key] || "placeholder.png"}`;
+  return `./assets/cars/${map[name] || "car1.png"}`; // ✅ fallback that exists
 }
+
 async function loadCarDetails() {
   if (!id) {
     loadingState.textContent = "Missing car id in URL.";
@@ -93,12 +95,11 @@ async function loadCarDetails() {
       carAvail.className = "pill bad";
       bookBtn.disabled = true;
     }
-    carImg.src = `./assets/cars/${id}.png`;
+    carImg.src = getCarImage(manufacturer, model, drivetrain);
     carImg.onerror = () => {
-      carImg.onerror = () => (carImg.src = "./assets/cars/placeholder.png"); // final fallback
-      carImg.src = getCarImage(manufacturer, model);
-      carImg.onerror = () => (carImg.src = "./assets/cars/placeholder.png");
+      carImg.src = "./assets/car1.png";
     };
+
     loadingState.style.display = "none";
     detailsUI.style.display = "block";
   } catch (err) {
