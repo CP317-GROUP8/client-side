@@ -93,11 +93,11 @@ async function loadCarDetails() {
       carAvail.className = "pill bad";
       bookBtn.disabled = true;
     }
-
     carImg.src = `./assets/cars/${id}.png`;
     carImg.onerror = () => {
       carImg.onerror = () => (carImg.src = "./assets/cars/placeholder.png"); // final fallback
-      carImg.src = getCarImage(manufacturer, model, drivetrain);
+      carImg.src = getCarImage(manufacturer, model);
+      carImg.onerror = () => (carImg.src = "./assets/cars/placeholder.png");
     };
     loadingState.style.display = "none";
     detailsUI.style.display = "block";
