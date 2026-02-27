@@ -34,7 +34,7 @@ h1{ font-size:44px; margin:0; }
 .topRow{
   display:flex;
   justify-content:space-between;
-  margin:30px 0 20px;
+  margin:30px 0 12px; 
   gap:16px;
 }
 
@@ -118,6 +118,8 @@ button{
 
 @media(max-width:900px){
   .grid{grid-template-columns:1fr;}
+  .topRow{ flex-direction:column; align-items:stretch; }
+  .searchBox{ width:100%; }
 }
 </style>
 </head>
@@ -126,19 +128,54 @@ button{
 <div class="container">
 
 <header>
-<div>
-<h1>Cars</h1>
-<div class="sub">Live from SQL database</div>
-</div>
+  <div>
+    <h1>Cars</h1>
+    <div class="sub">Live from SQL database</div>
+  </div>
 
-<div>
-<button class="secondary" onclick="location.href='home.html'">← Home</button>
-</div>
+  <div>
+    <button class="secondary" onclick="location.href='home.html'">← Home</button>
+  </div>
 </header>
 
 <div class="topRow">
-<input id="searchInput" class="searchBox" placeholder="Search by make/model">
-<button class="secondary" onclick="alert('Filter Sprint 2')">Filter</button>
+  <input id="searchInput" class="searchBox" placeholder="Search by make/model">
+  <button id="filterBtn" class="secondary" type="button">Filter</button>
+</div>
+
+<div id="filterPanel" style="display:none; margin-bottom:20px; background:white; border:1px solid #e5e7eb; border-radius:16px; padding:16px; box-shadow:0 10px 25px rgba(0,0,0,.06);">
+  <div style="display:flex; gap:16px; flex-wrap:wrap; align-items:end;">
+
+    <div>
+      <div class="sub" style="margin-bottom:6px;">Vehicle Type</div>
+      <select id="filterType" style="height:42px; border-radius:12px; border:1px solid #ddd; padding:0 12px; min-width:180px;">
+        <option value="">Any</option>
+        <option value="Sedan">Sedan</option>
+        <option value="SUV">SUV</option>
+        <option value="Sport">Sport</option>
+      </select>
+    </div>
+
+    <div>
+      <div class="sub" style="margin-bottom:6px;">Drivetrain</div>
+      <select id="filterDrive" style="height:42px; border-radius:12px; border:1px solid #ddd; padding:0 12px; min-width:180px;">
+        <option value="">Any</option>
+        <option value="AWD">AWD</option>
+        <option value="FWD">FWD</option>
+        <option value="RWD">RWD</option>
+      </select>
+    </div>
+
+    <div style="min-width:260px;">
+      <div class="sub" style="margin-bottom:6px;">Max price / day: <span id="priceLabel">Any</span></div>
+      <input id="filterPrice" type="range" min="0" max="2000" step="50" value="2000" style="width:260px;">
+    </div>
+
+    <div style="display:flex; gap:10px;">
+      <button id="clearFilters" class="secondary" type="button">Clear</button>
+    </div>
+
+  </div>
 </div>
 
 <div class="grid" id="carsGrid"></div>
@@ -159,7 +196,7 @@ const imageMap = {
   "Toyota Corolla | AWD": "corolla-awd.png"
 };
 
-let allCars = [];   
+let allCars = [];
 let filteredCars = [];
 
 function safeStr(v){ return (v ?? "").toString().trim(); }
@@ -187,7 +224,7 @@ function normalizeCar(car){
     isAvailable,
     priceText,
     imgKey, imgUrl,
-    vehicleId: car["Vehicle ID"]
+    priceNum: Number.isFinite(priceNum) ? priceNum : null,
   };
 }
 
@@ -202,8 +239,16 @@ async function loadCars() {
     const rawCars = Array.isArray(data) ? data : (data.cars ?? data.vehicles ?? []);
     allCars = rawCars.map(normalizeCar);
 
-    filteredCars = [...allCars];
-    renderCars(filteredCars);
+    const prices = allCars.map(c => c.priceNum).filter(n => Number.isFinite(n));
+    const maxPrice = prices.length ? Math.max(...prices) : 2000;
+    const slider = document.getElementById("filterPrice");
+    if (slider) {
+      slider.max = String(Math.ceil(maxPrice / 50) * 50);
+      slider.value = slider.max;
+      updatePriceLabel();
+    }
+
+    applyAllFilters();
   } catch (e) {
     console.error(e);
     grid.innerHTML = "<div style='color:#b91c1c;'>Failed to load cars.</div>";
@@ -215,14 +260,13 @@ function renderCars(cars) {
   grid.innerHTML = "";
 
   if (!cars.length) {
-    grid.innerHTML = "<div style='color:#555;'>No cars match your search.</div>";
+    grid.innerHTML = "<div style='color:#555;'>No cars match your search/filters.</div>";
     return;
   }
 
   cars.forEach((car) => {
     const tagClass = car.isAvailable ? "available" : "unavailable";
     const tagText  = car.isAvailable ? "Available" : "Unavailable";
-
     const name = `${car.manufacturer} ${car.model}`.trim();
 
     const card = document.createElement("div");
@@ -250,39 +294,107 @@ function renderCars(cars) {
         </div>
       </div>
     `;
-
     grid.appendChild(card);
   });
 }
 
-function applySearch(query) {
-  const q = (query || "").trim().toLowerCase();
+function getSearchQuery() {
+  const input = document.getElementById("searchInput");
+  return (input?.value || "").trim().toLowerCase();
+}
 
-  if (!q) {
-    filteredCars = [...allCars];
-    renderCars(filteredCars);
-    return;
+function getSelectedType() {
+  return (document.getElementById("filterType")?.value || "").trim();
+}
+
+function getSelectedDrive() {
+  return (document.getElementById("filterDrive")?.value || "").trim();
+}
+
+function getMaxPrice() {
+  const v = Number(document.getElementById("filterPrice")?.value);
+  return Number.isFinite(v) ? v : Infinity;
+}
+
+function updatePriceLabel() {
+  const slider = document.getElementById("filterPrice");
+  const label = document.getElementById("priceLabel");
+  if (!slider || !label) return;
+
+  const max = Number(slider.max);
+  const val = Number(slider.value);
+
+  if (!Number.isFinite(val) || !Number.isFinite(max) || val >= max) {
+    label.textContent = "Any";
+  } else {
+    label.textContent = `$${val}`;
   }
+}
+
+function applyAllFilters() {
+  const q = getSearchQuery();
+  const typeFilter = getSelectedType().toLowerCase();
+  const driveFilter = getSelectedDrive().toLowerCase();
+  const maxPrice = getMaxPrice();
 
   filteredCars = allCars.filter(c => {
-    const title = `${c.manufacturer} ${c.model}`.toLowerCase();
-    const type = (c.type || "").toLowerCase();
-    const drive = (c.drivetrain || "").toLowerCase();
+    if (q) {
+      const title = `${c.manufacturer} ${c.model}`.toLowerCase();
+      const type = (c.type || "").toLowerCase();
+      const drive = (c.drivetrain || "").toLowerCase();
+      const matchesSearch = title.includes(q) || type.includes(q) || drive.includes(q);
+      if (!matchesSearch) return false;
+    }
 
-    return title.includes(q) || type.includes(q) || drive.includes(q);
+    if (typeFilter && (c.type || "").toLowerCase() !== typeFilter) return false;
+    if (driveFilter && (c.drivetrain || "").toLowerCase() !== driveFilter) return false;
+
+    if (Number.isFinite(c.priceNum) && c.priceNum > maxPrice) return false;
+
+    return true;
   });
 
   renderCars(filteredCars);
 }
 
-function wireSearch() {
-  const input = document.getElementById("searchInput");
-  if (!input) return;
+function wireUI() {
+  const search = document.getElementById("searchInput");
+  search?.addEventListener("input", applyAllFilters);
 
-  input.addEventListener("input", () => applySearch(input.value));
+  const btn = document.getElementById("filterBtn");
+  const panel = document.getElementById("filterPanel");
+  btn?.addEventListener("click", () => {
+    if (!panel) return;
+    panel.style.display = (panel.style.display === "none" || !panel.style.display) ? "block" : "none";
+  });
+
+  document.getElementById("filterType")?.addEventListener("change", applyAllFilters);
+  document.getElementById("filterDrive")?.addEventListener("change", applyAllFilters);
+
+  const price = document.getElementById("filterPrice");
+  price?.addEventListener("input", () => {
+    updatePriceLabel();
+    applyAllFilters();
+  });
+
+  document.getElementById("clearFilters")?.addEventListener("click", () => {
+    if (search) search.value = "";
+    const t = document.getElementById("filterType");
+    const d = document.getElementById("filterDrive");
+    const p = document.getElementById("filterPrice");
+
+    if (t) t.value = "";
+    if (d) d.value = "";
+    if (p) p.value = p.max;
+
+    updatePriceLabel();
+    applyAllFilters();
+  });
+
+  updatePriceLabel();
 }
 
-wireSearch();
+wireUI();
 loadCars();
 </script>
 
