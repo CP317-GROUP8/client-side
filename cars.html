@@ -367,6 +367,7 @@ function carKeyFromParts(manufacturer, model, drivetrain, priceNum){
 }
 
 function normalizeCar(car){
+  const id           = safeStr(car["Vehicle ID"] ?? car.vehicleId ?? car.id);
   const manufacturer = safeStr(car["Manufacturer"]);
   const model        = safeStr(car["Model"]);
   const type         = safeStr(car["Vehicle Type"]);
@@ -388,6 +389,7 @@ function normalizeCar(car){
   const favKey = carKeyFromParts(manufacturer, model, drivetrain, cleanPriceNum ?? NaN);
 
   return {
+    id,
     manufacturer, model, type, drivetrain,
     isAvailable,
     priceText,
@@ -443,6 +445,14 @@ function renderCars(cars) {
 
     const card = document.createElement("div");
     card.className = "card";
+    const detailsHref = car.id ? `car-details.html?id=${encodeURIComponent(car.id)}` : "#";
+    const detailsOnClick = car.id
+      ? ""
+      : `onclick="event.preventDefault(); alert('Missing vehicle id for this car');"`;
+    const bookHref = car.id ? `bookings.html?id=${encodeURIComponent(car.id)}&preview=1` : "#";
+    const bookOnClick = car.id
+      ? ""
+      : `onclick="event.preventDefault(); alert('Missing vehicle id for this car');"`;
 
     card.innerHTML = `
       <img src="${car.imgUrl}" alt="${car.imgKey}"
@@ -478,10 +488,8 @@ function renderCars(cars) {
         </span>
 
         <div class="cardActions">
-          <a class="linkBtn viewBtn" href="#"
-             onclick="event.preventDefault(); alert('Details page in Sprint 2');">View</a>
-          <a class="linkBtn bookBtn" href="#"
-             onclick="event.preventDefault(); alert('Booking in Sprint 2');">Book</a>
+          <a class="linkBtn viewBtn" href="${detailsHref}" ${detailsOnClick}>View</a>
+          <a class="linkBtn bookBtn" href="${bookHref}" ${bookOnClick}>Book</a>
         </div>
 
       </div>
@@ -603,4 +611,3 @@ loadCars();
 
 </body>
 </html>
-
