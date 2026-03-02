@@ -316,6 +316,38 @@ const API = "https://server-side-zqaz.onrender.com";
 const params = new URLSearchParams(window.location.search);
 const isPreview = params.get("preview") === "1";
 
+function getWeekKey(date = new Date()) {
+  const d = new Date(date);
+  d.setHours(0, 0, 0, 0);
+  const day = d.getDay();
+  const diffToMonday = day === 0 ? -6 : 1 - day;
+  d.setDate(d.getDate() + diffToMonday);
+  return d.toISOString().slice(0, 10);
+}
+
+function popularityStorageKey() {
+  return `popularity:${getWeekKey()}`;
+}
+
+function loadPopularityMap() {
+  const raw = localStorage.getItem(popularityStorageKey());
+  const obj = raw ? JSON.parse(raw) : {};
+  return obj && typeof obj === "object" ? obj : {};
+}
+
+function savePopularityMap(map) {
+  localStorage.setItem(popularityStorageKey(), JSON.stringify(map));
+}
+
+function bumpPopularity(vehicleId, amount) {
+  if (!vehicleId) return;
+  const map = loadPopularityMap();
+  const key = String(vehicleId);
+  const current = Number(map[key] || 0);
+  map[key] = current + Number(amount || 0);
+  savePopularityMap(map);
+}
+
 const SESSION_MS = 12 * 60 * 60 * 1000;
 function requireSession() {
   const email = localStorage.getItem("userEmail");
@@ -348,6 +380,11 @@ function loadFavsSet() {
 function saveFavsSet(set) {
   localStorage.setItem(favStorageKey(), JSON.stringify([...set]));
 }
+
+window.bumpPopularityFromAttr = function (el, amount) {
+  const id = el?.getAttribute("data-vehicle-id") || "";
+  bumpPopularity(id, amount);
+};
 
 const imageMap = {
   "Dodge Challenger | AWD": "challenger.png",
@@ -453,11 +490,11 @@ function renderCars(cars) {
       ? `car-details.html?id=${encodeURIComponent(car.id)}${isPreview ? "&preview=1" : ""}`
       : "#";
     const detailsOnClick = car.id
-      ? ""
+      ? `onclick="bumpPopularityFromAttr(this, 2)"`
       : `onclick="event.preventDefault(); alert('Missing vehicle id for this car');"`;
     const bookHref = car.id ? `bookings.html?id=${encodeURIComponent(car.id)}&preview=1` : "#";
     const bookOnClick = car.id
-      ? ""
+      ? `onclick="bumpPopularityFromAttr(this, 4)"`
       : `onclick="event.preventDefault(); alert('Missing vehicle id for this car');"`;
 
     card.innerHTML = `
@@ -474,6 +511,7 @@ function renderCars(cars) {
 
           <button class="heartBtn ${isSaved ? "saved" : ""}"
                   type="button"
+                  data-vehicle-id="${encodeURIComponent(car.id || "")}"
                   data-favkey="${encodeURIComponent(car.favKey)}"
                   aria-label="Toggle favourite">
 
@@ -507,6 +545,7 @@ function renderCars(cars) {
   grid.querySelectorAll(".heartBtn").forEach(btn => {
     btn.addEventListener("click", () => {
       const key = decodeURIComponent(btn.getAttribute("data-favkey") || "");
+      const vehicleId = decodeURIComponent(btn.getAttribute("data-vehicle-id") || "");
       if (!key) return;
 
       const favs = loadFavsSet();
@@ -524,6 +563,8 @@ function renderCars(cars) {
         path.setAttribute("fill", !isSaved ? "#ef4444" : "none");
         path.setAttribute("stroke", !isSaved ? "#ef4444" : "#64748b");
       }
+
+      if (!isSaved && vehicleId) bumpPopularity(vehicleId, 1);
     });
   });
 }
