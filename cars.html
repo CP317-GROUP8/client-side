@@ -250,65 +250,86 @@ button{
   border-color: rgba(79,70,229,0.35);
   box-shadow: 0 10px 22px rgba(15,23,42,0.06);
 }
+
+/* Available card hover effect */
+.card.clickable:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 40px rgba(79,70,229,0.15);
+  transition: all 0.2s ease;
+}
 </style>
 </head>
 
 <body>
 <div class="container">
 
-<header>
-  <div>
-    <h1>Cars</h1>
-    <div class="sub">Live from SQL database</div>
+  <header>
+    <div>
+      <h1>Cars</h1>
+      <div class="sub">Live from SQL database</div>
+    </div>
+    <div>
+      <button class="secondary" onclick="location.href='home.html'">← Home</button>
+    </div>
+  </header>
+
+  <div class="topRow">
+    <input id="searchInput" class="searchBox" placeholder="Search by make/model">
+    <button id="filterBtn" class="secondary" type="button">Filter</button>
   </div>
 
-  <div>
-    <button class="secondary" onclick="location.href='home.html'">← Home</button>
-  </div>
-</header>
+  <div id="filterPanel" style="display:none; margin-bottom:20px; background:white; border:1px solid #e5e7eb; border-radius:16px; padding:16px; box-shadow:0 10px 25px rgba(0,0,0,.06);">
+    <div style="display:flex; gap:16px; flex-wrap:wrap; align-items:end;">
 
-<div class="topRow">
-  <input id="searchInput" class="searchBox" placeholder="Search by make/model">
-  <button id="filterBtn" class="secondary" type="button">Filter</button>
+      <div>
+        <div class="sub" style="margin-bottom:6px;">Vehicle Type</div>
+        <select id="filterType" style="height:42px; border-radius:12px; border:1px solid #ddd; padding:0 12px; min-width:180px;">
+          <option value="">Any</option>
+          <option value="Sedan">Sedan</option>
+          <option value="SUV">SUV</option>
+          <option value="Sport">Sport</option>
+        </select>
+      </div>
+
+      <div>
+        <div class="sub" style="margin-bottom:6px;">Drivetrain</div>
+        <select id="filterDrive" style="height:42px; border-radius:12px; border:1px solid #ddd; padding:0 12px; min-width:180px;">
+          <option value="">Any</option>
+          <option value="AWD">AWD</option>
+          <option value="FWD">FWD</option>
+          <option value="RWD">RWD</option>
+        </select>
+      </div>
+
+      <div style="min-width:260px;">
+        <div class="sub" style="margin-bottom:6px;">Max price : <span id="priceLabel">Any</span></div>
+        <input id="filterPrice" type="range" min="0" max="2000" step="50" value="2000" style="width:260px;">
+      </div>
+
+      <div style="display:flex; gap:10px;">
+        <button id="clearFilters" class="secondary" type="button">Clear</button>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="grid" id="carsGrid"></div>
+
 </div>
 
-<div id="filterPanel" style="display:none; margin-bottom:20px; background:white; border:1px solid #e5e7eb; border-radius:16px; padding:16px; box-shadow:0 10px 25px rgba(0,0,0,.06);">
-  <div style="display:flex; gap:16px; flex-wrap:wrap; align-items:end;">
-
-    <div>
-      <div class="sub" style="margin-bottom:6px;">Vehicle Type</div>
-      <select id="filterType" style="height:42px; border-radius:12px; border:1px solid #ddd; padding:0 12px; min-width:180px;">
-        <option value="">Any</option>
-        <option value="Sedan">Sedan</option>
-        <option value="SUV">SUV</option>
-        <option value="Sport">Sport</option>
-      </select>
+<!-- Vehicle Detail Modal -->
+<div id="vehicleModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center;">
+  <div style="background:white; border-radius:20px; padding:32px; max-width:560px; width:90%; max-height:85vh; overflow-y:auto; box-shadow:0 20px 60px rgba(0,0,0,0.25); position:relative;">
+    <button onclick="closeModal()" style="position:absolute; top:16px; right:16px; background:none; border:none; font-size:22px; cursor:pointer; color:#64748b;">✕</button>
+    <img id="modalImg" src="" alt="" style="width:100%; height:200px; object-fit:cover; border-radius:12px; margin-bottom:20px;" onerror="this.src='./assets/cars/placeholder.png'">
+    <h2 id="modalTitle" style="margin:0 0 4px;"></h2>
+    <span id="modalTag" class="tag" style="margin-bottom:16px; display:inline-block;"></span>
+    <table id="modalTable" style="width:100%; border-collapse:collapse; font-size:15px;"></table>
+    <div style="display:flex; gap:12px; margin-top:24px;">
+      <a id="modalViewBtn" href="#" class="linkBtn viewBtn" style="flex:1; text-align:center; padding:12px; text-decoration:none; font-weight:600; border-radius:12px;">View Details</a>
+      <a id="modalBookBtn" href="#" class="linkBtn bookBtn" style="flex:1; text-align:center; padding:12px; text-decoration:none; font-weight:600; border-radius:12px; border:1px solid #ccc; color:black;">Book</a>
     </div>
-
-    <div>
-      <div class="sub" style="margin-bottom:6px;">Drivetrain</div>
-      <select id="filterDrive" style="height:42px; border-radius:12px; border:1px solid #ddd; padding:0 12px; min-width:180px;">
-        <option value="">Any</option>
-        <option value="AWD">AWD</option>
-        <option value="FWD">FWD</option>
-        <option value="RWD">RWD</option>
-      </select>
-    </div>
-
-    <div style="min-width:260px;">
-      <div class="sub" style="margin-bottom:6px;">Max price : <span id="priceLabel">Any</span></div>
-      <input id="filterPrice" type="range" min="0" max="2000" step="50" value="2000" style="width:260px;">
-    </div>
-
-    <div style="display:flex; gap:10px;">
-      <button id="clearFilters" class="secondary" type="button">Clear</button>
-    </div>
-
   </div>
-</div>
-
-<div class="grid" id="carsGrid"></div>
-
 </div>
 
 <script>
@@ -440,6 +461,63 @@ function normalizeCar(car){
   };
 }
 
+// ── Modal ──────────────────────────────────────────────
+function openModal(car) {
+  const name = `${car.manufacturer} ${car.model}`.trim();
+
+  document.getElementById("modalImg").src = car.imgUrl;
+  document.getElementById("modalImg").alt = name;
+  document.getElementById("modalTitle").textContent = name;
+
+  const tag = document.getElementById("modalTag");
+  tag.textContent = car.isAvailable ? "Available" : "Unavailable";
+  tag.className = `tag ${car.isAvailable ? "available" : "unavailable"}`;
+
+  const rows = [
+    ["Manufacturer", car.manufacturer],
+    ["Model",        car.model],
+    ["Type",         car.type],
+    ["Drivetrain",   car.drivetrain],
+    ["Price",        car.priceText],
+    ["Vehicle ID",   car.id || "—"],
+  ];
+
+  document.getElementById("modalTable").innerHTML = rows.map(([label, val]) => `
+    <tr style="border-bottom:1px solid #f1f5f9;">
+      <td style="padding:10px 8px; color:#64748b; font-weight:600; width:40%;">${label}</td>
+      <td style="padding:10px 8px;">${val || "—"}</td>
+    </tr>
+  `).join("");
+
+  const detailsHref = car.id
+    ? `car-details.html?id=${encodeURIComponent(car.id)}${isPreview ? "&preview=1" : ""}`
+    : "#";
+  const bookHref = car.id
+    ? `bookings.html?id=${encodeURIComponent(car.id)}${isPreview ? "&preview=1" : ""}`
+    : "#";
+
+  document.getElementById("modalViewBtn").href = detailsHref;
+  document.getElementById("modalBookBtn").href = bookHref;
+
+  const modal = document.getElementById("vehicleModal");
+  modal.style.display = "flex";
+}
+
+function closeModal() {
+  document.getElementById("vehicleModal").style.display = "none";
+}
+
+// Close on backdrop click
+document.getElementById("vehicleModal").addEventListener("click", function(e) {
+  if (e.target === this) closeModal();
+});
+
+// Close on Escape key
+document.addEventListener("keydown", function(e) {
+  if (e.key === "Escape") closeModal();
+});
+// ── End Modal ──────────────────────────────────────────
+
 async function loadCars() {
   const grid = document.getElementById("carsGrid");
   grid.innerHTML = "<div style='color:#555;'>Loading cars…</div>";
@@ -486,6 +564,17 @@ function renderCars(cars) {
 
     const card = document.createElement("div");
     card.className = "card";
+
+    // Make available cards clickable → open modal
+    if (car.isAvailable) {
+      card.classList.add("clickable");
+      card.style.cursor = "pointer";
+      card.addEventListener("click", (e) => {
+        if (e.target.closest("a, button")) return; // don't intercept View/Book/Heart
+        openModal(car);
+      });
+    }
+
     const detailsHref = car.id
       ? `car-details.html?id=${encodeURIComponent(car.id)}${isPreview ? "&preview=1" : ""}`
       : "#";
@@ -514,14 +603,12 @@ function renderCars(cars) {
                   data-vehicle-id="${encodeURIComponent(car.id || "")}"
                   data-favkey="${encodeURIComponent(car.favKey)}"
                   aria-label="Toggle favourite">
-
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <path d="M12 21s-7-4.6-9.4-8.5C.7 9.6 2.2 6.5 5.5 6.1c1.8-.2 3.4.6 4.5 1.9 1.1-1.3 2.7-2.1 4.5-1.9 3.3.4 4.8 3.5 2.9 6.4C19 16.4 12 21 12 21z"
                 fill="${isSaved ? "#ef4444" : "none"}"
                 stroke="${isSaved ? "#ef4444" : "#64748b"}"
                 stroke-width="1.8"/>
             </svg>
-
           </button>
         </div>
 
