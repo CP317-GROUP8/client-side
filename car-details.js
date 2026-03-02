@@ -36,6 +36,7 @@ const carType = document.getElementById("carType");
 const carDrive = document.getElementById("carDrive");
 const carAvail = document.getElementById("carAvail");
 const carImg = document.getElementById("carImg");
+const vehicleTableBody = document.getElementById("vehicleTableBody");
 
 const fromDateEl = document.getElementById("fromDate");
 const toDateEl = document.getElementById("toDate");
@@ -50,7 +51,7 @@ if (allCarsBtn && isPreview) {
 }
 
 function getCarImage(manufacturer, model, drivetrain) {
-  const name = `${manufacturer} ${model}`.trim(); // ✅ NO drivetrain here
+  const name = `${manufacturer} ${model}`.trim();
 
   const map = {
     "Toyota Corolla": drivetrain === "AWD" ? "corolla-awd.png" : "corolla-fwd.png",
@@ -61,7 +62,26 @@ function getCarImage(manufacturer, model, drivetrain) {
     "Porsche 911": "porsche.png",
   };
 
-  return `./assets/cars/${map[name] || "car1.png"}`; // ✅ fallback that exists
+  return `./assets/cars/${map[name] || "car1.png"}`;
+}
+
+function populateVehicleTable(car) {
+  const rows = [
+    ["Vehicle ID",    car["Vehicle ID"]],
+    ["Manufacturer",  car["Manufacturer"]],
+    ["Model",         car["Model"]],
+    ["Vehicle Type",  car["Vehicle Type"]],
+    ["Drivetrain",    car["Drivetrain"]],
+    ["Price",         Number.isFinite(Number(car["Price"])) ? `$${Number(car["Price"]).toFixed(2)}/day` : car["Price"]],
+    ["Availability",  Number(car["Availability"]) === 1 ? "Available" : "Unavailable"],
+  ];
+
+  vehicleTableBody.innerHTML = rows.map(([label, value]) => `
+    <tr>
+      <td>${label}</td>
+      <td>${value ?? "—"}</td>
+    </tr>
+  `).join("");
 }
 
 async function loadCarDetails() {
@@ -82,37 +102,38 @@ async function loadCarDetails() {
     if (!car) throw new Error("Car not found (maybe not available anymore).");
 
     const manufacturer = car["Manufacturer"];
-    const model = car["Model"];
-    const type = car["Vehicle Type"];
-    const drivetrain = car["Drivetrain"];
-    const price = Number(car["Price"]);
+    const model        = car["Model"];
+    const type         = car["Vehicle Type"];
+    const drivetrain   = car["Drivetrain"];
+    const price        = Number(car["Price"]);
     const availability = Number(car["Availability"]);
 
-    carName.textContent = `${manufacturer} ${model}`;
+    // Header section
+    carName.textContent  = `${manufacturer} ${model}`;
     carPrice.textContent = Number.isFinite(price) ? `$${price.toFixed(2)}/day` : "—";
-    carType.textContent = `Type: ${type || "—"}`;
+    carType.textContent  = `Type: ${type || "—"}`;
     carDrive.textContent = `Drivetrain: ${drivetrain || "—"}`;
 
     if (availability === 1) {
       carAvail.textContent = "Available";
-      carAvail.className = "pill ok";
-      bookBtn.disabled = false;
+      carAvail.className   = "pill ok";
+      bookBtn.disabled     = false;
     } else {
       carAvail.textContent = "Unavailable";
-      carAvail.className = "pill bad";
-      bookBtn.disabled = true;
+      carAvail.className   = "pill bad";
+      bookBtn.disabled     = true;
     }
-    const imgSrc = getCarImage(manufacturer, model, drivetrain);
-    console.log("Loading image:", imgSrc);
 
+    // Car image
+    const imgSrc = getCarImage(manufacturer, model, drivetrain);
     carImg.src = imgSrc;
-    carImg.onerror = () => {
-      console.warn("Image failed, using fallback");
-      carImg.src = "./assets/car1.png";
-    };
+    carImg.onerror = () => { carImg.src = "./assets/car1.png"; };
+
+    // Vehicle Table
+    populateVehicleTable(car);
 
     loadingState.style.display = "none";
-    detailsUI.style.display = "block";
+    detailsUI.style.display    = "block";
   } catch (err) {
     loadingState.textContent = `Failed to load details: ${err.message}`;
   }
@@ -120,19 +141,19 @@ async function loadCarDetails() {
 
 async function bookCar() {
   try {
-    statusText.className = "status";
+    statusText.className  = "status";
     statusText.textContent = "Booking…";
 
     const fromDate = fromDateEl.value;
-    const toDate = toDateEl.value;
+    const toDate   = toDateEl.value;
 
     if (!fromDate || !toDate) {
-      statusText.className = "status error";
+      statusText.className  = "status error";
       statusText.textContent = "Please select both From and To dates.";
       return;
     }
     if (toDate < fromDate) {
-      statusText.className = "status error";
+      statusText.className  = "status error";
       statusText.textContent = "To date must be after From date.";
       return;
     }
@@ -149,11 +170,11 @@ async function bookCar() {
     const data = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(data.error || "Booking failed");
 
-    statusText.className = "status ok";
+    statusText.className  = "status ok";
     statusText.textContent = `Booked ✅ Sale ID #${data.saleId}`;
     bookBtn.disabled = true;
   } catch (err) {
-    statusText.className = "status error";
+    statusText.className  = "status error";
     statusText.textContent = `Error: ${err.message}`;
   }
 }
