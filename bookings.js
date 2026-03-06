@@ -25,11 +25,7 @@ function requireSession() {
 
 const params = new URLSearchParams(window.location.search);
 const carId = params.get("id");
-const isPreview = params.get("preview") === "1";
-
-const userEmail = isPreview
-  ? (localStorage.getItem("userEmail") || "preview@example.com")
-  : requireSession();
+const userEmail = requireSession();
 
 const el = {
   pageSub: document.getElementById("pageSub"),
@@ -210,11 +206,6 @@ async function loadCar() {
 }
 
 async function confirmBooking() {
-  if (isPreview) {
-    setStatus("Preview mode: booking submit is disabled.", "ok");
-    return;
-  }
-
   const validation = validateForm();
   if (!validation.ok) {
     setStatus(validation.message, "error");
