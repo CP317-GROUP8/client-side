@@ -193,11 +193,7 @@
       return email;
     }
 
-    const params = new URLSearchParams(window.location.search);
-    const isPreview = params.get("preview") === "1";
-    const userEmail = isPreview
-      ? (localStorage.getItem("userEmail") || "preview@example.com")
-      : requireSession();
+    const userEmail = requireSession();
 
     const imageMap = {
       "Toyota Corolla AWD":    "corolla-awd.png",
@@ -215,9 +211,11 @@
       return `./assets/cars/${imageMap[key] || "placeholder.png"}`;
     }
 
+    // ✅ FIX: Parse date parts directly to avoid UTC timezone shift
     function formatDate(dateStr) {
       if (!dateStr) return "—";
-      return new Date(dateStr).toLocaleDateString("en-CA", { year: "numeric", month: "short", day: "numeric" });
+      const [year, month, day] = dateStr.slice(0, 10).split("-");
+      return new Date(year, month - 1, day).toLocaleDateString("en-CA", { year: "numeric", month: "short", day: "numeric" });
     }
 
     function formatMoney(val) {
@@ -239,7 +237,6 @@
         const data = await res.json().catch(() => ({}));
         if (!res.ok) throw new Error(data.error || "Cancel failed");
 
-        // Fade out and remove card
         const card = btnEl.closest(".bookingCard");
         card.style.transition = "opacity 0.3s";
         card.style.opacity = "0";
