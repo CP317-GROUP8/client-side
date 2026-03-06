@@ -29,32 +29,21 @@
       margin-bottom: 32px;
     }
 
-    .topbar h1 {
-      font-size: 36px;
-      font-weight: 700;
-      margin: 0;
-    }
-
-    .topbar .sub {
-      font-size: 14px;
-      color: #64748b;
-      margin-top: 4px;
-    }
+    .topbar h1 { font-size: 36px; font-weight: 700; margin: 0; }
+    .topbar .sub { font-size: 14px; color: #64748b; margin-top: 4px; }
 
     .btn {
-      border: none;
+      border: 1px solid #e2e8f0;
       cursor: pointer;
       border-radius: 12px;
       padding: 11px 16px;
       font-weight: 600;
       font-size: 14px;
       background: white;
-      border: 1px solid #e2e8f0;
       color: #0f172a;
     }
     .btn:hover { filter: brightness(0.96); }
 
-    /* Booking card */
     .bookingCard {
       background: white;
       border-radius: 20px;
@@ -87,31 +76,11 @@
       gap: 12px;
     }
 
-    .bookingTop h2 {
-      font-size: 20px;
-      font-weight: 700;
-      margin: 0;
-    }
+    .bookingTop h2 { font-size: 20px; font-weight: 700; margin: 0; }
+    .saleId { font-size: 12px; color: #94a3b8; margin-top: 4px; }
+    .price { font-size: 20px; font-weight: 700; color: #4f46e5; white-space: nowrap; }
 
-    .saleId {
-      font-size: 12px;
-      color: #94a3b8;
-      margin-top: 4px;
-    }
-
-    .price {
-      font-size: 20px;
-      font-weight: 700;
-      color: #4f46e5;
-      white-space: nowrap;
-    }
-
-    .pillRow {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      margin: 12px 0;
-    }
+    .pillRow { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
 
     .pill {
       padding: 5px 12px;
@@ -122,11 +91,15 @@
       color: #334155;
     }
 
-    .dates {
+    .bottomRow {
       display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
       gap: 16px;
-      margin-top: 8px;
+      flex-wrap: wrap;
     }
+
+    .dates { display: flex; gap: 12px; }
 
     .dateBox {
       background: #f8fafc;
@@ -143,13 +116,23 @@
       letter-spacing: 0.05em;
     }
 
-    .dateBox .value {
-      font-size: 14px;
-      font-weight: 600;
-      margin-top: 2px;
-    }
+    .dateBox .value { font-size: 14px; font-weight: 600; margin-top: 2px; }
 
-    /* Empty / loading states */
+    .cancelBtn {
+      border: 1px solid #fecaca;
+      cursor: pointer;
+      border-radius: 12px;
+      padding: 10px 18px;
+      font-weight: 600;
+      font-size: 13px;
+      background: #fee2e2;
+      color: #991b1b;
+      transition: filter 0.15s;
+      white-space: nowrap;
+    }
+    .cancelBtn:hover { filter: brightness(0.95); }
+    .cancelBtn:disabled { opacity: 0.5; cursor: not-allowed; }
+
     .stateBox {
       background: white;
       border-radius: 20px;
@@ -167,6 +150,7 @@
       .bookingCard { grid-template-columns: 1fr; }
       .bookingCard img { height: 180px; }
       .dates { flex-direction: column; gap: 8px; }
+      .bottomRow { flex-direction: column; align-items: flex-start; }
     }
   </style>
 </head>
@@ -198,10 +182,7 @@
     function requireSession() {
       const email = localStorage.getItem("userEmail");
       const loggedInAt = Number(localStorage.getItem("loggedInAt") || "0");
-      if (!email || !loggedInAt) {
-        window.location.replace("index.html");
-        throw new Error("No session");
-      }
+      if (!email || !loggedInAt) { window.location.replace("index.html"); throw new Error("No session"); }
       if (Date.now() - loggedInAt > SESSION_MS) {
         localStorage.removeItem("userEmail");
         localStorage.removeItem("loggedInAt");
@@ -219,14 +200,14 @@
       : requireSession();
 
     const imageMap = {
-      "Toyota Corolla AWD":     "corolla-awd.png",
-      "Toyota Corolla FWD":     "corolla-fwd.png",
-      "Toyota Highlander AWD":  "highlander-awd.png",
-      "Toyota Highlander RWD":  "highlander-rwd.png",
-      "Dodge Challenger AWD":   "challenger.png",
-      "Honda Civic RWD":        "civic.png",
-      "KIA K4 RWD":             "kia.png",
-      "Porsche 911 AWD":        "porsche.png",
+      "Toyota Corolla AWD":    "corolla-awd.png",
+      "Toyota Corolla FWD":    "corolla-fwd.png",
+      "Toyota Highlander AWD": "highlander-awd.png",
+      "Toyota Highlander RWD": "highlander-rwd.png",
+      "Dodge Challenger AWD":  "challenger.png",
+      "Honda Civic RWD":       "civic.png",
+      "KIA K4 RWD":            "kia.png",
+      "Porsche 911 AWD":       "porsche.png",
     };
 
     function getImage(manufacturer, model, drivetrain) {
@@ -236,12 +217,49 @@
 
     function formatDate(dateStr) {
       if (!dateStr) return "—";
-      const d = new Date(dateStr);
-      return d.toLocaleDateString("en-CA", { year: "numeric", month: "short", day: "numeric" });
+      return new Date(dateStr).toLocaleDateString("en-CA", { year: "numeric", month: "short", day: "numeric" });
     }
 
     function formatMoney(val) {
       return `$${Number(val || 0).toFixed(2)}`;
+    }
+
+    async function cancelBooking(saleId, btnEl) {
+      if (!confirm("Cancel this booking? The car will be made available again.")) return;
+
+      btnEl.disabled = true;
+      btnEl.textContent = "Cancelling...";
+
+      try {
+        const res = await fetch(`${API_BASE}/me/bookings/${saleId}`, {
+          method: "DELETE",
+          headers: { "X-User-Email": userEmail }
+        });
+
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.error || "Cancel failed");
+
+        // Fade out and remove card
+        const card = btnEl.closest(".bookingCard");
+        card.style.transition = "opacity 0.3s";
+        card.style.opacity = "0";
+        setTimeout(() => {
+          card.remove();
+          if (!document.querySelectorAll(".bookingCard").length) {
+            document.getElementById("bookingsContainer").innerHTML = `
+              <div class="stateBox">
+                <div class="emoji">🚗</div>
+                <h2>No bookings yet</h2>
+                <p>You haven't rented any cars yet. <a href="cars.html" style="color:#4f46e5;">Browse cars</a> to get started.</p>
+              </div>
+            `;
+          }
+        }, 300);
+      } catch (err) {
+        btnEl.disabled = false;
+        btnEl.textContent = "Cancel Booking";
+        alert(`Error: ${err.message}`);
+      }
     }
 
     async function loadBookings() {
@@ -271,7 +289,6 @@
         container.innerHTML = rows.map(booking => {
           const name = `${booking.manufacturer} ${booking.model}`.trim();
           const imgSrc = getImage(booking.manufacturer, booking.model, booking.drivetrain);
-
           return `
             <div class="bookingCard">
               <img src="${imgSrc}" alt="${name}" onerror="this.src='./assets/cars/placeholder.png'">
@@ -284,27 +301,32 @@
                     </div>
                     <div class="price">${formatMoney(booking.priceSoldAt)}/day</div>
                   </div>
-
                   <div class="pillRow">
                     <span class="pill">${booking.vehicleType || "—"}</span>
                     <span class="pill">${booking.drivetrain || "—"}</span>
                   </div>
                 </div>
-
-                <div class="dates">
-                  <div class="dateBox">
-                    <div class="label">Pickup</div>
-                    <div class="value">${formatDate(booking.fromDate)}</div>
+                <div class="bottomRow">
+                  <div class="dates">
+                    <div class="dateBox">
+                      <div class="label">Pickup</div>
+                      <div class="value">${formatDate(booking.fromDate)}</div>
+                    </div>
+                    <div class="dateBox">
+                      <div class="label">Dropoff</div>
+                      <div class="value">${formatDate(booking.toDate)}</div>
+                    </div>
                   </div>
-                  <div class="dateBox">
-                    <div class="label">Dropoff</div>
-                    <div class="value">${formatDate(booking.toDate)}</div>
-                  </div>
+                  <button class="cancelBtn" data-saleid="${booking.saleId}">Cancel Booking</button>
                 </div>
               </div>
             </div>
           `;
         }).join("");
+
+        container.querySelectorAll(".cancelBtn").forEach(btn => {
+          btn.addEventListener("click", () => cancelBooking(btn.getAttribute("data-saleid"), btn));
+        });
 
       } catch (err) {
         container.innerHTML = `
