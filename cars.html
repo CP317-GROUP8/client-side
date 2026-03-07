@@ -94,12 +94,11 @@ button{
   margin-top:4px;
 }
 
-.heartBtn{
-  width:42px;
-  height:42px;
-  border-radius:999px;
-  border:1px solid rgba(148,163,184,0.55);
-  background:#ffffff;
+.heartBtn svg {
+  width: 20px;
+  height: 20px;
+  display: block;    
+  margin: auto;         
 
   display:flex;
   align-items:center;
@@ -598,16 +597,14 @@ function renderCars(cars) {
             <div class="meta">${car.type} • ${car.drivetrain}</div>
           </div>
 
-          <button class="heartBtn ${isSaved ? "saved" : ""}"
-                  type="button"
-                  data-vehicle-id="${encodeURIComponent(car.id || "")}"
-                  data-favkey="${encodeURIComponent(car.favKey)}"
-                  aria-label="Toggle favourite">
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M12 21s-7-4.6-9.4-8.5C.7 9.6 2.2 6.5 5.5 6.1c1.8-.2 3.4.6 4.5 1.9 1.1-1.3 2.7-2.1 4.5-1.9 3.3.4 4.8 3.5 2.9 6.4C19 16.4 12 21 12 21z"
-                fill="${isSaved ? "#ef4444" : "none"}"
-                stroke="${isSaved ? "#ef4444" : "#64748b"}"
-                stroke-width="1.8"/>
+          <button class="heartBtn …" type="button" …>
+            <svg viewBox="0 0 24 24"
+                aria-hidden="true"
+                preserveAspectRatio="xMidYMid meet">
+              <path d="M12 21s-7-4.6-9.4-8.5C.7 9.6 2.2 6.5 5.5 6.1
+                      c1.8-.2 3.4.6 4.5 1.9 1.1-1.3 2.7-2.1 4.5-1.9
+                      3.3.4 4.8 3.5 2.9 6.4C19 16.4 12 21 12 21z"
+                    fill="none" stroke="#64748b" stroke-width="1.8"/>
             </svg>
           </button>
         </div>
