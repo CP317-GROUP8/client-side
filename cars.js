@@ -171,7 +171,7 @@ async function loadCars() {
       btn.addEventListener("click", () => {
         const vehicleId = btn.getAttribute("data-book");
         const previewSuffix = isPreview ? "&preview=1" : "";
-        window.location.href = `bookings.html?id=${vehicleId}${previewSuffix}`;
+        window.location.href = `car-details.html?id=${vehicleId}${previewSuffix}`;
       });
     });
     

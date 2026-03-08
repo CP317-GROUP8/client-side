@@ -80,7 +80,7 @@ function render(cars, popularityMap) {
   grid.innerHTML = ranked
     .map((c) => {
       const details = `car-details.html?id=${encodeURIComponent(c.id)}&preview=1`;
-      const book = `bookings.html?id=${encodeURIComponent(c.id)}&preview=1`;
+      const book = `car-details.html?id=${encodeURIComponent(c.id)}&preview=1`;
       return `
         <article class="card">
           <img src="${c.imgUrl}" alt="${c.name}" onerror="this.src='./assets/cars/placeholder.png'">

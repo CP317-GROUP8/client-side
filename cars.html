@@ -492,7 +492,7 @@ function openModal(car) {
     ? `car-details.html?id=${encodeURIComponent(car.id)}${isPreview ? "&preview=1" : ""}`
     : "#";
   const bookHref = car.id
-    ? `bookings.html?id=${encodeURIComponent(car.id)}${isPreview ? "&preview=1" : ""}`
+    ? `car-details.html?id=${encodeURIComponent(car.id)}${isPreview ? "&preview=1" : ""}`
     : "#";
 
   document.getElementById("modalViewBtn").href = detailsHref;
@@ -580,7 +580,9 @@ function renderCars(cars) {
     const detailsOnClick = car.id
       ? `onclick="bumpPopularityFromAttr(this, 2)"`
       : `onclick="event.preventDefault(); alert('Missing vehicle id for this car');"`;
-    const bookHref = car.id ? `bookings.html?id=${encodeURIComponent(car.id)}&preview=1` : "#";
+    const bookHref = car.id
+      ? `car-details.html?id=${encodeURIComponent(car.id)}${isPreview ? "&preview=1" : ""}`
+      : "#";
     const bookOnClick = car.id
       ? `onclick="bumpPopularityFromAttr(this, 4)"`
       : `onclick="event.preventDefault(); alert('Missing vehicle id for this car');"`;
