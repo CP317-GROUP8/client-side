@@ -488,15 +488,13 @@ function openModal(car) {
     </tr>
   `).join("");
 
-  const detailsHref = car.id
-    ? `car-details.html?id=${encodeURIComponent(car.id)}${isPreview ? "&preview=1" : ""}`
-    : "#";
-  const bookHref = car.id
-    ? `car-details.html?id=${encodeURIComponent(car.id)}${isPreview ? "&preview=1" : ""}`
-    : "#";
+  const detailsHref = car.id ? carDetailsHref(car.id) : "#";
+  const bookHref = car.id ? carDetailsHref(car.id) : "#";
 
   document.getElementById("modalViewBtn").href = detailsHref;
   document.getElementById("modalBookBtn").href = bookHref;
+  document.getElementById("modalViewBtn").setAttribute("data-vehicle-id", car.id || "");
+  document.getElementById("modalBookBtn").setAttribute("data-vehicle-id", car.id || "");
 
   const modal = document.getElementById("vehicleModal");
   modal.style.display = "flex";
@@ -504,6 +502,16 @@ function openModal(car) {
 
 function closeModal() {
   document.getElementById("vehicleModal").style.display = "none";
+}
+
+function carDetailsHref(vehicleId) {
+  if (!vehicleId) return "#";
+  return `car-details.html?id=${encodeURIComponent(vehicleId)}${isPreview ? "&preview=1" : ""}`;
+}
+
+function navigateToCarDetails(vehicleId) {
+  if (!vehicleId) return;
+  window.location.assign(carDetailsHref(vehicleId));
 }
 
 // Close on backdrop click
@@ -514,6 +522,22 @@ document.getElementById("vehicleModal").addEventListener("click", function(e) {
 // Close on Escape key
 document.addEventListener("keydown", function(e) {
   if (e.key === "Escape") closeModal();
+});
+
+document.getElementById("modalViewBtn").addEventListener("click", function(e) {
+  const vehicleId = this.getAttribute("data-vehicle-id") || "";
+  if (!vehicleId) return;
+  e.preventDefault();
+  bumpPopularity(vehicleId, 2);
+  navigateToCarDetails(vehicleId);
+});
+
+document.getElementById("modalBookBtn").addEventListener("click", function(e) {
+  const vehicleId = this.getAttribute("data-vehicle-id") || "";
+  if (!vehicleId) return;
+  e.preventDefault();
+  bumpPopularity(vehicleId, 4);
+  navigateToCarDetails(vehicleId);
 });
 // ── End Modal ──────────────────────────────────────────
 
@@ -574,17 +598,13 @@ function renderCars(cars) {
       });
     }
 
-    const detailsHref = car.id
-      ? `car-details.html?id=${encodeURIComponent(car.id)}${isPreview ? "&preview=1" : ""}`
-      : "#";
+    const detailsHref = car.id ? carDetailsHref(car.id) : "#";
     const detailsOnClick = car.id
-      ? `onclick="bumpPopularityFromAttr(this, 2)"`
+      ? ""
       : `onclick="event.preventDefault(); alert('Missing vehicle id for this car');"`;
-    const bookHref = car.id
-      ? `car-details.html?id=${encodeURIComponent(car.id)}${isPreview ? "&preview=1" : ""}`
-      : "#";
+    const bookHref = car.id ? carDetailsHref(car.id) : "#";
     const bookOnClick = car.id
-      ? `onclick="bumpPopularityFromAttr(this, 4)"`
+      ? ""
       : `onclick="event.preventDefault(); alert('Missing vehicle id for this car');"`;
 
     card.innerHTML = `
@@ -618,14 +638,36 @@ function renderCars(cars) {
         </span>
 
         <div class="cardActions">
-          <a class="linkBtn viewBtn" href="${detailsHref}" ${detailsOnClick}>View</a>
-          <a class="linkBtn bookBtn" href="${bookHref}" ${bookOnClick}>Book</a>
+          <a class="linkBtn viewBtn" href="${detailsHref}" data-vehicle-id="${car.id || ""}" ${detailsOnClick}>View</a>
+          <a class="linkBtn bookBtn" href="${bookHref}" data-vehicle-id="${car.id || ""}" ${bookOnClick}>Book</a>
         </div>
 
       </div>
     `;
 
     grid.appendChild(card);
+  });
+
+  grid.querySelectorAll(".viewBtn").forEach(link => {
+    link.addEventListener("click", (e) => {
+      const vehicleId = link.getAttribute("data-vehicle-id") || "";
+      if (!vehicleId) return;
+      e.preventDefault();
+      e.stopPropagation();
+      bumpPopularity(vehicleId, 2);
+      navigateToCarDetails(vehicleId);
+    });
+  });
+
+  grid.querySelectorAll(".bookBtn").forEach(link => {
+    link.addEventListener("click", (e) => {
+      const vehicleId = link.getAttribute("data-vehicle-id") || "";
+      if (!vehicleId) return;
+      e.preventDefault();
+      e.stopPropagation();
+      bumpPopularity(vehicleId, 4);
+      navigateToCarDetails(vehicleId);
+    });
   });
 
   grid.querySelectorAll(".heartBtn").forEach(btn => {
