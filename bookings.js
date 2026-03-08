@@ -60,7 +60,6 @@ function getRowValue(row, ...keys) {
 }
 
 const userEmail = requireSession();
-
 const statusEl = document.getElementById("status");
 const listEl = document.getElementById("list");
 
@@ -71,7 +70,6 @@ function setStatus(msg, isError = false) {
 }
 
 function renderEmptyState(message) {
-  if (!listEl) return;
   listEl.innerHTML = `
     <div class="bookingCard">
       <div class="muted">${escapeHtml(message)}</div>
@@ -80,8 +78,6 @@ function renderEmptyState(message) {
 }
 
 function renderBookings(rows) {
-  if (!listEl) return;
-
   listEl.innerHTML = rows.map((r) => {
     const manufacturer = escapeHtml(r.manufacturer);
     const model = escapeHtml(r.model);
@@ -141,6 +137,8 @@ async function loadMyBookings() {
   try {
     setStatus("Loading your bookings...");
 
+    console.log("Loading bookings for:", userEmail);
+
     const res = await fetch(`${API_BASE}/me/bookings`, {
       method: "GET",
       headers: {
@@ -149,6 +147,8 @@ async function loadMyBookings() {
     });
 
     const data = await res.json().catch(() => ({}));
+
+    console.log("Bookings response:", res.status, data);
 
     if (!res.ok) {
       throw new Error(data.error || "Failed to load bookings");
