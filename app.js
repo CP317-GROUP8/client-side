@@ -3,16 +3,18 @@ const API_BASE = "https://server-side-zqaz.onrender.com";
 // Session duration for "must have logged in recently"
 const SESSION_MS = 12 * 60 * 60 * 1000; // 12 hours
 
-function setSession({ email, administrator }) {
+function setSession({ email, administrator, userData }) {
   localStorage.setItem("userEmail", email);
   localStorage.setItem("isAdmin", String(Number(administrator) === 1 ? 1 : 0));
   localStorage.setItem("loggedInAt", String(Date.now()));
+  if (userData) localStorage.setItem("userData", JSON.stringify(userData)); // ← NEW
 }
 
 function clearSession() {
   localStorage.removeItem("userEmail");
   localStorage.removeItem("isAdmin");
   localStorage.removeItem("loggedInAt");
+  localStorage.removeItem("userData"); // ← NEW
 }
 
 function hasValidSession() {
@@ -44,7 +46,7 @@ async function handleCredentialResponse(response) {
     const lastName = data.lastName || "";
     const adminVal = Number(data.administrator || 0);
 
-    setSession({ email, administrator: adminVal });
+    setSession({ email, administrator: adminVal, userData: data }); // ← passes full user
 
     statusEl.textContent = `Welcome, ${firstName} ${lastName} (${email})`;
 

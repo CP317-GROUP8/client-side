@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>My Account</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --ink: #0d1117;
+      --ink2: #3d4450;
+      --muted: #8891a0;
+      --surface: #ffffff;
+      --surface2: #f4f6f9;
+      --border: #e4e8ee;
+      --accent: #4f46e5;
+      --accent-light: #eef2ff;
+      --accent2: #f59e0b;
+      --danger: #ef4444;
+      --danger-light: #fef2f2;
+      --success: #10b981;
+    }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--surface2);
+      color: var(--ink);
+      min-height: 100vh;
+    }
+
+    /* ── HEADER ── */
+    .header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 0 32px;
+      height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .header-logo {
+      font-family: 'DM Serif Display', serif;
+      font-size: 22px;
+      color: var(--ink);
+      text-decoration: none;
+    }
+
+    .header-logo span { color: var(--accent); }
+
+    .header-nav { display: flex; gap: 8px; align-items: center; }
+
+    .nav-btn {
+      padding: 8px 16px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--ink2);
+      cursor: pointer;
+      text-decoration: none;
+      transition: all 0.15s;
+    }
+
+    .nav-btn:hover { background: var(--surface2); border-color: #c8cdd6; }
+    .nav-btn.active { background: var(--accent-light); border-color: #c7d2fe; color: var(--accent); }
+
+    /* ── LAYOUT ── */
+    .page {
+      max-width: 1060px;
+      margin: 0 auto;
+      padding: 40px 24px 80px;
+    }
+
+    .page-title {
+      font-family: 'DM Serif Display', serif;
+      font-size: 38px;
+      color: var(--ink);
+      margin-bottom: 4px;
+      animation: fadeUp 0.4s ease both;
+    }
+
+    .page-sub {
+      font-size: 14px;
+      color: var(--muted);
+      margin-bottom: 36px;
+      animation: fadeUp 0.4s 0.05s ease both;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 320px 1fr;
+      gap: 24px;
+      align-items: start;
+    }
+
+    /* ── CARD ── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      overflow: hidden;
+      animation: fadeUp 0.4s 0.1s ease both;
+    }
+
+    .card-header {
+      padding: 24px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .card-title {
+      font-size: 13px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: var(--muted);
+    }
+
+    .card-body { padding: 24px; }
+
+    /* ── PROFILE SECTION ── */
+    .avatar-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 32px 24px 24px;
+      border-bottom: 1px solid var(--border);
+      text-align: center;
+    }
+
+    .avatar {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), #7c3aed);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'DM Serif Display', serif;
+      font-size: 30px;
+      color: white;
+      margin-bottom: 14px;
+      box-shadow: 0 8px 24px rgba(79, 70, 229, 0.3);
+    }
+
+    .profile-name {
+      font-family: 'DM Serif Display', serif;
+      font-size: 22px;
+      color: var(--ink);
+    }
+
+    .profile-email {
+      font-size: 13px;
+      color: var(--muted);
+      margin-top: 4px;
+      word-break: break-all;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      margin-top: 10px;
+      padding: 4px 12px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .badge-admin { background: #fef3c7; color: #92400e; }
+    .badge-member { background: var(--accent-light); color: var(--accent); }
+
+    /* ── STAT ROW ── */
+    .stat-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1px;
+      background: var(--border);
+      border-top: 1px solid var(--border);
+    }
+
+    .stat-cell {
+      background: var(--surface);
+      padding: 18px 20px;
+      text-align: center;
+    }
+
+    .stat-value {
+      font-family: 'DM Serif Display', serif;
+      font-size: 24px;
+      color: var(--ink);
+    }
+
+    .stat-label {
+      font-size: 11px;
+      color: var(--muted);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-top: 2px;
+    }
+
+    /* ── INFO LIST ── */
+    .info-list { display: flex; flex-direction: column; gap: 0; }
+
+    .info-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .info-item:last-child { border-bottom: none; }
+
+    .info-label { font-size: 13px; color: var(--muted); font-weight: 500; }
+    .info-value { font-size: 14px; font-weight: 600; color: var(--ink); text-align: right; max-width: 200px; word-break: break-word; }
+
+    /* ── DANGER ZONE ── */
+    .danger-zone {
+      border: 1px solid #fecaca;
+      border-radius: 20px;
+      overflow: hidden;
+      background: var(--surface);
+      margin-top: 24px;
+      animation: fadeUp 0.4s 0.15s ease both;
+    }
+
+    .danger-header {
+      padding: 16px 24px;
+      border-bottom: 1px solid #fecaca;
+      background: #fff5f5;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .danger-title { font-size: 13px; font-weight: 700; color: var(--danger); text-transform: uppercase; letter-spacing: 0.07em; }
+
+    .danger-body { padding: 20px 24px; }
+    .danger-desc { font-size: 13px; color: var(--ink2); margin-bottom: 14px; line-height: 1.6; }
+
+    .logout-btn {
+      width: 100%;
+      padding: 12px;
+      border-radius: 12px;
+      border: 1px solid #fecaca;
+      background: var(--danger-light);
+      color: var(--danger);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .logout-btn:hover { background: #fee2e2; }
+
+    /* ── BOOKINGS ── */
+    .bookings-card { animation: fadeUp 0.4s 0.12s ease both; }
+
+    .booking-item {
+      display: flex;
+      gap: 16px;
+      align-items: center;
+      padding: 16px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .booking-item:last-child { border-bottom: none; }
+
+    .booking-thumb {
+      width: 72px;
+      height: 54px;
+      border-radius: 10px;
+      object-fit: cover;
+      background: var(--surface2);
+      flex-shrink: 0;
+      border: 1px solid var(--border);
+    }
+
+    .booking-info { flex: 1; min-width: 0; }
+
+    .booking-name {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--ink);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .booking-meta { font-size: 12px; color: var(--muted); margin-top: 3px; }
+
+    .booking-pill-row { display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap; }
+
+    .pill {
+      padding: 3px 10px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 600;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--ink2);
+    }
+
+    .pill-accent { background: var(--accent-light); color: var(--accent); border-color: #c7d2fe; }
+
+    .booking-price {
+      font-family: 'DM Serif Display', serif;
+      font-size: 18px;
+      color: var(--accent);
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .view-all-btn {
+      display: block;
+      width: 100%;
+      margin-top: 20px;
+      padding: 12px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: var(--surface2);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--ink2);
+      cursor: pointer;
+      text-align: center;
+      text-decoration: none;
+      transition: all 0.15s;
+    }
+
+    .view-all-btn:hover { background: var(--accent-light); color: var(--accent); border-color: #c7d2fe; }
+
+    /* ── EMPTY / LOADING ── */
+    .empty-state {
+      padding: 40px 20px;
+      text-align: center;
+      color: var(--muted);
+    }
+
+    .empty-state .icon { font-size: 32px; margin-bottom: 10px; }
+    .empty-state p { font-size: 14px; }
+
+    /* ── SKELETON ── */
+    .skeleton {
+      background: linear-gradient(90deg, #f0f2f5 25%, #e4e8ee 50%, #f0f2f5 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.4s infinite;
+      border-radius: 8px;
+      height: 16px;
+    }
+
+    @keyframes shimmer {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(14px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 768px) {
+      .grid { grid-template-columns: 1fr; }
+      .page-title { font-size: 28px; }
+      .header { padding: 0 16px; }
+      .page { padding: 24px 16px 60px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header class="header">
+    <a class="header-logo" href="home.html">Drive<span>.</span></a>
+    <nav class="header-nav">
+      <a class="nav-btn" href="cars.html">Browse Cars</a>
+      <a class="nav-btn" href="my-bookings.html">My Bookings</a>
+      <a class="nav-btn active" href="account.html">Account</a>
+    </nav>
+  </header>
+
+  <main class="page">
+    <h1 class="page-title">My Account</h1>
+    <p class="page-sub" id="greetingSub">Loading your profile…</p>
+
+    <div class="grid">
+
+      <!-- LEFT COLUMN -->
+      <div>
+        <!-- Profile Card -->
+        <div class="card">
+          <div class="avatar-wrap">
+            <div class="avatar" id="avatarEl">?</div>
+            <div class="profile-name" id="profileName">
+              <div class="skeleton" style="width:140px;height:22px;"></div>
+            </div>
+            <div class="profile-email" id="profileEmail">
+              <div class="skeleton" style="width:180px;height:14px;margin-top:6px;"></div>
+            </div>
+            <div id="badgeEl"></div>
+          </div>
+
+          <div class="stat-row">
+            <div class="stat-cell">
+              <div class="stat-value" id="statBookings">—</div>
+              <div class="stat-label">Bookings</div>
+            </div>
+            <div class="stat-cell">
+              <div class="stat-value" id="statSpent">—</div>
+              <div class="stat-label">Total Spent</div>
+            </div>
+          </div>
+
+          <div class="card-body">
+            <div class="info-list">
+              <div class="info-item">
+                <span class="info-label">First Name</span>
+                <span class="info-value" id="infoFirst">—</span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">Last Name</span>
+                <span class="info-value" id="infoLast">—</span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">Email</span>
+                <span class="info-value" id="infoEmail">—</span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">Account Type</span>
+                <span class="info-value" id="infoRole">—</span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">User ID</span>
+                <span class="info-value" id="infoId">—</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Danger Zone -->
+        <div class="danger-zone">
+          <div class="danger-header">
+            <span>⚠️</span>
+            <span class="danger-title">Sign Out</span>
+          </div>
+          <div class="danger-body">
+            <p class="danger-desc">You will be returned to the login page. Your session will be cleared.</p>
+            <button class="logout-btn" onclick="logout()">Sign Out of Account</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT COLUMN: Recent Bookings -->
+      <div class="card bookings-card">
+        <div class="card-header">
+          <span class="card-title">Recent Bookings</span>
+          <a class="nav-btn" href="my-bookings.html" style="padding:6px 12px;font-size:13px;">View All →</a>
+        </div>
+        <div class="card-body" id="bookingsBody">
+          <div class="empty-state">
+            <div class="icon">⏳</div>
+            <p>Loading your bookings…</p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <script>
+    const API_BASE = "https://server-side-zqaz.onrender.com";
+    const SESSION_MS = 12 * 60 * 60 * 1000;
+
+    // ── SESSION ──
+    function requireSession() {
+      const email = localStorage.getItem("userEmail");
+      const loggedInAt = Number(localStorage.getItem("loggedInAt") || "0");
+      if (!email || !loggedInAt) { window.location.replace("index.html"); throw new Error("No session"); }
+      if (Date.now() - loggedInAt > SESSION_MS) {
+        ["userEmail","loggedInAt","isAdmin","userData"].forEach(k => localStorage.removeItem(k));
+        window.location.replace("index.html");
+        throw new Error("Session expired");
+      }
+      return email;
+    }
+
+    const userEmail = requireSession();
+
+    // ── HELPERS ──
+    const imageMap = {
+      "Toyota Corolla AWD":    "corolla-awd.png",
+      "Toyota Corolla FWD":    "corolla-fwd.png",
+      "Toyota Highlander AWD": "highlander-awd.png",
+      "Toyota Highlander RWD": "highlander-rwd.png",
+      "Dodge Challenger AWD":  "challenger.png",
+      "Honda Civic RWD":       "civic.png",
+      "KIA K4 RWD":            "kia.png",
+      "Porsche 911 AWD":       "porsche.png",
+    };
+
+    function getImage(manufacturer, model, drivetrain) {
+      const key = `${manufacturer} ${model} ${drivetrain}`.trim();
+      return `./assets/cars/${imageMap[key] || "placeholder.png"}`;
+    }
+
+    function formatMoney(val) {
+      return `$${Number(val || 0).toFixed(2)}`;
+    }
+
+    function formatDate(dateStr) {
+      if (!dateStr) return "—";
+      const [y, m, d] = dateStr.slice(0, 10).split("-");
+      return new Date(y, m - 1, d).toLocaleDateString("en-CA", { month: "short", day: "numeric", year: "numeric" });
+    }
+
+    function getInitials(first, last) {
+      return ((first?.[0] || "") + (last?.[0] || "")).toUpperCase() || "?";
+    }
+
+    // ── POPULATE PROFILE ──
+    function populateProfile(user) {
+      const first = user.firstName || user["First Name"] || "";
+      const last  = user.lastName  || user["Last Name"]  || "";
+      const email = user.email     || user["Email Address"] || userEmail;
+      const isAdmin = Number(user.administrator ?? user["Administrator"]) === 1;
+      const spent = user.totalSpent ?? user["Total Amount Spent"] ?? 0;
+      const userId = user.userId   || user["User ID"] || "—";
+
+      document.getElementById("avatarEl").textContent = getInitials(first, last);
+      document.getElementById("profileName").textContent = `${first} ${last}`.trim() || "User";
+      document.getElementById("profileEmail").textContent = email;
+      document.getElementById("greetingSub").textContent = `Welcome back, ${first || "there"} 👋`;
+
+      document.getElementById("badgeEl").innerHTML = isAdmin
+        ? `<span class="badge badge-admin">👑 Administrator</span>`
+        : `<span class="badge badge-member">🚗 Member</span>`;
+
+      document.getElementById("statSpent").textContent = formatMoney(spent);
+      document.getElementById("infoFirst").textContent = first || "—";
+      document.getElementById("infoLast").textContent  = last  || "—";
+      document.getElementById("infoEmail").textContent = email;
+      document.getElementById("infoRole").textContent  = isAdmin ? "Administrator" : "Member";
+      document.getElementById("infoId").textContent    = `#${userId}`;
+
+      // Cache it
+      localStorage.setItem("userData", JSON.stringify(user));
+    }
+
+    // ── POPULATE BOOKINGS ──
+    function populateBookings(rows) {
+      const body = document.getElementById("bookingsBody");
+      document.getElementById("statBookings").textContent = rows.length;
+
+      if (!rows.length) {
+        body.innerHTML = `
+          <div class="empty-state">
+            <div class="icon">🚗</div>
+            <p>No bookings yet. <a href="cars.html" style="color:var(--accent);font-weight:600;">Browse cars</a> to get started.</p>
+          </div>`;
+        return;
+      }
+
+      const recent = rows.slice(0, 5);
+      body.innerHTML = recent.map(b => {
+        const name = `${b.manufacturer || ""} ${b.model || ""}`.trim();
+        const imgSrc = getImage(b.manufacturer, b.model, b.drivetrain);
+        return `
+          <div class="booking-item">
+            <img class="booking-thumb" src="${imgSrc}" alt="${name}" onerror="this.src='./assets/cars/placeholder.png'">
+            <div class="booking-info">
+              <div class="booking-name">${name}</div>
+              <div class="booking-meta">${formatDate(b.fromDate)} → ${formatDate(b.toDate)}</div>
+              <div class="booking-pill-row">
+                <span class="pill">${b.vehicleType || "—"}</span>
+                <span class="pill">${b.drivetrain || "—"}</span>
+                <span class="pill pill-accent">Sale #${b.saleId}</span>
+              </div>
+            </div>
+            <div class="booking-price">${formatMoney(b.priceSoldAt)}<span style="font-family:'DM Sans';font-size:11px;color:var(--muted);font-weight:500;">/day</span></div>
+          </div>`;
+      }).join("");
+
+      if (rows.length > 5) {
+        body.innerHTML += `<a class="view-all-btn" href="my-bookings.html">View all ${rows.length} bookings →</a>`;
+      }
+    }
+
+    // ── LOAD DATA ──
+    async function loadAll() {
+      // Try cache first for instant render
+      const cached = localStorage.getItem("userData");
+      if (cached) {
+        try { populateProfile(JSON.parse(cached)); } catch {}
+      }
+
+      try {
+        // Fetch bookings (already returns user-matched data)
+        const bRes = await fetch(`${API_BASE}/me/bookings`, {
+          headers: { "X-User-Email": userEmail }
+        });
+        const bData = await bRes.json().catch(() => ({}));
+        if (!bRes.ok) throw new Error(bData.error || "Failed to load bookings");
+        const rows = Array.isArray(bData.rows) ? bData.rows : [];
+
+        populateBookings(rows);
+
+        // Get user profile from auth (re-verify session to get fresh user data)
+        // We store user data at login — pull from localStorage or use email fallback
+        if (!cached) {
+          // Minimal fallback from email
+          populateProfile({ email: userEmail, firstName: "", lastName: "", administrator: localStorage.getItem("isAdmin") === "true" ? 1 : 0 });
+        }
+
+      } catch (err) {
+        document.getElementById("bookingsBody").innerHTML = `
+          <div class="empty-state">
+            <div class="icon">⚠️</div>
+            <p>${err.message}</p>
+          </div>`;
+      }
+    }
+
+    // ── LOGOUT ──
+    function logout() {
+      if (!confirm("Sign out of your account?")) return;
+      ["userEmail", "loggedInAt", "isAdmin", "userData"].forEach(k => localStorage.removeItem(k));
+      window.location.replace("index.html");
+    }
+
+    loadAll();
+  </script>
+</body>
+</html>
