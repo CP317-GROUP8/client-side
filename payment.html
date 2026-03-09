@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Payment</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0a0a0f;
+      --surface: #13131a;
+      --surface2: #1c1c28;
+      --border: #2a2a3d;
+      --accent: #6c63ff;
+      --accent2: #a78bfa;
+      --green: #10b981;
+      --green-light: #d1fae5;
+      --text: #f0f0ff;
+      --muted: #6b6b8a;
+      --danger: #f87171;
+    }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    /* Ambient background glow */
+    body::before {
+      content: '';
+      position: fixed;
+      width: 600px;
+      height: 600px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(108,99,255,0.12) 0%, transparent 70%);
+      top: -200px;
+      left: 50%;
+      transform: translateX(-50%);
+      pointer-events: none;
+    }
+
+    .wrap {
+      width: 100%;
+      max-width: 480px;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* ── STEP INDICATOR ── */
+    .steps {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0;
+      margin-bottom: 36px;
+      animation: fadeUp 0.4s ease both;
+    }
+
+    .step {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--muted);
+    }
+
+    .step.active { color: var(--text); }
+    .step.done { color: var(--green); }
+
+    .step-num {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      border: 1.5px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 700;
+      background: var(--surface);
+    }
+
+    .step.active .step-num {
+      border-color: var(--accent);
+      background: var(--accent);
+      color: white;
+    }
+
+    .step.done .step-num {
+      border-color: var(--green);
+      background: var(--green);
+      color: white;
+    }
+
+    .step-line {
+      width: 40px;
+      height: 1.5px;
+      background: var(--border);
+      margin: 0 4px;
+    }
+
+    /* ── CARD ── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      overflow: hidden;
+      animation: fadeUp 0.4s 0.05s ease both;
+    }
+
+    /* ── BOOKING SUMMARY ── */
+    .summary {
+      background: var(--surface2);
+      border-bottom: 1px solid var(--border);
+      padding: 20px 28px;
+      display: flex;
+      gap: 16px;
+      align-items: center;
+    }
+
+    .summary img {
+      width: 80px;
+      height: 60px;
+      object-fit: cover;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .summary-info { flex: 1; min-width: 0; }
+
+    .summary-name {
+      font-family: 'Syne', sans-serif;
+      font-size: 17px;
+      font-weight: 700;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .summary-meta { font-size: 12px; color: var(--muted); margin-top: 3px; }
+
+    .summary-price {
+      font-family: 'Syne', sans-serif;
+      font-size: 22px;
+      font-weight: 800;
+      color: var(--accent2);
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .summary-price span {
+      font-size: 12px;
+      font-weight: 400;
+      color: var(--muted);
+      font-family: 'DM Sans', sans-serif;
+    }
+
+    /* ── FORM BODY ── */
+    .form-body { padding: 28px; }
+
+    .section-label {
+      font-family: 'Syne', sans-serif;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+      margin-bottom: 16px;
+    }
+
+    .field { margin-bottom: 14px; }
+
+    .field label {
+      display: block;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+
+    .field input {
+      width: 100%;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 13px 16px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 15px;
+      color: var(--text);
+      outline: none;
+      transition: border-color 0.15s;
+    }
+
+    .field input:focus { border-color: var(--accent); }
+    .field input::placeholder { color: var(--muted); }
+
+    .field input.mock {
+      font-family: 'Courier New', monospace;
+      letter-spacing: 0.05em;
+    }
+
+    .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+    .fake-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(108,99,255,0.12);
+      border: 1px solid rgba(108,99,255,0.3);
+      border-radius: 999px;
+      padding: 4px 12px;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--accent2);
+      margin-bottom: 20px;
+    }
+
+    .divider {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 22px 0;
+    }
+
+    /* ── TOTAL ROW ── */
+    .total-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .total-label { font-size: 14px; color: var(--muted); }
+
+    .total-value {
+      font-family: 'Syne', sans-serif;
+      font-size: 26px;
+      font-weight: 800;
+      color: var(--text);
+    }
+
+    /* ── PAY BUTTON ── */
+    .pay-btn {
+      width: 100%;
+      padding: 16px;
+      border-radius: 14px;
+      border: none;
+      background: linear-gradient(135deg, var(--accent), #9333ea);
+      color: white;
+      font-family: 'Syne', sans-serif;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      letter-spacing: 0.02em;
+      transition: all 0.2s;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .pay-btn:hover { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(108,99,255,0.4); }
+    .pay-btn:active { transform: translateY(0); }
+    .pay-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+    .pay-btn .spinner {
+      display: none;
+      width: 18px;
+      height: 18px;
+      border: 2.5px solid rgba(255,255,255,0.3);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      margin: 0 auto;
+    }
+
+    .pay-btn.loading .btn-text { display: none; }
+    .pay-btn.loading .spinner { display: block; }
+
+    /* ── SUCCESS STATE ── */
+    .success-screen {
+      display: none;
+      padding: 40px 28px;
+      text-align: center;
+      animation: fadeUp 0.5s ease both;
+    }
+
+    .success-icon {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      background: rgba(16,185,129,0.12);
+      border: 2px solid var(--green);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 32px;
+      margin: 0 auto 20px;
+      animation: popIn 0.4s 0.1s ease both;
+    }
+
+    .success-title {
+      font-family: 'Syne', sans-serif;
+      font-size: 26px;
+      font-weight: 800;
+      margin-bottom: 8px;
+    }
+
+    .success-sub { font-size: 14px; color: var(--muted); margin-bottom: 28px; line-height: 1.6; }
+
+    .ref-box {
+      background: var(--surface2);
+      border: 1px dashed var(--border);
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 28px;
+    }
+
+    .ref-label {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+
+    .ref-number {
+      font-family: 'Syne', sans-serif;
+      font-size: 28px;
+      font-weight: 800;
+      color: var(--accent2);
+      letter-spacing: 0.06em;
+    }
+
+    .ref-hint { font-size: 12px; color: var(--muted); margin-top: 6px; }
+
+    .success-btns { display: flex; flex-direction: column; gap: 10px; }
+
+    .success-btn {
+      padding: 13px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: var(--surface2);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+      text-decoration: none;
+      display: block;
+    }
+
+    .success-btn:hover { border-color: var(--accent); color: var(--accent2); }
+    .success-btn.primary-btn {
+      background: linear-gradient(135deg, var(--accent), #9333ea);
+      border-color: transparent;
+      color: white;
+    }
+    .success-btn.primary-btn:hover { opacity: 0.9; color: white; }
+
+    /* ── ERROR ── */
+    .err-msg {
+      font-size: 13px;
+      color: var(--danger);
+      margin-top: 12px;
+      text-align: center;
+      min-height: 18px;
+    }
+
+    /* ── SECURE NOTE ── */
+    .secure-note {
+      text-align: center;
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 16px;
+      animation: fadeUp 0.4s 0.1s ease both;
+    }
+
+    /* ── ANIMATIONS ── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes popIn {
+      from { opacity: 0; transform: scale(0.6); }
+      to   { opacity: 1; transform: scale(1); }
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    @media (max-width: 500px) {
+      .summary { flex-wrap: wrap; }
+      .row2 { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="wrap">
+
+    <!-- Step indicator -->
+    <div class="steps">
+      <div class="step done">
+        <div class="step-num">✓</div>
+        <span>Details</span>
+      </div>
+      <div class="step-line"></div>
+      <div class="step active">
+        <div class="step-num">2</div>
+        <span>Payment</span>
+      </div>
+      <div class="step-line"></div>
+      <div class="step" id="step3">
+        <div class="step-num">3</div>
+        <span>Confirmed</span>
+      </div>
+    </div>
+
+    <div class="card">
+
+      <!-- Booking summary bar -->
+      <div class="summary">
+        <img id="carImg" src="" alt="Car" onerror="this.src='./assets/cars/placeholder.png'">
+        <div class="summary-info">
+          <div class="summary-name" id="carName">Loading…</div>
+          <div class="summary-meta" id="carDates">—</div>
+        </div>
+        <div class="summary-price" id="carPrice">—<span>/day</span></div>
+      </div>
+
+      <!-- Payment form -->
+      <div class="form-body" id="paymentForm">
+        <div class="fake-badge">🔒 Simulated Payment — No real charge</div>
+
+        <div class="section-label">Card Details</div>
+
+        <div class="field">
+          <label>Cardholder Name</label>
+          <input type="text" id="cardName" placeholder="Jane Smith" autocomplete="cc-name">
+        </div>
+
+        <div class="field">
+          <label>Card Number</label>
+          <input type="text" id="cardNumber" class="mock" placeholder="1234 5678 9012 3456" maxlength="19" autocomplete="cc-number">
+        </div>
+
+        <div class="row2">
+          <div class="field">
+            <label>Expiry Date</label>
+            <input type="text" id="cardExpiry" class="mock" placeholder="MM / YY" maxlength="7" autocomplete="cc-exp">
+          </div>
+          <div class="field">
+            <label>CVV</label>
+            <input type="text" id="cardCvv" class="mock" placeholder="•••" maxlength="3" autocomplete="cc-csc">
+          </div>
+        </div>
+
+        <hr class="divider">
+
+        <div class="total-row">
+          <span class="total-label">Total Due</span>
+          <span class="total-value" id="totalDue">—</span>
+        </div>
+
+        <button class="pay-btn" id="payBtn" onclick="handlePay()">
+          <span class="btn-text">Pay & Confirm Booking</span>
+          <div class="spinner"></div>
+        </button>
+
+        <div class="err-msg" id="errMsg"></div>
+      </div>
+
+      <!-- Success screen (hidden until payment) -->
+      <div class="success-screen" id="successScreen">
+        <div class="success-icon">✓</div>
+        <div class="success-title">Booking Confirmed!</div>
+        <div class="success-sub">Your payment was processed and your booking is confirmed. Save your reference number below.</div>
+
+        <div class="ref-box">
+          <div class="ref-label">Reference Number</div>
+          <div class="ref-number" id="refNumber">—</div>
+          <div class="ref-hint">Keep this for your records</div>
+        </div>
+
+        <div class="success-btns">
+          <a class="success-btn primary-btn" href="my-bookings.html">View My Bookings</a>
+          <a class="success-btn" href="cars.html">Browse More Cars</a>
+          <a class="success-btn" href="home.html">Back to Home</a>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="secure-note">🔒 This is a simulated payment for demo purposes only</div>
+
+  </div>
+
+  <script>
+    const API_BASE = "https://server-side-zqaz.onrender.com";
+    const SESSION_MS = 12 * 60 * 60 * 1000;
+
+    const imageMap = {
+      "Toyota Corolla AWD":    "corolla-awd.png",
+      "Toyota Corolla FWD":    "corolla-fwd.png",
+      "Toyota Highlander AWD": "highlander-awd.png",
+      "Toyota Highlander RWD": "highlander-rwd.png",
+      "Dodge Challenger AWD":  "challenger.png",
+      "Honda Civic RWD":       "civic.png",
+      "KIA K4 RWD":            "kia.png",
+      "Porsche 911 AWD":       "porsche.png",
+    };
+
+    function getImage(manufacturer, model, drivetrain) {
+      const key = `${manufacturer} ${model} ${drivetrain}`.trim();
+      return `./assets/cars/${imageMap[key] || "placeholder.png"}`;
+    }
+
+    // ── SESSION ──
+    function requireSession() {
+      const email = localStorage.getItem("userEmail");
+      const loggedInAt = Number(localStorage.getItem("loggedInAt") || "0");
+      if (!email || !loggedInAt) { window.location.replace("index.html"); throw new Error("No session"); }
+      if (Date.now() - loggedInAt > SESSION_MS) {
+        ["userEmail","loggedInAt","isAdmin","userData"].forEach(k => localStorage.removeItem(k));
+        window.location.replace("index.html");
+        throw new Error("Session expired");
+      }
+      return email;
+    }
+
+    const userEmail = requireSession();
+
+    // ── READ URL PARAMS ──
+    // Expected: payment.html?id=VEHICLE_ID&from=DATE&to=DATE&pickup=LOC&dropoff=LOC
+    const params = new URLSearchParams(window.location.search);
+    const vehicleId   = params.get("id");
+    const fromDate    = params.get("from");
+    const toDate      = params.get("to");
+    const pickup      = params.get("pickup") || "";
+    const dropoff     = params.get("dropoff") || "";
+
+    if (!vehicleId || !fromDate || !toDate) {
+      document.getElementById("errMsg").textContent = "Missing booking details. Please go back and try again.";
+    }
+
+    // ── FORMAT DATE ──
+    function formatDate(d) {
+      if (!d) return "—";
+      const [y, m, day] = d.split("-");
+      return new Date(y, m - 1, day).toLocaleDateString("en-CA", { month: "short", day: "numeric", year: "numeric" });
+    }
+
+    // ── DAYS BETWEEN ──
+    function daysBetween(from, to) {
+      const a = new Date(from), b = new Date(to);
+      return Math.max(1, Math.round((b - a) / (1000 * 60 * 60 * 24)));
+    }
+
+    // ── GENERATE REFERENCE ──
+    function generateRef() {
+      const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+      let ref = "CR-";
+      for (let i = 0; i < 8; i++) ref += chars[Math.floor(Math.random() * chars.length)];
+      return ref;
+    }
+
+    // ── CARD FORMATTING ──
+    document.getElementById("cardNumber").addEventListener("input", function () {
+      let v = this.value.replace(/\D/g, "").slice(0, 16);
+      this.value = v.replace(/(.{4})/g, "$1 ").trim();
+    });
+
+    document.getElementById("cardExpiry").addEventListener("input", function () {
+      let v = this.value.replace(/\D/g, "").slice(0, 4);
+      if (v.length >= 3) v = v.slice(0, 2) + " / " + v.slice(2);
+      this.value = v;
+    });
+
+    document.getElementById("cardCvv").addEventListener("input", function () {
+      this.value = this.value.replace(/\D/g, "").slice(0, 3);
+    });
+
+    // ── LOAD CAR DETAILS ──
+    async function loadCar() {
+      if (!vehicleId) return;
+      try {
+        const res = await fetch(`${API_BASE}/cars/${vehicleId}`);
+        const car = await res.json();
+
+        const mfr   = car["Manufacturer"] || car.manufacturer || "";
+        const model = car["Model"]        || car.model        || "";
+        const drv   = car["Drivetrain"]   || car.drivetrain   || "";
+        const price = Number(car["Price"] || car.price || 0);
+        const days  = daysBetween(fromDate, toDate);
+        const total = price * days;
+
+        document.getElementById("carImg").src = getImage(mfr, model, drv);
+        document.getElementById("carName").textContent = `${mfr} ${model}`.trim();
+        document.getElementById("carDates").textContent = `${formatDate(fromDate)} → ${formatDate(toDate)} · ${days} day${days !== 1 ? "s" : ""}`;
+        document.getElementById("carPrice").innerHTML = `$${price.toFixed(2)}<span>/day</span>`;
+        document.getElementById("totalDue").textContent = `$${total.toFixed(2)}`;
+
+        // Pre-fill cardholder name from stored user
+        const userData = JSON.parse(localStorage.getItem("userData") || "{}");
+        const fullName = `${userData.firstName || ""} ${userData.lastName || ""}`.trim();
+        if (fullName) document.getElementById("cardName").value = fullName;
+
+      } catch (e) {
+        document.getElementById("carName").textContent = `Vehicle #${vehicleId}`;
+      }
+    }
+
+    loadCar();
+
+    // ── HANDLE PAY ──
+    async function handlePay() {
+      const errEl = document.getElementById("errMsg");
+      const btn   = document.getElementById("payBtn");
+      errEl.textContent = "";
+
+      const name   = document.getElementById("cardName").value.trim();
+      const number = document.getElementById("cardNumber").value.replace(/\s/g, "");
+      const expiry = document.getElementById("cardExpiry").value.trim();
+      const cvv    = document.getElementById("cardCvv").value.trim();
+
+      if (!name)              { errEl.textContent = "Please enter the cardholder name."; return; }
+      if (number.length < 16) { errEl.textContent = "Please enter a valid 16-digit card number."; return; }
+      if (!expiry)            { errEl.textContent = "Please enter the expiry date."; return; }
+      if (cvv.length < 3)     { errEl.textContent = "Please enter a valid CVV."; return; }
+
+      btn.disabled = true;
+      btn.classList.add("loading");
+
+      // Simulate payment processing delay
+      await new Promise(r => setTimeout(r, 1800));
+
+      try {
+        // Actually book the car on the server
+        const res = await fetch(`${API_BASE}/cars/${vehicleId}/book`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-User-Email": userEmail,
+          },
+          body: JSON.stringify({
+            fromDate,
+            toDate,
+            pickupLocation: pickup,
+            dropoffLocation: dropoff,
+          }),
+        });
+
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.error || "Booking failed");
+
+        // Generate + store reference number
+        const ref = generateRef();
+        // Store reference tied to saleId for bookings page
+        const refs = JSON.parse(localStorage.getItem("bookingRefs") || "{}");
+        refs[data.saleId] = ref;
+        localStorage.setItem("bookingRefs", JSON.stringify(refs));
+
+        // Show success
+        showSuccess(ref);
+
+      } catch (err) {
+        btn.disabled = false;
+        btn.classList.remove("loading");
+        errEl.textContent = `Error: ${err.message}`;
+      }
+    }
+
+    function showSuccess(ref) {
+      // Update step 3
+      const step3 = document.getElementById("step3");
+      step3.classList.add("active");
+
+      document.getElementById("paymentForm").style.display = "none";
+      document.getElementById("refNumber").textContent = ref;
+      document.getElementById("successScreen").style.display = "block";
+    }
+  </script>
+</body>
+</html>

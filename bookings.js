@@ -176,9 +176,14 @@ if (vehicleId) {
       msgEl.textContent = "✅ Booking confirmed!";
       btn.textContent = "Booked!";
 
-      setTimeout(() => {
-        window.location.href = `my-bookings.html${isPreview ? "?preview=1" : ""}`;
-      }, 1500);
+      const qs = new URLSearchParams({
+        id: vehicleId,
+        from: fromDate,
+        to: toDate,
+        pickup: pickupLocation,
+        dropoff: dropoffLocation,
+      }).toString();
+      window.location.href = `payment.html?${qs}`;
 
     } catch (err) {
       msgEl.className = "error";
