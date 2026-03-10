@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Payment</title>
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -675,13 +676,50 @@
         refs[data.saleId] = ref;
         localStorage.setItem("bookingRefs", JSON.stringify(refs));
 
-        // Show success
-        showSuccess(ref);
+        // Show success and send email
+        showSuccess(ref, data);
 
       } catch (err) {
         btn.disabled = false;
         btn.classList.remove("loading");
         errEl.textContent = `Error: ${err.message}`;
+      }
+    }
+
+    // ── EMAILJS ──
+    emailjs.init("xKlqbLg8GDzQWAvbx");
+
+    async function sendConfirmationEmail(ref) {
+      try {
+        const userData = JSON.parse(localStorage.getItem("userData") || "{}");
+        const firstName = userData.firstName || userData["First Name"] || "";
+        const lastName  = userData.lastName  || userData["Last Name"]  || "";
+        const toName    = `${firstName} ${lastName}`.trim() || "Valued Customer";
+
+        const days = (() => {
+          const a = new Date(fromDate), b = new Date(toDate);
+          return Math.max(1, Math.round((b - a) / (1000 * 60 * 60 * 24)));
+        })();
+
+        const priceText = document.getElementById("carPrice")?.textContent || "";
+        const priceNum  = parseFloat(priceText.replace(/[^0-9.]/g, "")) || 0;
+        const total     = `$${(priceNum * days).toFixed(2)}`;
+
+        await emailjs.send("service_fvcm81h", "template_vgeh0gt", {
+          to_name:    toName,
+          to_email:   userEmail,
+          ref_number: ref,
+          car_name:   document.getElementById("carName")?.textContent || `Vehicle #${vehicleId}`,
+          from_date:  fromDate,
+          to_date:    toDate,
+          pickup:     pickup || "—",
+          dropoff:    dropoff || "—",
+          total:      total,
+        });
+
+        console.log("Confirmation email sent!");
+      } catch (err) {
+        console.warn("Email send failed (booking still confirmed):", err);
       }
     }
 
@@ -693,6 +731,9 @@
       document.getElementById("paymentForm").style.display = "none";
       document.getElementById("refNumber").textContent = ref;
       document.getElementById("successScreen").style.display = "block";
+
+      // Send confirmation email
+      sendConfirmationEmail(ref);
     }
   </script>
 </body>
