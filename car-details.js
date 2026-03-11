@@ -144,7 +144,6 @@ async function loadCarDetails() {
 }
 
 function bookCar() {
-  statusText.className = "status";
 
   const fromDate = fromDateEl.value;
   const toDate = toDateEl.value;
