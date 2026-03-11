@@ -266,7 +266,10 @@
       <header>
         <div>
           <h1>Cars</h1>
-          <div class="sub" id="carsSubtitle">Live from SQL database</div>
+          <!-- ✅ FIXED: Dynamic count instead of "Live from SQL database" -->
+          <div class="sub" id="carsSubtitle">
+            <span id="availableCount">—</span> available vehicles • Updated in real-time
+          </div>
         </div>
         <div>
           <button class="secondary" onclick="location.href = 'home.html'">
@@ -692,11 +695,16 @@
             ? data
             : (data.cars ?? data.vehicles ?? []);
           allCars = rawCars.map(normalizeCar);
+          
+          // ✅ FIXED: Update subtitle with dynamic count
           if (subtitle) {
-            subtitle.textContent = searchWhere
-              ? `Showing cars in ${params.get("where")}`
-              : "Live from SQL database";
+            if (searchWhere) {
+              subtitle.innerHTML = `<span id="availableCount">${allCars.length}</span> cars in ${params.get("where")}`;
+            } else {
+              subtitle.innerHTML = `<span id="availableCount">${allCars.length}</span> available vehicles • Updated in real-time`;
+            }
           }
+          
           const prices = allCars
             .map((c) => c.priceNum)
             .filter((n) => Number.isFinite(n));

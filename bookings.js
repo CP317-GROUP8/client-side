@@ -132,6 +132,7 @@ if (vehicleId) {
   document.getElementById("fromDate").min = today;
   document.getElementById("toDate").min = today;
   document.getElementById("fromDate").addEventListener("change", function () {
+    // Allow same day or later
     document.getElementById("toDate").min = this.value || today;
   });
 
@@ -147,16 +148,25 @@ if (vehicleId) {
     msgEl.className = "";
     msgEl.textContent = "";
 
-    if (!fromDate || !toDate) {
-      msgEl.className = "error";
-      msgEl.textContent = "Please select both pickup and dropoff dates.";
-      return;
-    }
-    if (toDate < fromDate) {
-      msgEl.className = "error";
-      msgEl.textContent = "Dropoff date must be after pickup date.";
-      return;
-    }
+    // ✅ FIX: Require all fields and allow same-day
+if (!fromDate || !toDate) {
+  msgEl.className = "error";
+  msgEl.textContent = "⚠️ Please select both pickup and dropoff dates.";
+  return;
+}
+
+  if (!pickupLocation || !dropoffLocation) {
+    msgEl.className = "error";
+    msgEl.textContent = "⚠️ Please enter both pickup and dropoff locations.";
+    return;
+  }
+
+  // ✅ FIX: Allow same-day rentals (changed from < to <=)
+  if (toDate < fromDate) {
+    msgEl.className = "error";
+    msgEl.textContent = "⚠️ Dropoff date must be on or after pickup date.";
+    return;
+  }
 
     btn.disabled = true;
     btn.textContent = "Booking...";
