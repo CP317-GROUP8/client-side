@@ -6,12 +6,7 @@ const TAX_RATE = 0.13;
 function requireSession() {
   const email = localStorage.getItem("userEmail");
   const loggedInAt = Number(localStorage.getItem("loggedInAt") || "0");
-
-  if (!email || !loggedInAt) {
-    window.location.replace("index.html");
-    throw new Error("No session");
-  }
-
+  if (!email || !loggedInAt) { window.location.replace("index.html"); throw new Error("No session"); }
   if (Date.now() - loggedInAt > SESSION_MS) {
     localStorage.removeItem("userEmail");
     localStorage.removeItem("loggedInAt");
@@ -19,7 +14,6 @@ function requireSession() {
     window.location.replace("index.html");
     throw new Error("Session expired");
   }
-
   return email;
 }
 
@@ -27,30 +21,10 @@ const params = new URLSearchParams(window.location.search);
 const carId = params.get("id");
 const userEmail = requireSession();
 
-const el = {
-  pageSub: document.getElementById("pageSub"),
-  carImg: document.getElementById("carImg"),
-  carName: document.getElementById("carName"),
-  carPrice: document.getElementById("carPrice"),
-  carType: document.getElementById("carType"),
-  carDrive: document.getElementById("carDrive"),
-  carAvail: document.getElementById("carAvail"),
-  fromDate: document.getElementById("fromDate"),
-  toDate: document.getElementById("toDate"),
-  pickupLocation: document.getElementById("pickupLocation"),
-  lineRate: document.getElementById("lineRate"),
-  lineDays: document.getElementById("lineDays"),
-  lineSubtotal: document.getElementById("lineSubtotal"),
-  lineFee: document.getElementById("lineFee"),
-  lineTax: document.getElementById("lineTax"),
-  lineTotal: document.getElementById("lineTotal"),
-  confirmBtn: document.getElementById("confirmBtn"),
-  status: document.getElementById("status"),
-};
-
 let selectedCar = null;
-let bookedRanges = []; // { fromDate, toDate } for existing bookings on this car
+let bookedRanges = [];
 
+// ── Image map ──
 function getCarImage(manufacturer, model, drivetrain) {
   const name = `${manufacturer} ${model}`.trim();
   const map = {
@@ -64,103 +38,99 @@ function getCarImage(manufacturer, model, drivetrain) {
   return `./assets/cars/${map[name] || "placeholder.png"}`;
 }
 
-function setStatus(message, type = "") {
-  el.status.className = type;
-  el.status.textContent = message;
-}
-
 function todayISO() {
   const now = new Date();
-  const y = now.getFullYear();
-  const m = String(now.getMonth() + 1).padStart(2, "0");
-  const d = String(now.getDate()).padStart(2, "0");
-  return `${y}-${m}-${d}`;
+  return `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}-${String(now.getDate()).padStart(2,"0")}`;
 }
 
 function formatMoney(value) {
   return `$${Number(value || 0).toFixed(2)}`;
 }
 
-function daysBetween(fromDate, toDate) {
-  if (!fromDate || !toDate) return 0;
-  const from = new Date(`${fromDate}T00:00:00`);
-  const to = new Date(`${toDate}T00:00:00`);
-  const ms = to.getTime() - from.getTime();
+function formatDate(dateStr) {
+  if (!dateStr) return "—";
+  const [y, m, d] = dateStr.slice(0, 10).split("-");
+  return new Date(y, m - 1, d).toLocaleDateString("en-CA", { year: "numeric", month: "short", day: "numeric" });
+}
+
+function daysBetween(from, to) {
+  if (!from || !to) return 0;
+  const a = new Date(`${from}T00:00:00`);
+  const b = new Date(`${to}T00:00:00`);
+  const ms = b - a;
   if (ms < 0) return 0;
-  if (ms === 0) return 1; // same day = 1 day rental
-  return Math.ceil(ms / (1000 * 60 * 60 * 24));
+  if (ms === 0) return 1; // same-day = 1 day
+  return Math.ceil(ms / 86400000);
 }
 
 function hasDateConflict(from, to) {
-  for (const range of bookedRanges) {
-    if (from <= range.toDate && to >= range.fromDate) {
-      return range;
-    }
+  for (const r of bookedRanges) {
+    if (from <= r.toDate && to >= r.fromDate) return r;
   }
   return null;
 }
 
-function computeBreakdown() {
-  const rate = Number(selectedCar?.price || 0);
-  const days = daysBetween(el.fromDate.value, el.toDate.value);
+function setMsg(msg, type = "") {
+  const el = document.getElementById("bookMsg");
+  el.className = type;
+  el.textContent = msg;
+}
 
+function setStatus(msg) {
+  document.getElementById("status").textContent = msg;
+}
+
+// ── Price breakdown (shown in bookMsg area) ──
+function computeAndShowBreakdown() {
+  const from = document.getElementById("fromDate").value;
+  const to = document.getElementById("toDate").value;
+  if (!from || !to || !selectedCar) return;
+
+  const days = daysBetween(from, to);
+  const rate = selectedCar.price;
   const subtotal = rate * days;
-  const fee = days > 0 ? SERVICE_FEE : 0;
+  const fee = SERVICE_FEE;
   const tax = (subtotal + fee) * TAX_RATE;
   const total = subtotal + fee + tax;
 
-  el.lineRate.textContent = formatMoney(rate);
-  el.lineDays.textContent = String(days);
-  el.lineSubtotal.textContent = formatMoney(subtotal);
-  el.lineFee.textContent = formatMoney(fee);
-  el.lineTax.textContent = formatMoney(tax);
-  el.lineTotal.textContent = formatMoney(total);
-
-  return { days, subtotal, fee, tax, total };
+  setMsg(
+    `${days} day${days !== 1 ? "s" : ""} × ${formatMoney(rate)} + $${SERVICE_FEE} fee + tax = ${formatMoney(total)} total`
+  );
 }
 
 function validateForm() {
-  if (!selectedCar) return { ok: false, message: "Car not loaded yet." };
+  const from = document.getElementById("fromDate").value;
+  const to = document.getElementById("toDate").value;
+  const pickup = document.getElementById("pickupLocation").value.trim();
+  const dropoff = document.getElementById("dropoffLocation").value.trim();
 
-  const from = el.fromDate.value;
-  const to = el.toDate.value;
-
-  if (!from || !to) {
-    return { ok: false, message: "Please pick both pickup and dropoff dates." };
-  }
-
-  const today = todayISO();
-  if (from < today) {
-    return { ok: false, message: "Pickup date cannot be in the past." };
-  }
-
-  if (to < from) {
-    return { ok: false, message: "Dropoff date cannot be before pickup date." };
-  }
+  if (!from || !to) return { ok: false, message: "Please select both pickup and dropoff dates." };
+  if (from < todayISO()) return { ok: false, message: "Pickup date cannot be in the past." };
+  if (to < from) return { ok: false, message: "Dropoff date cannot be before pickup date." };
+  if (!pickup) return { ok: false, message: "Please enter a pickup location." };
+  if (!dropoff) return { ok: false, message: "Please enter a dropoff location." };
 
   const conflict = hasDateConflict(from, to);
-  if (conflict) {
-    return {
-      ok: false,
-      message: `Car already booked ${conflict.fromDate} – ${conflict.toDate}. Pick different dates.`,
-    };
-  }
+  if (conflict) return { ok: false, message: `Car already booked ${conflict.fromDate} – ${conflict.toDate}. Pick different dates.` };
 
-  return { ok: true, message: "" };
+  return { ok: true };
 }
 
-function refreshUI() {
-  const breakdown = computeBreakdown();
-  const validation = validateForm();
+function refreshForm() {
+  const from = document.getElementById("fromDate").value;
+  const to = document.getElementById("toDate").value;
+  const btn = document.getElementById("bookNowBtn");
 
-  el.confirmBtn.disabled = !validation.ok;
+  const v = validateForm();
+  btn.disabled = !v.ok;
 
-  if (!validation.ok) {
-    setStatus(validation.message, "error");
+  if (!v.ok) {
+    // Only show error if user has touched something
+    if (from || to) setMsg(v.message, "error");
     return;
   }
 
-  setStatus(`Ready to confirm. Total: ${formatMoney(breakdown.total)}`);
+  computeAndShowBreakdown();
 }
 
 async function loadBookedDates() {
@@ -168,93 +138,90 @@ async function loadBookedDates() {
     const res = await fetch(`${API_BASE}/cars/${carId}/booked-dates`);
     const data = await res.json().catch(() => ({ ranges: [] }));
     bookedRanges = Array.isArray(data.ranges) ? data.ranges : [];
-
-    if (bookedRanges.length > 0) {
-      const bookedInfo = document.getElementById("bookedDatesInfo");
-      if (bookedInfo) {
-        bookedInfo.textContent = `⚠ Unavailable dates: ${bookedRanges.map(r => `${r.fromDate} – ${r.toDate}`).join("  |  ")}`;
-        bookedInfo.style.display = "block";
-      }
-    }
   } catch {
     bookedRanges = [];
   }
 }
 
-async function loadCar() {
-  if (!carId) {
-    el.pageSub.textContent = "Missing car id in URL.";
-    setStatus("Open this page as bookings.html?id=<vehicleId>", "error");
-    return;
+async function loadCarAndShowForm() {
+  document.getElementById("pageTitle").textContent = "Confirm Booking";
+  document.getElementById("bookLayout").style.display = "grid";
+
+  await Promise.all([
+    fetch(`${API_BASE}/cars/${carId}`).then(async (r) => {
+      const row = await r.json().catch(() => null);
+      if (!r.ok || !row) throw new Error("Car not found");
+
+      selectedCar = {
+        id: row["Vehicle ID"],
+        manufacturer: row["Manufacturer"] || "Unknown",
+        model: row["Model"] || "",
+        vehicleType: row["Vehicle Type"] || "-",
+        drivetrain: row["Drivetrain"] || "-",
+        price: Number(row["Price"] || 0),
+      };
+
+      const fullName = `${selectedCar.manufacturer} ${selectedCar.model}`.trim();
+      document.getElementById("carImg").src = getCarImage(selectedCar.manufacturer, selectedCar.model, selectedCar.drivetrain);
+      document.getElementById("carImgName").textContent = fullName;
+      document.getElementById("carImgPrice").textContent = `${formatMoney(selectedCar.price)}/day`;
+      document.getElementById("carImgPills").innerHTML = `
+        <span class="carPill">${selectedCar.vehicleType}</span>
+        <span class="carPill">${selectedCar.drivetrain}</span>
+        <span class="carPill" style="background:#dcfce7;border-color:#86efac;color:#166534;">Available</span>
+      `;
+      setStatus(`Booking for ${fullName} (ID ${selectedCar.id})`);
+    }),
+    loadBookedDates(),
+  ]);
+
+  // Show booked ranges as a warning if any
+  if (bookedRanges.length > 0) {
+    setMsg(
+      `⚠ Already booked: ${bookedRanges.map(r => `${r.fromDate} – ${r.toDate}`).join("  |  ")}`,
+      "error"
+    );
   }
 
-  try {
-    el.pageSub.textContent = "Loading selected car...";
+  // Set up date inputs
+  const today = todayISO();
+  const fromEl = document.getElementById("fromDate");
+  const toEl = document.getElementById("toDate");
+  fromEl.min = today;
+  toEl.min = today;
 
-    await Promise.all([
-      fetch(`${API_BASE}/cars/${carId}`).then(async (r) => {
-        const row = await r.json().catch(() => null);
-        if (!r.ok || !row) throw new Error("Car not found");
-
-        selectedCar = {
-          id: row["Vehicle ID"],
-          manufacturer: row["Manufacturer"] || "Unknown",
-          model: row["Model"] || "",
-          vehicleType: row["Vehicle Type"] || "-",
-          drivetrain: row["Drivetrain"] || "-",
-          price: Number(row["Price"] || 0),
-          availability: Number(row["Availability"] || 0),
-        };
-
-        const fullName = `${selectedCar.manufacturer} ${selectedCar.model}`.trim();
-        el.carName.textContent = fullName;
-        el.carPrice.textContent = `${formatMoney(selectedCar.price)}/day`;
-        el.carType.textContent = `Type: ${selectedCar.vehicleType}`;
-        el.carDrive.textContent = `Drive: ${selectedCar.drivetrain}`;
-        el.carAvail.textContent = "Available";
-        el.carAvail.className = "pill ok";
-
-        el.carImg.src = getCarImage(selectedCar.manufacturer, selectedCar.model, selectedCar.drivetrain);
-        el.carImg.onerror = () => {
-          el.carImg.onerror = null;
-          el.carImg.src = "./assets/cars/placeholder.png";
-        };
-
-        el.pageSub.textContent = `Booking for ${fullName} (ID ${selectedCar.id})`;
-      }),
-      loadBookedDates(),
-    ]);
-
-    refreshUI();
-  } catch (err) {
-    el.pageSub.textContent = "Unable to load selected car.";
-    setStatus(`Error: ${err.message}`, "error");
-  }
+  fromEl.addEventListener("change", () => {
+    toEl.min = fromEl.value || today;
+    if (toEl.value && toEl.value < fromEl.value) toEl.value = fromEl.value;
+    refreshForm();
+  });
+  toEl.addEventListener("change", refreshForm);
+  document.getElementById("pickupLocation").addEventListener("input", refreshForm);
+  document.getElementById("dropoffLocation").addEventListener("input", refreshForm);
+  document.getElementById("bookNowBtn").addEventListener("click", submitBooking);
+  document.getElementById("bookNowBtn").disabled = true;
 }
 
-async function confirmBooking() {
-  const validation = validateForm();
-  if (!validation.ok) {
-    setStatus(validation.message, "error");
-    return;
-  }
+async function submitBooking() {
+  const v = validateForm();
+  if (!v.ok) { setMsg(v.message, "error"); return; }
+
+  const btn = document.getElementById("bookNowBtn");
+  btn.disabled = true;
+  btn.textContent = "Booking...";
+  setMsg("Submitting booking...");
 
   try {
-    el.confirmBtn.disabled = true;
-    setStatus("Submitting booking...");
-
     const payload = {
-      fromDate: el.fromDate.value,
-      toDate: el.toDate.value,
-      pickupLocation: (el.pickupLocation.value || "").trim(),
+      fromDate: document.getElementById("fromDate").value,
+      toDate: document.getElementById("toDate").value,
+      pickupLocation: document.getElementById("pickupLocation").value.trim(),
+      dropoffLocation: document.getElementById("dropoffLocation").value.trim(),
     };
 
     const res = await fetch(`${API_BASE}/cars/${encodeURIComponent(carId)}/book`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-User-Email": userEmail,
-      },
+      headers: { "Content-Type": "application/json", "X-User-Email": userEmail },
       body: JSON.stringify(payload),
     });
 
@@ -262,34 +229,37 @@ async function confirmBooking() {
     if (!res.ok) throw new Error(data.error || "Booking failed");
 
     const saleId = data.saleId ? ` Sale ID #${data.saleId}.` : "";
-    setStatus(`Booked successfully.${saleId}`, "ok");
-    el.confirmBtn.disabled = true;
+    setMsg(`✅ Booked successfully!${saleId}`, "success");
+    btn.textContent = "Booked ✓";
 
-    // Update local ranges immediately
-    bookedRanges.push({ fromDate: el.fromDate.value, toDate: el.toDate.value });
+    // Add to local ranges so user can't double book same dates
+    bookedRanges.push({ fromDate: payload.fromDate, toDate: payload.toDate });
   } catch (err) {
-    setStatus(`Error: ${err.message}`, "error");
-    refreshUI();
+    setMsg(`Error: ${err.message}`, "error");
+    btn.disabled = false;
+    btn.textContent = "Book Now";
   }
 }
 
-(function init() {
-  const minDate = todayISO();
-  el.fromDate.min = minDate;
-  el.toDate.min = minDate;
+// ── Back button ──
+document.getElementById("backBtn").addEventListener("click", () => {
+  if (carId) {
+    history.back();
+  } else {
+    window.location.href = "home.html";
+  }
+});
 
-  el.fromDate.addEventListener("change", () => {
-    // Allow same-day dropoff
-    el.toDate.min = el.fromDate.value || minDate;
-    if (el.toDate.value && el.toDate.value < el.fromDate.value) {
-      el.toDate.value = el.fromDate.value;
+// ── Init ──
+(async function init() {
+  if (carId) {
+    try {
+      await loadCarAndShowForm();
+    } catch (err) {
+      setStatus(`Error: ${err.message}`);
     }
-    refreshUI();
-  });
-
-  el.toDate.addEventListener("change", refreshUI);
-  el.pickupLocation.addEventListener("input", refreshUI);
-  el.confirmBtn.addEventListener("click", confirmBooking);
-
-  loadCar();
+  } else {
+    // No car ID — redirect to my-bookings page
+    window.location.href = "my-bookings.html";
+  }
 })();
