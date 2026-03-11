@@ -1,15 +1,17 @@
-const API_BASE = window.location.hostname === "localhost"
-  ? "http://localhost:10000"
-  : "https://server-side-zqaz.onrender.com";
+const API_BASE = "https://server-side-zqaz.onrender.com";
 const SESSION_MS = 12 * 60 * 60 * 1000;
+const SERVICE_FEE = 15;
+const TAX_RATE = 0.13;
 
 function requireSession() {
   const email = localStorage.getItem("userEmail");
   const loggedInAt = Number(localStorage.getItem("loggedInAt") || "0");
+
   if (!email || !loggedInAt) {
     window.location.replace("index.html");
     throw new Error("No session");
   }
+
   if (Date.now() - loggedInAt > SESSION_MS) {
     localStorage.removeItem("userEmail");
     localStorage.removeItem("loggedInAt");
@@ -17,273 +19,277 @@ function requireSession() {
     window.location.replace("index.html");
     throw new Error("Session expired");
   }
+
   return email;
 }
 
-function prettyDate(d) {
-  if (!d) return "—";
-  return String(d).slice(0, 10);
-}
-
-function escapeHtml(value) {
-  return String(value ?? "")
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
-}
-
-const imageMap = {
-  "Dodge Challenger AWD": "challenger.png",
-  "KIA K4 RWD":           "kia.png",
-  "Honda Civic RWD":      "civic.png",
-  "Porsche 911 AWD":      "porsche.png",
-  "Toyota Highlander AWD":"highlander-awd.png",
-  "Toyota Highlander RWD":"highlander-rwd.png",
-  "Toyota Corolla FWD":   "corolla-fwd.png",
-  "Toyota Corolla AWD":   "corolla-awd.png",
-};
-
-function getCarImage(manufacturer, model, drivetrain) {
-  const key = `${manufacturer} ${model} ${drivetrain}`.trim();
-  return `./assets/cars/${imageMap[key] || "civic.png"}`;
-}
-
-function getBookingImage(manufacturer, model) {
-  const key = `${manufacturer} ${model}`.trim();
-  const map = {
-    "KIA K4":            "kia.png",
-    "Dodge Challenger":  "challenger.png",
-    "Honda Civic":       "civic.png",
-    "Toyota Corolla":    "corolla-fwd.png",
-    "Toyota Highlander": "highlander-awd.png",
-    "Porsche 911":       "porsche.png",
-  };
-  return map[key] || "civic.png";
-}
-
-function getRowValue(row, ...keys) {
-  for (const key of keys) {
-    if (row && row[key] !== undefined && row[key] !== null && String(row[key]).trim() !== "") {
-      return row[key];
-    }
-  }
-  return "";
-}
-
 const params = new URLSearchParams(window.location.search);
-const vehicleId = params.get("id");
-const isPreview = params.get("preview") === "1";
+const carId = params.get("id");
 const userEmail = requireSession();
 
-const statusEl   = document.getElementById("status");
-const listEl     = document.getElementById("list");
-const bookLayout = document.getElementById("bookLayout");
-const pageTitleEl = document.getElementById("pageTitle");
-const backBtn    = document.getElementById("backBtn");
+const el = {
+  pageSub: document.getElementById("pageSub"),
+  carImg: document.getElementById("carImg"),
+  carName: document.getElementById("carName"),
+  carPrice: document.getElementById("carPrice"),
+  carType: document.getElementById("carType"),
+  carDrive: document.getElementById("carDrive"),
+  carAvail: document.getElementById("carAvail"),
+  fromDate: document.getElementById("fromDate"),
+  toDate: document.getElementById("toDate"),
+  pickupLocation: document.getElementById("pickupLocation"),
+  lineRate: document.getElementById("lineRate"),
+  lineDays: document.getElementById("lineDays"),
+  lineSubtotal: document.getElementById("lineSubtotal"),
+  lineFee: document.getElementById("lineFee"),
+  lineTax: document.getElementById("lineTax"),
+  lineTotal: document.getElementById("lineTotal"),
+  confirmBtn: document.getElementById("confirmBtn"),
+  status: document.getElementById("status"),
+};
 
-function setStatus(msg, isError = false) {
-  if (!statusEl) return;
-  statusEl.textContent = msg;
-  statusEl.style.color = isError ? "#b91c1c" : "#475569";
+let selectedCar = null;
+let bookedRanges = []; // { fromDate, toDate } for existing bookings on this car
+
+function getCarImage(manufacturer, model, drivetrain) {
+  const name = `${manufacturer} ${model}`.trim();
+  const map = {
+    "Toyota Corolla": drivetrain === "AWD" ? "corolla-awd.png" : "corolla-fwd.png",
+    "Toyota Highlander": drivetrain === "AWD" ? "highlander-awd.png" : "highlander-rwd.png",
+    "Dodge Challenger": "challenger.png",
+    "Honda Civic": "civic.png",
+    "KIA K4": "kia.png",
+    "Porsche 911": "porsche.png",
+  };
+  return `./assets/cars/${map[name] || "placeholder.png"}`;
 }
 
-// ── BOOKING FORM MODE ─────────────────────────────────
-if (vehicleId) {
-  pageTitleEl.textContent = "Book a Car";
-  backBtn.onclick = () => history.back();
-  bookLayout.style.display = "grid";
-  listEl.style.display = "none";
+function setStatus(message, type = "") {
+  el.status.className = type;
+  el.status.textContent = message;
+}
 
-  // Load car details and populate left panel
-  async function loadCarDetails() {
-    try {
-      const res = await fetch(`${API_BASE}/cars/${vehicleId}`);
-      const car = await res.json();
+function todayISO() {
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = String(now.getMonth() + 1).padStart(2, "0");
+  const d = String(now.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
 
-      const mfr       = car["Manufacturer"] || car.manufacturer || "";
-      const model     = car["Model"]        || car.model        || "";
-      const type      = car["Vehicle Type"] || car.vehicleType  || "";
-      const drivetrain= car["Drivetrain"]   || car.drivetrain   || "";
-      const price     = car["Price"]        || car.price        || "";
-      const priceText = price ? `$${Number(price).toFixed(2)}/day` : "";
+function formatMoney(value) {
+  return `$${Number(value || 0).toFixed(2)}`;
+}
 
-      // Populate image
-      document.getElementById("carImg").src = getCarImage(mfr, model, drivetrain);
-      document.getElementById("carImg").alt = `${mfr} ${model}`;
+function daysBetween(fromDate, toDate) {
+  if (!fromDate || !toDate) return 0;
+  const from = new Date(`${fromDate}T00:00:00`);
+  const to = new Date(`${toDate}T00:00:00`);
+  const ms = to.getTime() - from.getTime();
+  if (ms < 0) return 0;
+  if (ms === 0) return 1; // same day = 1 day rental
+  return Math.ceil(ms / (1000 * 60 * 60 * 24));
+}
 
-      // Populate info
-      document.getElementById("carImgName").textContent = `${mfr} ${model}`.trim();
-      document.getElementById("carImgPrice").textContent = priceText;
-      document.getElementById("carImgPills").innerHTML = [type, drivetrain]
-        .filter(Boolean)
-        .map(v => `<span class="carPill">${escapeHtml(v)}</span>`)
-        .join("");
-
-    } catch (e) {
-      document.getElementById("carImgName").textContent = `Vehicle #${vehicleId}`;
+function hasDateConflict(from, to) {
+  for (const range of bookedRanges) {
+    if (from <= range.toDate && to >= range.fromDate) {
+      return range;
     }
   }
-  loadCarDetails();
-
-  // Set min date to today
-  const today = new Date().toISOString().slice(0, 10);
-  document.getElementById("fromDate").min = today;
-  document.getElementById("toDate").min = today;
-  document.getElementById("fromDate").addEventListener("change", function () {
-    // Allow same day or later
-    document.getElementById("toDate").min = this.value || today;
-  });
-
-  // Book Now
-  document.getElementById("bookNowBtn").addEventListener("click", async () => {
-    const fromDate       = document.getElementById("fromDate").value;
-    const toDate         = document.getElementById("toDate").value;
-    const pickupLocation = document.getElementById("pickupLocation").value.trim();
-    const dropoffLocation= document.getElementById("dropoffLocation").value.trim();
-    const msgEl = document.getElementById("bookMsg");
-    const btn   = document.getElementById("bookNowBtn");
-
-    msgEl.className = "";
-    msgEl.textContent = "";
-
-    // ✅ FIX: Require all fields and allow same-day
-if (!fromDate || !toDate) {
-  msgEl.className = "error";
-  msgEl.textContent = "⚠️ Please select both pickup and dropoff dates.";
-  return;
+  return null;
 }
 
-  if (!pickupLocation || !dropoffLocation) {
-    msgEl.className = "error";
-    msgEl.textContent = "⚠️ Please enter both pickup and dropoff locations.";
+function computeBreakdown() {
+  const rate = Number(selectedCar?.price || 0);
+  const days = daysBetween(el.fromDate.value, el.toDate.value);
+
+  const subtotal = rate * days;
+  const fee = days > 0 ? SERVICE_FEE : 0;
+  const tax = (subtotal + fee) * TAX_RATE;
+  const total = subtotal + fee + tax;
+
+  el.lineRate.textContent = formatMoney(rate);
+  el.lineDays.textContent = String(days);
+  el.lineSubtotal.textContent = formatMoney(subtotal);
+  el.lineFee.textContent = formatMoney(fee);
+  el.lineTax.textContent = formatMoney(tax);
+  el.lineTotal.textContent = formatMoney(total);
+
+  return { days, subtotal, fee, tax, total };
+}
+
+function validateForm() {
+  if (!selectedCar) return { ok: false, message: "Car not loaded yet." };
+
+  const from = el.fromDate.value;
+  const to = el.toDate.value;
+
+  if (!from || !to) {
+    return { ok: false, message: "Please pick both pickup and dropoff dates." };
+  }
+
+  const today = todayISO();
+  if (from < today) {
+    return { ok: false, message: "Pickup date cannot be in the past." };
+  }
+
+  if (to < from) {
+    return { ok: false, message: "Dropoff date cannot be before pickup date." };
+  }
+
+  const conflict = hasDateConflict(from, to);
+  if (conflict) {
+    return {
+      ok: false,
+      message: `Car already booked ${conflict.fromDate} – ${conflict.toDate}. Pick different dates.`,
+    };
+  }
+
+  return { ok: true, message: "" };
+}
+
+function refreshUI() {
+  const breakdown = computeBreakdown();
+  const validation = validateForm();
+
+  el.confirmBtn.disabled = !validation.ok;
+
+  if (!validation.ok) {
+    setStatus(validation.message, "error");
     return;
   }
 
-  // ✅ FIX: Allow same-day rentals (changed from < to <=)
-  if (toDate < fromDate) {
-    msgEl.className = "error";
-    msgEl.textContent = "⚠️ Dropoff date must be on or after pickup date.";
-    return;
-  }
+  setStatus(`Ready to confirm. Total: ${formatMoney(breakdown.total)}`);
+}
 
-    btn.disabled = true;
-    btn.textContent = "Booking...";
+async function loadBookedDates() {
+  try {
+    const res = await fetch(`${API_BASE}/cars/${carId}/booked-dates`);
+    const data = await res.json().catch(() => ({ ranges: [] }));
+    bookedRanges = Array.isArray(data.ranges) ? data.ranges : [];
 
-    try {
-      const res = await fetch(`${API_BASE}/cars/${vehicleId}/book`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-User-Email": userEmail,
-        },
-        body: JSON.stringify({ fromDate, toDate, pickupLocation, dropoffLocation }),
-      });
-
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error || "Booking failed");
-
-      msgEl.className = "success";
-      msgEl.textContent = "✅ Booking confirmed!";
-      btn.textContent = "Booked!";
-
-      const qs = new URLSearchParams({
-        id: vehicleId,
-        from: fromDate,
-        to: toDate,
-        pickup: pickupLocation,
-        dropoff: dropoffLocation,
-      }).toString();
-      window.location.href = `payment.html?${qs}`;
-
-    } catch (err) {
-      msgEl.className = "error";
-      msgEl.textContent = `Error: ${err.message}`;
-      btn.disabled = false;
-      btn.textContent = "Book Now";
-    }
-  });
-
-// ── HISTORY MODE ──────────────────────────────────────
-} else {
-  pageTitleEl.textContent = "My Bookings";
-  backBtn.onclick = () => location.href = "home.html";
-  bookLayout.style.display = "none";
-  listEl.style.display = "grid";
-
-  function renderEmptyState(message) {
-    listEl.innerHTML = `
-      <div class="bookingCard">
-        <div class="muted">${escapeHtml(message)}</div>
-      </div>
-    `;
-  }
-
-  function renderBookings(rows) {
-    listEl.innerHTML = rows.map((r) => {
-      const manufacturer   = escapeHtml(r.manufacturer);
-      const model          = escapeHtml(r.model);
-      const vehicleType    = escapeHtml(r.vehicleType || "—");
-      const drivetrain     = escapeHtml(r.drivetrain || "—");
-      const pickupLocation = escapeHtml(getRowValue(r, "pickupLocation", "pickup_location", "Pickup Location"));
-      const dropoffLocation= escapeHtml(getRowValue(r, "dropoffLocation", "dropoff_location", "Drop Off Location", "Dropoff Location"));
-      const imgFile        = getBookingImage(r.manufacturer, r.model);
-      const price          = Number(r.priceSoldAt || 0).toFixed(2);
-
-      return `
-        <div class="bookingCard">
-          <div class="row">
-            <img class="thumb"
-              src="./assets/cars/${imgFile}"
-              onerror="this.onerror=null;this.src='./assets/cars/civic.png';"
-              alt="${manufacturer} ${model}"
-            />
-            <div style="flex:1">
-              <div class="bookingTitle">
-                <b>${manufacturer} ${model}</b>
-                <span class="pill">$${price}</span>
-              </div>
-              <div class="pillRow">
-                <span class="pill">${vehicleType}</span>
-                <span class="pill">${drivetrain}</span>
-                <span class="pill">Sale ID: ${escapeHtml(String(r.saleId))}</span>
-                <span class="pill">Vehicle ID: ${escapeHtml(String(r.vehicleId))}</span>
-              </div>
-              <div class="meta"><b>Dates:</b> ${prettyDate(r.fromDate)} → ${prettyDate(r.toDate)}</div>
-              <div class="meta"><b>Pickup:</b> ${pickupLocation || "—"}</div>
-              <div class="meta"><b>Dropoff:</b> ${dropoffLocation || "—"}</div>
-              <div class="muted">Booked successfully ✅</div>
-            </div>
-          </div>
-        </div>
-      `;
-    }).join("");
-  }
-
-  async function loadMyBookings() {
-    if (!listEl) return;
-    try {
-      setStatus("Loading your bookings...");
-      const res = await fetch(`${API_BASE}/me/bookings`, {
-        method: "GET",
-        headers: { "X-User-Email": userEmail },
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error || "Failed to load bookings");
-      const rows = Array.isArray(data.rows) ? data.rows : [];
-      if (!rows.length) {
-        setStatus("0 booking(s)");
-        renderEmptyState("No booking history found.");
-        return;
+    if (bookedRanges.length > 0) {
+      const bookedInfo = document.getElementById("bookedDatesInfo");
+      if (bookedInfo) {
+        bookedInfo.textContent = `⚠ Unavailable dates: ${bookedRanges.map(r => `${r.fromDate} – ${r.toDate}`).join("  |  ")}`;
+        bookedInfo.style.display = "block";
       }
-      setStatus(`${rows.length} booking(s)`);
-      renderBookings(rows);
-    } catch (err) {
-      setStatus(`Error: ${err.message}`, true);
-      renderEmptyState("Could not load booking history.");
     }
+  } catch {
+    bookedRanges = [];
+  }
+}
+
+async function loadCar() {
+  if (!carId) {
+    el.pageSub.textContent = "Missing car id in URL.";
+    setStatus("Open this page as bookings.html?id=<vehicleId>", "error");
+    return;
   }
 
-  loadMyBookings();
+  try {
+    el.pageSub.textContent = "Loading selected car...";
+
+    await Promise.all([
+      fetch(`${API_BASE}/cars/${carId}`).then(async (r) => {
+        const row = await r.json().catch(() => null);
+        if (!r.ok || !row) throw new Error("Car not found");
+
+        selectedCar = {
+          id: row["Vehicle ID"],
+          manufacturer: row["Manufacturer"] || "Unknown",
+          model: row["Model"] || "",
+          vehicleType: row["Vehicle Type"] || "-",
+          drivetrain: row["Drivetrain"] || "-",
+          price: Number(row["Price"] || 0),
+          availability: Number(row["Availability"] || 0),
+        };
+
+        const fullName = `${selectedCar.manufacturer} ${selectedCar.model}`.trim();
+        el.carName.textContent = fullName;
+        el.carPrice.textContent = `${formatMoney(selectedCar.price)}/day`;
+        el.carType.textContent = `Type: ${selectedCar.vehicleType}`;
+        el.carDrive.textContent = `Drive: ${selectedCar.drivetrain}`;
+        el.carAvail.textContent = "Available";
+        el.carAvail.className = "pill ok";
+
+        el.carImg.src = getCarImage(selectedCar.manufacturer, selectedCar.model, selectedCar.drivetrain);
+        el.carImg.onerror = () => {
+          el.carImg.onerror = null;
+          el.carImg.src = "./assets/cars/placeholder.png";
+        };
+
+        el.pageSub.textContent = `Booking for ${fullName} (ID ${selectedCar.id})`;
+      }),
+      loadBookedDates(),
+    ]);
+
+    refreshUI();
+  } catch (err) {
+    el.pageSub.textContent = "Unable to load selected car.";
+    setStatus(`Error: ${err.message}`, "error");
+  }
 }
+
+async function confirmBooking() {
+  const validation = validateForm();
+  if (!validation.ok) {
+    setStatus(validation.message, "error");
+    return;
+  }
+
+  try {
+    el.confirmBtn.disabled = true;
+    setStatus("Submitting booking...");
+
+    const payload = {
+      fromDate: el.fromDate.value,
+      toDate: el.toDate.value,
+      pickupLocation: (el.pickupLocation.value || "").trim(),
+    };
+
+    const res = await fetch(`${API_BASE}/cars/${encodeURIComponent(carId)}/book`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-User-Email": userEmail,
+      },
+      body: JSON.stringify(payload),
+    });
+
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || "Booking failed");
+
+    const saleId = data.saleId ? ` Sale ID #${data.saleId}.` : "";
+    setStatus(`Booked successfully.${saleId}`, "ok");
+    el.confirmBtn.disabled = true;
+
+    // Update local ranges immediately
+    bookedRanges.push({ fromDate: el.fromDate.value, toDate: el.toDate.value });
+  } catch (err) {
+    setStatus(`Error: ${err.message}`, "error");
+    refreshUI();
+  }
+}
+
+(function init() {
+  const minDate = todayISO();
+  el.fromDate.min = minDate;
+  el.toDate.min = minDate;
+
+  el.fromDate.addEventListener("change", () => {
+    // Allow same-day dropoff
+    el.toDate.min = el.fromDate.value || minDate;
+    if (el.toDate.value && el.toDate.value < el.fromDate.value) {
+      el.toDate.value = el.fromDate.value;
+    }
+    refreshUI();
+  });
+
+  el.toDate.addEventListener("change", refreshUI);
+  el.pickupLocation.addEventListener("input", refreshUI);
+  el.confirmBtn.addEventListener("click", confirmBooking);
+
+  loadCar();
+})();
