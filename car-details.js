@@ -4,6 +4,12 @@ const SESSION_MS = 12 * 60 * 60 * 1000;
 const params = new URLSearchParams(location.search);
 const id = params.get("id");
 
+function formatDate(dateStr) {
+  if (!dateStr) return "—";
+  const [y, m, d] = dateStr.slice(0, 10).split("-");
+  return new Date(y, m - 1, d).toLocaleDateString("en-CA", { month: "short", day: "numeric", year: "numeric" });
+} 
+
 function requireSession() {
   const email = localStorage.getItem("userEmail");
   const loggedInAt = Number(localStorage.getItem("loggedInAt") || "0");
@@ -85,8 +91,11 @@ async function loadBookedDates() {
     bookedRanges = Array.isArray(data.ranges) ? data.ranges : [];
 
     if (bookedRanges.length > 0) {
-      statusText.className = "status error";
-      statusText.textContent = `⚠ Already booked: ${bookedRanges.map(r => `${r.fromDate} – ${r.toDate}`).join("  |  ")}`;
+      const rangeList = bookedRanges
+        .map(r => `${formatDate(r.fromDate)} → ${formatDate(r.toDate)}`)
+        .join(", ");
+      statusText.className = "status";
+      statusText.innerHTML = `<div style="background:#fef3c7;border:1px solid #f59e0b;border-radius:12px;padding:12px 14px;font-size:13px;color:#92400e;">📅 <strong>Unavailable:</strong> ${rangeList}<br><span style="font-size:12px;">Please pick dates outside these ranges.</span></div>`;
     }
   } catch {
     bookedRanges = [];
