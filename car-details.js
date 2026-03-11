@@ -1,6 +1,4 @@
-const API_BASE = window.location.hostname === "localhost"
-  ? "http://localhost:10000"
-  : "https://server-side-zqaz.onrender.com";
+const API_BASE = "https://server-side-zqaz.onrender.com";
 const SESSION_MS = 12 * 60 * 60 * 1000;
 
 const params = new URLSearchParams(location.search);
@@ -175,6 +173,21 @@ function bookCar() {
   if (!fromDate || !toDate) {
     statusText.className = "status error";
     statusText.textContent = "Error: Please select both From and To dates.";
+    return;
+  }
+
+  // Validate date format and real calendar date
+  function isValidDate(str) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(str)) return false;
+    const [y, m, d] = str.split("-").map(Number);
+    if (y < 2020 || y > 2100) return false;
+    const date = new Date(y, m - 1, d);
+    return date.getFullYear() === y && date.getMonth() === m - 1 && date.getDate() === d;
+  }
+
+  if (!isValidDate(fromDate) || !isValidDate(toDate)) {
+    statusText.className = "status error";
+    statusText.textContent = "Error: Please enter valid dates (e.g. 2026-03-15).";
     return;
   }
 
