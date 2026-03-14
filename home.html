@@ -267,12 +267,26 @@ button{
     grid-template-columns: 1fr;
   }
 }
+
+.promo-banner {
+  background: linear-gradient(90deg, #4f46e5, #ec4899);
+  color: white;
+  text-align: center;
+  padding: 12px 20px;
+  font-size: 15px;
+  font-weight: 600;
+  display: none;
+  position: relative;
+  z-index: 10;
+}
 </style>
 <script src="theme.js"></script>
 
 </head>
 
 <body>
+
+<div id="promoBanner" class="promo-banner"></div>
 
 <div class="container">
 
@@ -378,7 +392,7 @@ button{
 
   <div class="testimonialCard">
     <div class="testimonial-stars">★★★★★</div>
-    <div class="testimonial-text">"Excellent customer service and the vehicle was in pristine condition. The drop off was hassle free. Will definitely rent again."</div>
+    <div class="testimonial-text">"Excellent customer service and the vehicle was in pristine condition. The drop-off was hassle-free. Will definitely rent again."</div>
     <div class="testimonial-author">
       <div class="testimonial-avatar">MR</div>
       <div>
@@ -404,6 +418,15 @@ button{
 </div>
 
 <script>
+document.addEventListener("DOMContentLoaded", () => {
+  const promoText = localStorage.getItem("promoBanner");
+  if (promoText && promoText.trim() !== "") {
+    const banner = document.getElementById("promoBanner");
+    banner.textContent = promoText;
+    banner.style.display = "block";
+  }
+});
+
 function searchCars(){
   const params = new URLSearchParams();
   const city = (document.getElementById("cityInput")?.value || "").trim();
@@ -427,4 +450,3 @@ function logout(){
 
 </body>
 </html>
-

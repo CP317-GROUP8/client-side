@@ -555,6 +555,18 @@ async function onActionClick(e) {
     adminArea && (adminArea.style.display = "block");
     logoutBtn && (logoutBtn.style.display = "inline-block");
     statusEl && (statusEl.textContent = "Admin session active. Select a table above.");
+
+    const promoInput = document.getElementById("promoInput");
+    const savePromoBtn = document.getElementById("savePromoBtn");
+    if (promoInput && savePromoBtn) {
+      promoInput.value = localStorage.getItem("promoBanner") || "";
+      savePromoBtn.addEventListener("click", () => {
+        localStorage.setItem("promoBanner", promoInput.value);
+        savePromoBtn.textContent = "Saved!";
+        setTimeout(() => savePromoBtn.textContent = "Save Banner", 2000);
+      });
+    }
+
   } catch (e) {
     console.log("BOOT ERROR:", e);
     statusEl && (statusEl.textContent = `Error: ${e.message}`);

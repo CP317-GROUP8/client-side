@@ -197,6 +197,8 @@
       font-size: 14px;
     }
   </style>
+<script src="theme.js"></script>
+
 </head>
 
 <body>
@@ -213,6 +215,21 @@
     <div id="status">Loading…</div>
 
     <div id="tableLinks"></div>
+
+    <!-- Promotions Management -->
+    <div id="promoArea" class="panel" style="margin-bottom: 24px;">
+      <div class="panelHeader">
+        <h2>Promotions Banner</h2>
+        <div class="controls">
+          <button id="savePromoBtn" class="btnSuccess">Save Banner</button>
+        </div>
+      </div>
+      <div style="padding: 24px;">
+        <label style="font-size: 14px; font-weight: 600; color: #0f172a; display: block; margin-bottom: 8px;">Banner Text</label>
+        <input type="text" id="promoInput" placeholder="Enter promotional text (e.g., Get 20% off your first rental!)" value="">
+        <p style="font-size: 13px; color: #64748b; margin-top: 8px;">Leave blank to disable the banner on the homepage.</p>
+      </div>
+    </div>
 
     <div id="adminArea" class="panel">
       <div class="panelHeader">
