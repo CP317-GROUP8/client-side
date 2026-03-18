@@ -6,67 +6,54 @@ const TAX_RATE = 0.13;
 // ── EmailJS config ──────────────────────────────────────────────────────────
 const EMAILJS_PUBLIC_KEY      = "H3F1dxhmOW-hMSZij";
 const EMAILJS_SERVICE_ID      = "service_v914ueg";
-const EMAILJS_PICKUP_TEMPLATE = "template_m5nti5o";  // reused for return reminder too
+const EMAILJS_PICKUP_TEMPLATE = "template_m5nti5o";
 
 function initEmailJS() {
   if (window.emailjs) emailjs.init(EMAILJS_PUBLIC_KEY);
 }
 
 /**
- * Sends a pickup reminder email immediately on booking confirmation.
- * Uses the Pickup Reminder template.
+ * Email 1 — Booking Confirmed + Pickup Details
+ * Fires immediately on booking confirmation.
  */
-async function sendPickupReminderEmail({ userEmail, carName, pickupDate, dropoffDate, pickupLocation, saleId }) {
+async function sendPickupEmail({ userName, userEmail, carName, pickupDate, dropoffDate, pickupLocation, saleId }) {
   try {
     await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_PICKUP_TEMPLATE, {
-      user_email:       userEmail,
-      car_name:         carName,
-      pickup_date:      pickupDate,
-      dropoff_date:     dropoffDate,
-      pickup_location:  pickupLocation,
-      sale_id:          saleId,
+      user_name:       userName,
+      user_email:      userEmail,
+      car_name:        carName,
+      pickup_date:     pickupDate,
+      dropoff_date:    dropoffDate,
+      pickup_location: pickupLocation,
+      sale_id:         saleId,
     });
-    console.log("✅ Pickup reminder email sent");
+    console.log("✅ Pickup confirmation email sent");
   } catch (err) {
-    console.warn("EmailJS pickup reminder failed:", err);
+    console.warn("EmailJS pickup email failed:", err);
   }
 }
 
 /**
- * Schedules a return reminder email.
- * Fires 24 hours before the dropoff date using setTimeout.
- * (Works as long as the tab stays open — good enough for a sprint demo!)
+ * Email 2 — Return Details
+ * Also fires immediately on booking confirmation.
  */
-function scheduleReturnReminderEmail({ userEmail, carName, pickupDate, dropoffDate, dropoffLocation, saleId }) {
-  const dropoff = new Date(`${dropoffDate}T09:00:00`); // 9am on dropoff day
-  const reminderTime = dropoff.getTime() - 24 * 60 * 60 * 1000; // 24hrs before
-  const msUntilReminder = reminderTime - Date.now();
-
-  if (msUntilReminder <= 0) {
-    console.log("Dropoff is too soon for a return reminder — skipping.");
-    return;
+async function sendReturnEmail({ userName, userEmail, carName, pickupDate, dropoffDate, dropoffLocation, saleId }) {
+  try {
+    await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_PICKUP_TEMPLATE, {
+      user_name:       userName,
+      user_email:      userEmail,
+      car_name:        carName,
+      pickup_date:     pickupDate,
+      dropoff_date:    dropoffDate,
+      pickup_location: dropoffLocation,
+      sale_id:         saleId,
+    });
+    console.log("✅ Return details email sent");
+  } catch (err) {
+    console.warn("EmailJS return email failed:", err);
   }
-
-  console.log(`⏰ Return reminder scheduled in ${Math.round(msUntilReminder / 3600000)}h`);
-
-  setTimeout(async () => {
-    try {
-      await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_PICKUP_TEMPLATE, {
-        user_email:       userEmail,
-        car_name:         carName,
-        pickup_date:      pickupDate,
-        dropoff_date:     dropoffDate,
-        pickup_location:  dropoffLocation, // repurpose pickup_location field for dropoff
-        sale_id:          saleId,
-      });
-      console.log("✅ Return reminder email sent");
-    } catch (err) {
-      console.warn("EmailJS return reminder failed:", err);
-    }
-  }, msUntilReminder);
 }
 
-// ── Session ─────────────────────────────────────────────────────────────────
 function requireSession() {
   const email = localStorage.getItem("userEmail");
   const loggedInAt = Number(localStorage.getItem("loggedInAt") || "0");
@@ -88,7 +75,6 @@ const userEmail = requireSession();
 let selectedCar = null;
 let bookedRanges = [];
 
-// ── Image map ────────────────────────────────────────────────────────────────
 function getCarImage(manufacturer, model, drivetrain) {
   const name = `${manufacturer} ${model}`.trim();
   const map = {
@@ -144,22 +130,17 @@ function setStatus(msg) {
   document.getElementById("status").textContent = msg;
 }
 
-// ── Price breakdown ───────────────────────────────────────────────────────────
 function computeAndShowBreakdown() {
   const from = document.getElementById("fromDate").value;
   const to = document.getElementById("toDate").value;
   if (!from || !to || !selectedCar) return;
-
   const days = daysBetween(from, to);
   const rate = selectedCar.price;
   const subtotal = rate * days;
   const fee = SERVICE_FEE;
   const tax = (subtotal + fee) * TAX_RATE;
   const total = subtotal + fee + tax;
-
-  setMsg(
-    `${days} day${days !== 1 ? "s" : ""} × ${formatMoney(rate)} + $${SERVICE_FEE} fee + tax = ${formatMoney(total)} total`
-  );
+  setMsg(`${days} day${days !== 1 ? "s" : ""} × ${formatMoney(rate)} + $${SERVICE_FEE} fee + tax = ${formatMoney(total)} total`);
 }
 
 function validateForm() {
@@ -167,16 +148,13 @@ function validateForm() {
   const to = document.getElementById("toDate").value;
   const pickup = document.getElementById("pickupLocation").value.trim();
   const dropoff = document.getElementById("dropoffLocation").value.trim();
-
   if (!from || !to) return { ok: false, message: "Please select both pickup and dropoff dates." };
   if (from < todayISO()) return { ok: false, message: "Pickup date cannot be in the past." };
   if (to < from) return { ok: false, message: "Dropoff date cannot be before pickup date." };
   if (!pickup) return { ok: false, message: "Please enter a pickup location." };
   if (!dropoff) return { ok: false, message: "Please enter a dropoff location." };
-
   const conflict = hasDateConflict(from, to);
   if (conflict) return { ok: false, message: `Car already booked ${conflict.fromDate} – ${conflict.toDate}. Pick different dates.` };
-
   return { ok: true };
 }
 
@@ -184,15 +162,12 @@ function refreshForm() {
   const from = document.getElementById("fromDate").value;
   const to = document.getElementById("toDate").value;
   const btn = document.getElementById("bookNowBtn");
-
   const v = validateForm();
   btn.disabled = !v.ok;
-
   if (!v.ok) {
     if (from || to) setMsg(v.message, "error");
     return;
   }
-
   computeAndShowBreakdown();
 }
 
@@ -214,7 +189,6 @@ async function loadCarAndShowForm() {
     fetch(`${API_BASE}/cars/${carId}`).then(async (r) => {
       const row = await r.json().catch(() => null);
       if (!r.ok || !row) throw new Error("Car not found");
-
       selectedCar = {
         id: row["Vehicle ID"],
         manufacturer: row["Manufacturer"] || "Unknown",
@@ -223,7 +197,6 @@ async function loadCarAndShowForm() {
         drivetrain: row["Drivetrain"] || "-",
         price: Number(row["Price"] || 0),
       };
-
       const fullName = `${selectedCar.manufacturer} ${selectedCar.model}`.trim();
       document.getElementById("carImg").src = getCarImage(selectedCar.manufacturer, selectedCar.model, selectedCar.drivetrain);
       document.getElementById("carImgName").textContent = fullName;
@@ -239,10 +212,7 @@ async function loadCarAndShowForm() {
   ]);
 
   if (bookedRanges.length > 0) {
-    setMsg(
-      `⚠ Already booked: ${bookedRanges.map(r => `${r.fromDate} – ${r.toDate}`).join("  |  ")}`,
-      "error"
-    );
+    setMsg(`⚠ Already booked: ${bookedRanges.map(r => `${r.fromDate} – ${r.toDate}`).join("  |  ")}`, "error");
   }
 
   const today = todayISO();
@@ -291,30 +261,29 @@ async function submitBooking() {
 
     const saleId = data.saleId || "—";
     const carName = `${selectedCar.manufacturer} ${selectedCar.model}`.trim();
+    const userData = JSON.parse(localStorage.getItem("userData") || "{}");
+    const userName = `${userData.firstName || ""} ${userData.lastName || ""}`.trim() || userEmail;
 
     setMsg(`✅ Booked successfully! Sale ID #${saleId}.`, "success");
     btn.textContent = "Booked ✓";
-
     bookedRanges.push({ fromDate: payload.fromDate, toDate: payload.toDate });
 
-    // ── 📧 Send pickup reminder email immediately ──────────────────────────
-    await sendPickupReminderEmail({
-      userEmail:       userEmail,
-      carName:         carName,
-      pickupDate:      formatDate(payload.fromDate),
-      dropoffDate:     formatDate(payload.toDate),
-      pickupLocation:  payload.pickupLocation,
-      saleId:          saleId,
+    // 📧 Email 1: Booking Confirmed + Pickup Details
+    await sendPickupEmail({
+      userName, userEmail, carName,
+      pickupDate:     formatDate(payload.fromDate),
+      dropoffDate:    formatDate(payload.toDate),
+      pickupLocation: payload.pickupLocation,
+      saleId,
     });
 
-    // ── ⏰ Schedule return reminder email (24hrs before dropoff) ──────────
-    scheduleReturnReminderEmail({
-      userEmail:       userEmail,
-      carName:         carName,
+    // 📧 Email 2: Return Details
+    await sendReturnEmail({
+      userName, userEmail, carName,
       pickupDate:      formatDate(payload.fromDate),
       dropoffDate:     formatDate(payload.toDate),
       dropoffLocation: payload.dropoffLocation,
-      saleId:          saleId,
+      saleId,
     });
 
   } catch (err) {
@@ -324,13 +293,11 @@ async function submitBooking() {
   }
 }
 
-// ── Back button ───────────────────────────────────────────────────────────────
 document.getElementById("backBtn").addEventListener("click", () => {
   if (carId) history.back();
   else window.location.href = "home.html";
 });
 
-// ── Init ──────────────────────────────────────────────────────────────────────
 (async function init() {
   initEmailJS();
   if (carId) {
