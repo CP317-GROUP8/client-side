@@ -659,6 +659,8 @@
           dropoff_date:    formatDate(toDate),
           pickup_location: pickup || "—",
           email_type:      "Booking Confirmed + Pickup Details",
+          email_message:   "This is a reminder that your rental pickup is tomorrow!",
+          location_label:  "Pickup Location",
           sale_id:         "see booking confirmation",
         }, KEERTHANA_KEY); // ← Keerthana's key passed directly
         console.log("✅ Pickup reminder email sent!");
@@ -678,6 +680,8 @@
           dropoff_date:    formatDate(toDate),
           pickup_location: dropoff || "—",
           email_type:      "Return Details",
+          email_message:   "This is a reminder that your rental return is tomorrow!",
+          location_label:  "Dropoff Location",
           sale_id:         "see booking confirmation",
         }, KEERTHANA_KEY); // ← Keerthana's key passed directly
         console.log("✅ Return reminder email sent!");
