@@ -50,12 +50,7 @@
       pointer-events: none;
     }
 
-    .wrap {
-      width: 100%;
-      max-width: 480px;
-      position: relative;
-      z-index: 1;
-    }
+    .wrap { width: 100%; max-width: 480px; position: relative; z-index: 1; }
 
     .steps {
       display: flex;
@@ -91,24 +86,10 @@
       background: var(--surface);
     }
 
-    .step.active .step-num {
-      border-color: var(--accent);
-      background: var(--accent);
-      color: white;
-    }
+    .step.active .step-num { border-color: var(--accent); background: var(--accent); color: white; }
+    .step.done .step-num { border-color: var(--green); background: var(--green); color: white; }
 
-    .step.done .step-num {
-      border-color: var(--green);
-      background: var(--green);
-      color: white;
-    }
-
-    .step-line {
-      width: 40px;
-      height: 1.5px;
-      background: var(--border);
-      margin: 0 4px;
-    }
+    .step-line { width: 40px; height: 1.5px; background: var(--border); margin: 0 4px; }
 
     .card {
       background: var(--surface);
@@ -294,13 +275,7 @@
       animation: popIn 0.4s 0.1s ease both;
     }
 
-    .success-title {
-      font-family: 'Syne', sans-serif;
-      font-size: 26px;
-      font-weight: 800;
-      margin-bottom: 8px;
-    }
-
+    .success-title { font-family: 'Syne', sans-serif; font-size: 26px; font-weight: 800; margin-bottom: 8px; }
     .success-sub { font-size: 14px; color: var(--muted); margin-bottom: 28px; line-height: 1.6; }
 
     .ref-box {
@@ -348,20 +323,10 @@
     }
 
     .success-btn:hover { border-color: var(--accent); color: var(--accent2); }
-    .success-btn.primary-btn {
-      background: linear-gradient(135deg, var(--accent), #9333ea);
-      border-color: transparent;
-      color: white;
-    }
+    .success-btn.primary-btn { background: linear-gradient(135deg, var(--accent), #9333ea); border-color: transparent; color: white; }
     .success-btn.primary-btn:hover { opacity: 0.9; color: white; }
 
-    .err-msg {
-      font-size: 13px;
-      color: var(--danger);
-      margin-top: 12px;
-      text-align: center;
-      min-height: 18px;
-    }
+    .err-msg { font-size: 13px; color: var(--danger); margin-top: 12px; text-align: center; min-height: 18px; }
 
     .secure-note {
       text-align: center;
@@ -371,16 +336,8 @@
       animation: fadeUp 0.4s 0.1s ease both;
     }
 
-    @keyframes fadeUp {
-      from { opacity: 0; transform: translateY(16px); }
-      to   { opacity: 1; transform: translateY(0); }
-    }
-
-    @keyframes popIn {
-      from { opacity: 0; transform: scale(0.6); }
-      to   { opacity: 1; transform: scale(1); }
-    }
-
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes popIn { from { opacity: 0; transform: scale(0.6); } to { opacity: 1; transform: scale(1); } }
     @keyframes spin { to { transform: rotate(360deg); } }
 
     @media (max-width: 500px) {
@@ -487,15 +444,17 @@
   </div>
 
   <script>
-    const API_BASE = "https://server-side-zqaz.onrender.com";
+    const API_BASE   = "https://server-side-zqaz.onrender.com";
     const SESSION_MS = 12 * 60 * 60 * 1000;
 
-    // ── EmailJS config ──────────────────────────────────────────────────────
-    const EMAILJS_PUBLIC_KEY      = "H3F1dxhmOW-hMSZij";
-    const EMAILJS_SERVICE_ID      = "service_v914ueg";
-    const EMAILJS_PICKUP_TEMPLATE = "template_m5nti5o";
+    // ── EmailJS credentials ─────────────────────────────────────────────────
+    const HIERMONA_SERVICE  = "service_fvcm81h";
+    const HIERMONA_TEMPLATE = "template_vgeh0gt";
+    const HIERMONA_KEY      = "xKlqbLg8GDzQWAvbx";
 
-    emailjs.init(EMAILJS_PUBLIC_KEY);
+    const KEERTHANA_SERVICE  = "service_v914ueg";
+    const KEERTHANA_TEMPLATE = "template_m5nti5o";
+    const KEERTHANA_KEY      = "H3F1dxhmOW-hMSZij";
 
     const imageMap = {
       "Toyota Corolla AWD":    "corolla-awd.png",
@@ -659,10 +618,10 @@
       }
     }
 
-    // ── Original booking confirmation email (Hiermona's EmailJS) ──────────
+    // ── Email 1: Hiermona's booking confirmation ────────────────────────────
     async function sendConfirmationEmail(ref) {
       try {
-        const userData = JSON.parse(localStorage.getItem("userData") || "{}");
+        const userData  = JSON.parse(localStorage.getItem("userData") || "{}");
         const firstName = userData.firstName || userData["First Name"] || "";
         const lastName  = userData.lastName  || userData["Last Name"]  || "";
         const toName    = `${firstName} ${lastName}`.trim() || "Valued Customer";
@@ -672,55 +631,54 @@
         const priceNum  = parseFloat(priceText.replace(/[^0-9.]/g, "")) || 0;
         const total     = `$${(priceNum * days).toFixed(2)}`;
 
-        await emailjs.send("service_fvcm81h", "template_vgeh0gt", {
+        await emailjs.send(HIERMONA_SERVICE, HIERMONA_TEMPLATE, {
           to_name:    toName,
           email:      userEmail,
           ref_number: ref,
           car_name:   document.getElementById("carName")?.textContent || `Vehicle #${vehicleId}`,
           from_date:  fromDate,
           to_date:    toDate,
-          pickup:     pickup || "—",
+          pickup:     pickup  || "—",
           dropoff:    dropoff || "—",
           total:      total,
-        });
-
-        console.log("✅ Confirmation email sent!");
+        }, HIERMONA_KEY); // ← Hiermona's key passed directly
+        console.log("✅ Booking confirmation email sent!");
       } catch (err) {
         console.warn("Confirmation email failed:", err);
       }
     }
 
-    // ── Email 2: Pickup Details (fires on booking confirm) ─────────────────
-    async function sendPickupEmail(ref, carName, userName) {
+    // ── Email 2: Pickup reminder ────────────────────────────────────────────
+    async function sendPickupEmail(carName, userName) {
       try {
-        await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_PICKUP_TEMPLATE, {
+        await emailjs.send(KEERTHANA_SERVICE, KEERTHANA_TEMPLATE, {
           user_name:       userName,
           user_email:      userEmail,
           car_name:        carName,
           pickup_date:     formatDate(fromDate),
           dropoff_date:    formatDate(toDate),
           pickup_location: pickup || "—",
-          sale_id:         ref,
-        });
-        console.log("✅ Pickup details email sent!");
+          sale_id:         "see booking confirmation",
+        }, KEERTHANA_KEY); // ← Keerthana's key passed directly
+        console.log("✅ Pickup reminder email sent!");
       } catch (err) {
         console.warn("Pickup email failed:", err);
       }
     }
 
-    // ── Email 3: Return Details (fires on booking confirm) ─────────────────
-    async function sendReturnEmail(ref, carName, userName) {
+    // ── Email 3: Return reminder ────────────────────────────────────────────
+    async function sendReturnEmail(carName, userName) {
       try {
-        await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_PICKUP_TEMPLATE, {
+        await emailjs.send(KEERTHANA_SERVICE, KEERTHANA_TEMPLATE, {
           user_name:       userName,
           user_email:      userEmail,
           car_name:        carName,
           pickup_date:     formatDate(fromDate),
           dropoff_date:    formatDate(toDate),
           pickup_location: dropoff || "—",
-          sale_id:         ref,
-        });
-        console.log("✅ Return details email sent!");
+          sale_id:         "see booking confirmation",
+        }, KEERTHANA_KEY); // ← Keerthana's key passed directly
+        console.log("✅ Return reminder email sent!");
       } catch (err) {
         console.warn("Return email failed:", err);
       }
@@ -738,8 +696,8 @@
 
       // Fire all 3 emails
       await sendConfirmationEmail(ref);
-      await sendPickupEmail(ref, carName, userName);
-      await sendReturnEmail(ref, carName, userName);
+      await sendPickupEmail(carName, userName);
+      await sendReturnEmail(carName, userName);
     }
   </script>
 </body>
