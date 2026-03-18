@@ -203,10 +203,11 @@
     /**
      * Sends a cancellation confirmation email via EmailJS.
      */
-    async function sendCancellationEmail({ userEmail, carName, pickupDate, dropoffDate, saleId }) {
+    async function sendCancellationEmail({ userEmail, userName, carName, pickupDate, dropoffDate, saleId }) {
       try {
         await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_CANCEL_TEMPLATE, {
           user_email:   userEmail,
+          user_name:    userName,
           car_name:     carName,
           pickup_date:  pickupDate,
           dropoff_date: dropoffDate,
@@ -285,9 +286,12 @@
         const data = await res.json().catch(() => ({}));
         if (!res.ok) throw new Error(data.error || "Cancel failed");
 
-        // ── 📧 Send cancellation email ──────────────────────────────────────
+        // Send cancellation email
+        const userData = JSON.parse(localStorage.getItem("userData") || "{}");
+        const userName = `${userData.firstName || ""} ${userData.lastName || ""}`.trim() || userEmail;
         await sendCancellationEmail({
           userEmail:   userEmail,
+          userName:    userName,
           carName:     carName,
           pickupDate:  formatDate(fromDate),
           dropoffDate: formatDate(toDate),
