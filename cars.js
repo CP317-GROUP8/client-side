@@ -4,6 +4,43 @@ const API_BASE = window.location.hostname === "localhost"
 
 const SESSION_MS = 12 * 60 * 60 * 1000; 
 
+// Image cache keys
+const IMAGE_ASSIGNMENTS_KEY = 'carImageAssignments';
+
+// Define all possible image combinations that exist in your assets
+const IMAGE_MANIFEST = {
+  'honda/civic': [
+    { num: 1, ext: 'jpeg' },
+    { num: 2, ext: 'jpeg' },
+    { num: 3, ext: 'jpeg' }
+  ],
+  'toyota/corolla': [
+    { num: 1, ext: 'png' },
+    { num: 2, ext: 'png' },
+    { num: 3, ext: 'jpeg' }
+  ],
+  'toyota/highlander': [
+    { num: 1, ext: 'png' },
+    { num: 2, ext: 'png' },
+    { num: 3, ext: 'jpeg' }
+  ],
+  'porsche/911': [
+    { num: 1, ext: 'jpeg' },
+    { num: 2, ext: 'jpeg' },
+    { num: 3, ext: 'jpeg' }
+  ],
+  'kia/k4': [
+    { num: 1, ext: 'jpeg' },
+    { num: 2, ext: 'jpeg' },
+    { num: 3, ext: 'jpeg' }
+  ],
+  'dodge/challenger': [
+    { num: 1, ext: 'png' },
+    { num: 2, ext: 'png' },
+    { num: 3, ext: 'jpeg' }
+  ]
+};
+
 function requireSession() {
   const email = localStorage.getItem("userEmail");
   const loggedInAt = Number(localStorage.getItem("loggedInAt") || "0");
@@ -64,6 +101,88 @@ function pick(...vals) {
   return null;
 }
 
+// Load image assignments from localStorage
+function loadImageAssignments() {
+  const raw = localStorage.getItem(IMAGE_ASSIGNMENTS_KEY);
+  return raw ? JSON.parse(raw) : {};
+}
+
+// Save image assignments to localStorage
+function saveImageAssignments(assignments) {
+  localStorage.setItem(IMAGE_ASSIGNMENTS_KEY, JSON.stringify(assignments));
+}
+
+// Get or create an image assignment for a specific vehicle
+function getOrCreateImageAssignment(vehicleId, manufacturer, model) {
+  if (!vehicleId || !manufacturer || !model) {
+    console.warn('Missing vehicleId, manufacturer, or model', { vehicleId, manufacturer, model });
+    return './assets/cars/dummy.png';
+  }
+  
+  const manufacturerLower = manufacturer.toLowerCase().trim();
+  const modelLower = model.toLowerCase().trim();
+  const modelKey = `${manufacturerLower}/${modelLower}`;
+  
+  // Get existing assignments
+  const assignments = loadImageAssignments();
+  
+  // Check if this specific vehicle already has an assigned image
+  if (assignments[vehicleId]) {
+    return assignments[vehicleId];
+  }
+  
+  // Get available images for this model from manifest
+  const availableImages = IMAGE_MANIFEST[modelKey];
+  
+  if (!availableImages) {
+    console.warn(`No manifest entry for model: ${modelKey}`);
+    return './assets/cars/dummy.png';
+  }
+  
+  if (availableImages.length === 0) {
+    console.warn(`Empty manifest for model: ${modelKey}`);
+    return './assets/cars/dummy.png';
+  }
+  
+  // Find which images are already assigned to OTHER vehicles of the same model
+  const assignedImagesForModel = new Set();
+  Object.entries(assignments).forEach(([vid, imageUrl]) => {
+    // Only consider other vehicles
+    if (vid !== vehicleId) {
+      // Extract the path and check if it matches this model
+      if (imageUrl.includes(`/assets/cars/${modelKey}/`)) {
+        assignedImagesForModel.add(imageUrl);
+      }
+    }
+  });
+  
+  // Find unassigned images for this model
+  const unassignedImages = availableImages.filter(img => {
+    const imageUrl = `./assets/cars/${modelKey}/${img.num}.${img.ext}`;
+    return !assignedImagesForModel.has(imageUrl);
+  });
+  
+  let selectedImageUrl;
+  
+  if (unassignedImages.length > 0) {
+    // Randomly select from unassigned images
+    const randomIndex = Math.floor(Math.random() * unassignedImages.length);
+    const selected = unassignedImages[randomIndex];
+    selectedImageUrl = `./assets/cars/${modelKey}/${selected.num}.${selected.ext}`;
+  } else {
+    // All images are used up, reset and randomly select from all available
+    const randomIndex = Math.floor(Math.random() * availableImages.length);
+    const selected = availableImages[randomIndex];
+    selectedImageUrl = `./assets/cars/${modelKey}/${selected.num}.${selected.ext}`;
+  }
+  
+  // Assign and save
+  assignments[vehicleId] = selectedImageUrl;
+  saveImageAssignments(assignments);
+  
+  return selectedImageUrl;
+}
+
 function normalizeCar(row) {
   const id = pick(
     row["Vehicle ID"],
@@ -83,6 +202,9 @@ function normalizeCar(row) {
   const priceVal = pick(row["Price"], row.price);
   const priceNum = priceVal === null ? null : Number(priceVal);
 
+  // Get image using manifest-based assignment
+  const imgUrl = getOrCreateImageAssignment(id, manufacturer, model);
+
   return {
     id,
     manufacturer,
@@ -90,28 +212,8 @@ function normalizeCar(row) {
     type,
     drivetrain,
     price: Number.isFinite(priceNum) ? priceNum : null,
+    imgUrl // Add the image URL to the car object
   };
-}
-
-const CAR_IMAGES = {
-  "Toyota Corolla | AWD": "corolla-awd.png",
-  "Toyota Corolla | FWD": "corolla-fwd.png",
-  "Toyota Highlander | AWD": "highlander-awd.png",
-  "Toyota Highlander | RWD": "highlander-rwd.png",
-  "Dodge Challenger | AWD": "challenger-awd.png",
-  "KIA K4 | RWD": "kia-k4-rwd.png",
-  "Honda Civic | RWD": "civic-rwd.png",
-  "Porsche 911 | AWD": "porsche-911-awd.png",
-};
-
-function carImageKey(c) {
-  return `${c.manufacturer} ${c.model} | ${c.drivetrain}`.trim();
-}
-
-function getCarImageSrc(c) {
-  const key = carImageKey(c);
-  const file = CAR_IMAGES[key] || "placeholder.png";
-  return `./assets/cars/${file}`;
 }
 
 async function loadCars() {
@@ -133,13 +235,11 @@ async function loadCars() {
       const priceText =
         c.price === null ? "—" : `$${c.price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}/day`;
 
-      const imgSrc = getCarImageSrc(c);
-
       const card = document.createElement("div");
       card.className = "card";
       card.innerHTML = `
         <div class="cardImg">
-          <img src="${imgSrc}" alt="${c.manufacturer} ${c.model}" onerror="this.src='./assets/cars/placeholder.png'">
+          <img src="${c.imgUrl}" alt="${c.manufacturer} ${c.model}" onerror="this.src='./assets/cars/dummy.png'">
         </div>
 
         <div class="cardBody">
@@ -176,8 +276,6 @@ async function loadCars() {
         window.location.href = `car-details.html?id=${vehicleId}${previewSuffix}`;
       });
     });
-    
-    
     
   } catch (err) {
     document.getElementById("status").textContent = `Error: ${err.message}`;
