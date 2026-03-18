@@ -371,7 +371,8 @@ function rowHtml(row, cols, pkName) {
         tr += `<td><input type="${inputType}" data-col="${escapeHtml(col)}" value="${inputVal}"></td>`;
       }
     } else {
-      tr += `<td>${escapeHtml(val)}</td>`;
+      const displayVal = isDateColumn(col) ? toDateInputValue(val) : val;
+      tr += `<td>${escapeHtml(displayVal)}</td>`;
     }
   });
 
