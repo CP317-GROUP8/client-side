@@ -37,7 +37,6 @@
       overflow-x: hidden;
     }
 
-    /* Ambient background glow */
     body::before {
       content: '';
       position: fixed;
@@ -58,7 +57,6 @@
       z-index: 1;
     }
 
-    /* ── STEP INDICATOR ── */
     .steps {
       display: flex;
       align-items: center;
@@ -112,7 +110,6 @@
       margin: 0 4px;
     }
 
-    /* ── CARD ── */
     .card {
       background: var(--surface);
       border: 1px solid var(--border);
@@ -121,7 +118,6 @@
       animation: fadeUp 0.4s 0.05s ease both;
     }
 
-    /* ── BOOKING SUMMARY ── */
     .summary {
       background: var(--surface2);
       border-bottom: 1px solid var(--border);
@@ -169,7 +165,6 @@
       font-family: 'DM Sans', sans-serif;
     }
 
-    /* ── FORM BODY ── */
     .form-body { padding: 28px; }
 
     .section-label {
@@ -207,11 +202,7 @@
 
     .field input:focus { border-color: var(--accent); }
     .field input::placeholder { color: var(--muted); }
-
-    .field input.mock {
-      font-family: 'Courier New', monospace;
-      letter-spacing: 0.05em;
-    }
+    .field input.mock { font-family: 'Courier New', monospace; letter-spacing: 0.05em; }
 
     .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 
@@ -229,13 +220,8 @@
       margin-bottom: 20px;
     }
 
-    .divider {
-      border: none;
-      border-top: 1px solid var(--border);
-      margin: 22px 0;
-    }
+    .divider { border: none; border-top: 1px solid var(--border); margin: 22px 0; }
 
-    /* ── TOTAL ROW ── */
     .total-row {
       display: flex;
       justify-content: space-between;
@@ -252,7 +238,6 @@
       color: var(--text);
     }
 
-    /* ── PAY BUTTON ── */
     .pay-btn {
       width: 100%;
       padding: 16px;
@@ -288,7 +273,6 @@
     .pay-btn.loading .btn-text { display: none; }
     .pay-btn.loading .spinner { display: block; }
 
-    /* ── SUCCESS STATE ── */
     .success-screen {
       display: none;
       padding: 40px 28px;
@@ -371,7 +355,6 @@
     }
     .success-btn.primary-btn:hover { opacity: 0.9; color: white; }
 
-    /* ── ERROR ── */
     .err-msg {
       font-size: 13px;
       color: var(--danger);
@@ -380,7 +363,6 @@
       min-height: 18px;
     }
 
-    /* ── SECURE NOTE ── */
     .secure-note {
       text-align: center;
       font-size: 12px;
@@ -389,7 +371,6 @@
       animation: fadeUp 0.4s 0.1s ease both;
     }
 
-    /* ── ANIMATIONS ── */
     @keyframes fadeUp {
       from { opacity: 0; transform: translateY(16px); }
       to   { opacity: 1; transform: translateY(0); }
@@ -400,9 +381,7 @@
       to   { opacity: 1; transform: scale(1); }
     }
 
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
+    @keyframes spin { to { transform: rotate(360deg); } }
 
     @media (max-width: 500px) {
       .summary { flex-wrap: wrap; }
@@ -414,7 +393,6 @@
 
   <div class="wrap">
 
-    <!-- Step indicator -->
     <div class="steps">
       <div class="step done">
         <div class="step-num">✓</div>
@@ -434,7 +412,6 @@
 
     <div class="card">
 
-      <!-- Booking summary bar -->
       <div class="summary">
         <img id="carImg" src="" alt="Car" onerror="this.src='./assets/cars/placeholder.png'">
         <div class="summary-info">
@@ -444,7 +421,6 @@
         <div class="summary-price" id="carPrice">—<span>/day</span></div>
       </div>
 
-      <!-- Payment form -->
       <div class="form-body" id="paymentForm">
         <div class="fake-badge">🔒 Simulated Payment — No real charge</div>
 
@@ -486,7 +462,6 @@
         <div class="err-msg" id="errMsg"></div>
       </div>
 
-      <!-- Success screen (hidden until payment) -->
       <div class="success-screen" id="successScreen">
         <div class="success-icon">✓</div>
         <div class="success-title">Booking Confirmed!</div>
@@ -515,6 +490,13 @@
     const API_BASE = "https://server-side-zqaz.onrender.com";
     const SESSION_MS = 12 * 60 * 60 * 1000;
 
+    // ── EmailJS config ──────────────────────────────────────────────────────
+    const EMAILJS_PUBLIC_KEY      = "H3F1dxhmOW-hMSZij";
+    const EMAILJS_SERVICE_ID      = "service_v914ueg";
+    const EMAILJS_PICKUP_TEMPLATE = "template_m5nti5o";
+
+    emailjs.init(EMAILJS_PUBLIC_KEY);
+
     const imageMap = {
       "Toyota Corolla AWD":    "corolla-awd.png",
       "Toyota Corolla FWD":    "corolla-fwd.png",
@@ -531,7 +513,6 @@
       return `./assets/cars/${imageMap[key] || "placeholder.png"}`;
     }
 
-    // ── SESSION ──
     function requireSession() {
       const email = localStorage.getItem("userEmail");
       const loggedInAt = Number(localStorage.getItem("loggedInAt") || "0");
@@ -546,44 +527,28 @@
 
     const userEmail = requireSession();
 
-    // ── READ URL PARAMS ──
-    // Expected: payment.html?id=VEHICLE_ID&from=DATE&to=DATE&pickup=LOC&dropoff=LOC
-    const params = new URLSearchParams(window.location.search);
-    const vehicleId   = params.get("id");
-    const fromDate    = params.get("from");
-    const toDate      = params.get("to");
-    const pickup      = params.get("pickup") || "";
-    const dropoff     = params.get("dropoff") || "";
-
-    // Validate dates are real calendar dates within a sensible range
-    function isValidDate(str) {
-      if (!str || !/^\d{4}-\d{2}-\d{2}$/.test(str)) return false;
-      const [y, m, d] = str.split("-").map(Number);
-      if (y < 2020 || y > 2100) return false;
-      const dt = new Date(y, m - 1, d);
-      return dt.getFullYear() === y && dt.getMonth() === m - 1 && dt.getDate() === d;
-    }
-
-    const today = new Date().toISOString().split("T")[0];
+    const params    = new URLSearchParams(window.location.search);
+    const vehicleId = params.get("id");
+    const fromDate  = params.get("from");
+    const toDate    = params.get("to");
+    const pickup    = params.get("pickup")  || "";
+    const dropoff   = params.get("dropoff") || "";
 
     if (!vehicleId || !fromDate || !toDate) {
       document.getElementById("errMsg").textContent = "Missing booking details. Please go back and try again.";
     }
 
-    // ── FORMAT DATE ──
     function formatDate(d) {
       if (!d) return "—";
       const [y, m, day] = d.split("-");
       return new Date(y, m - 1, day).toLocaleDateString("en-CA", { month: "short", day: "numeric", year: "numeric" });
     }
 
-    // ── DAYS BETWEEN ──
     function daysBetween(from, to) {
       const a = new Date(from), b = new Date(to);
       return Math.max(1, Math.round((b - a) / (1000 * 60 * 60 * 24)));
     }
 
-    // ── GENERATE REFERENCE ──
     function generateRef() {
       const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
       let ref = "CR-";
@@ -591,7 +556,6 @@
       return ref;
     }
 
-    // ── CARD FORMATTING ──
     document.getElementById("cardNumber").addEventListener("input", function () {
       let v = this.value.replace(/\D/g, "").slice(0, 16);
       this.value = v.replace(/(.{4})/g, "$1 ").trim();
@@ -607,7 +571,6 @@
       this.value = this.value.replace(/\D/g, "").slice(0, 3);
     });
 
-    // ── LOAD CAR DETAILS ──
     async function loadCar() {
       if (!vehicleId) return;
       try {
@@ -627,7 +590,6 @@
         document.getElementById("carPrice").innerHTML = `$${price.toFixed(2)}<span>/day</span>`;
         document.getElementById("totalDue").textContent = `$${total.toFixed(2)}`;
 
-        // Pre-fill cardholder name from stored user
         const userData = JSON.parse(localStorage.getItem("userData") || "{}");
         const fullName = `${userData.firstName || ""} ${userData.lastName || ""}`.trim();
         if (fullName) document.getElementById("cardName").value = fullName;
@@ -639,7 +601,6 @@
 
     loadCar();
 
-    // ── HANDLE PAY ──
     async function handlePay() {
       const errEl = document.getElementById("errMsg");
       const btn   = document.getElementById("payBtn");
@@ -654,62 +615,41 @@
       if (number.length < 16) { errEl.textContent = "Please enter a valid 16-digit card number."; return; }
       if (!expiry)            { errEl.textContent = "Please enter the expiry date."; return; }
 
-      // Validate expiry format MM / YY and not in the past
       const expiryClean = expiry.replace(/\s/g, "");
       const expiryMatch = expiryClean.match(/^(\d{2})\/(\d{2})$/);
-      if (!expiryMatch) {
-        errEl.textContent = "Expiry must be in MM / YY format (e.g. 08 / 27).";
-        return;
-      }
+      if (!expiryMatch) { errEl.textContent = "Expiry must be in MM / YY format (e.g. 08 / 27)."; return; }
+
       const expMonth = parseInt(expiryMatch[1], 10);
       const expYear  = 2000 + parseInt(expiryMatch[2], 10);
-      if (expMonth < 1 || expMonth > 12) {
-        errEl.textContent = "Expiry month must be between 01 and 12.";
-        return;
-      }
+      if (expMonth < 1 || expMonth > 12) { errEl.textContent = "Expiry month must be between 01 and 12."; return; }
+
       const now = new Date();
-      const cardExpiry = new Date(expYear, expMonth - 1, 1);
-      const thisMonth  = new Date(now.getFullYear(), now.getMonth(), 1);
-      if (cardExpiry < thisMonth) {
-        errEl.textContent = "Your card has expired. Please use a valid card.";
-        return;
+      if (new Date(expYear, expMonth - 1, 1) < new Date(now.getFullYear(), now.getMonth(), 1)) {
+        errEl.textContent = "Your card has expired. Please use a valid card."; return;
       }
 
-      if (cvv.length < 3)     { errEl.textContent = "Please enter a valid CVV."; return; }
+      if (cvv.length < 3) { errEl.textContent = "Please enter a valid CVV."; return; }
 
       btn.disabled = true;
       btn.classList.add("loading");
 
-      // Simulate payment processing delay
       await new Promise(r => setTimeout(r, 1800));
 
       try {
-        // Actually book the car on the server
         const res = await fetch(`${API_BASE}/cars/${vehicleId}/book`, {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "X-User-Email": userEmail,
-          },
-          body: JSON.stringify({
-            fromDate,
-            toDate,
-            pickupLocation: pickup,
-            dropoffLocation: dropoff,
-          }),
+          headers: { "Content-Type": "application/json", "X-User-Email": userEmail },
+          body: JSON.stringify({ fromDate, toDate, pickupLocation: pickup, dropoffLocation: dropoff }),
         });
 
         const data = await res.json().catch(() => ({}));
         if (!res.ok) throw new Error(data.error || "Booking failed");
 
-        // Generate + store reference number
         const ref = generateRef();
-        // Store reference tied to saleId for bookings page
         const refs = JSON.parse(localStorage.getItem("bookingRefs") || "{}");
         refs[data.saleId] = ref;
         localStorage.setItem("bookingRefs", JSON.stringify(refs));
 
-        // Show success and send email
         showSuccess(ref, data);
 
       } catch (err) {
@@ -719,9 +659,7 @@
       }
     }
 
-    // ── EMAILJS ──
-    emailjs.init("xKlqbLg8GDzQWAvbx");
-
+    // ── Original booking confirmation email (Hiermona's EmailJS) ──────────
     async function sendConfirmationEmail(ref) {
       try {
         const userData = JSON.parse(localStorage.getItem("userData") || "{}");
@@ -729,11 +667,7 @@
         const lastName  = userData.lastName  || userData["Last Name"]  || "";
         const toName    = `${firstName} ${lastName}`.trim() || "Valued Customer";
 
-        const days = (() => {
-          const a = new Date(fromDate), b = new Date(toDate);
-          return Math.max(1, Math.round((b - a) / (1000 * 60 * 60 * 24)));
-        })();
-
+        const days     = daysBetween(fromDate, toDate);
         const priceText = document.getElementById("carPrice")?.textContent || "";
         const priceNum  = parseFloat(priceText.replace(/[^0-9.]/g, "")) || 0;
         const total     = `$${(priceNum * days).toFixed(2)}`;
@@ -750,23 +684,62 @@
           total:      total,
         });
 
-        console.log("Confirmation email sent!");
+        console.log("✅ Confirmation email sent!");
       } catch (err) {
-        console.warn("Email send failed (booking still confirmed):", err);
+        console.warn("Confirmation email failed:", err);
       }
     }
 
-    function showSuccess(ref) {
-      // Update step 3
-      const step3 = document.getElementById("step3");
-      step3.classList.add("active");
+    // ── Email 2: Pickup Details (fires on booking confirm) ─────────────────
+    async function sendPickupEmail(ref, carName, userName) {
+      try {
+        await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_PICKUP_TEMPLATE, {
+          user_name:       userName,
+          user_email:      userEmail,
+          car_name:        carName,
+          pickup_date:     formatDate(fromDate),
+          dropoff_date:    formatDate(toDate),
+          pickup_location: pickup || "—",
+          sale_id:         ref,
+        });
+        console.log("✅ Pickup details email sent!");
+      } catch (err) {
+        console.warn("Pickup email failed:", err);
+      }
+    }
 
+    // ── Email 3: Return Details (fires on booking confirm) ─────────────────
+    async function sendReturnEmail(ref, carName, userName) {
+      try {
+        await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_PICKUP_TEMPLATE, {
+          user_name:       userName,
+          user_email:      userEmail,
+          car_name:        carName,
+          pickup_date:     formatDate(fromDate),
+          dropoff_date:    formatDate(toDate),
+          pickup_location: dropoff || "—",
+          sale_id:         ref,
+        });
+        console.log("✅ Return details email sent!");
+      } catch (err) {
+        console.warn("Return email failed:", err);
+      }
+    }
+
+    async function showSuccess(ref, data) {
+      document.getElementById("step3").classList.add("active");
       document.getElementById("paymentForm").style.display = "none";
       document.getElementById("refNumber").textContent = ref;
       document.getElementById("successScreen").style.display = "block";
 
-      // Send confirmation email
-      sendConfirmationEmail(ref);
+      const userData = JSON.parse(localStorage.getItem("userData") || "{}");
+      const userName = `${userData.firstName || ""} ${userData.lastName || ""}`.trim() || userEmail;
+      const carName  = document.getElementById("carName")?.textContent || `Vehicle #${vehicleId}`;
+
+      // Fire all 3 emails
+      await sendConfirmationEmail(ref);
+      await sendPickupEmail(ref, carName, userName);
+      await sendReturnEmail(ref, carName, userName);
     }
   </script>
 </body>
