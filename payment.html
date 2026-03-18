@@ -658,6 +658,7 @@
           pickup_date:     formatDate(fromDate),
           dropoff_date:    formatDate(toDate),
           pickup_location: pickup || "—",
+          email_type:      "Booking Confirmed + Pickup Details",
           sale_id:         "see booking confirmation",
         }, KEERTHANA_KEY); // ← Keerthana's key passed directly
         console.log("✅ Pickup reminder email sent!");
@@ -676,6 +677,7 @@
           pickup_date:     formatDate(fromDate),
           dropoff_date:    formatDate(toDate),
           pickup_location: dropoff || "—",
+          email_type:      "Return Details",
           sale_id:         "see booking confirmation",
         }, KEERTHANA_KEY); // ← Keerthana's key passed directly
         console.log("✅ Return reminder email sent!");
