@@ -473,39 +473,38 @@
       const IMAGE_ASSIGNMENTS_KEY = 'carImageAssignments';
       
       // Define all possible image combinations that exist in your assets
-      // This is your "manifest" of what images actually exist
+      // UPDATED to match cars.js manifest with correct extensions
       const IMAGE_MANIFEST = {
         'honda/civic': [
-          { num: 1, ext: 'png' },
-          { num: 2, ext: 'jpg' },
+          { num: 1, ext: 'jpeg' },
+          { num: 2, ext: 'jpeg' },
           { num: 3, ext: 'jpeg' }
         ],
         'toyota/corolla': [
           { num: 1, ext: 'png' },
-          { num: 2, ext: 'jpg' },
-          { num: 3, ext: 'png' }
+          { num: 2, ext: 'png' },
+          { num: 3, ext: 'jpeg' }
         ],
         'toyota/highlander': [
-          { num: 1, ext: 'jpg' },
+          { num: 1, ext: 'png' },
           { num: 2, ext: 'png' },
           { num: 3, ext: 'jpeg' }
         ],
         'porsche/911': [
-          { num: 1, ext: 'png' },
-          { num: 2, ext: 'jpg' },
+          { num: 1, ext: 'jpeg' },
+          { num: 2, ext: 'jpeg' },
           { num: 3, ext: 'jpeg' }
         ],
         'kia/k4': [
-          { num: 1, ext: 'png' },
-          { num: 2, ext: 'jpg' },
-          { num: 3, ext: 'png' }
+          { num: 1, ext: 'jpeg' },
+          { num: 2, ext: 'jpeg' },
+          { num: 3, ext: 'jpeg' }
         ],
         'dodge/challenger': [
-          { num: 1, ext: 'jpg' },
+          { num: 1, ext: 'png' },
           { num: 2, ext: 'png' },
           { num: 3, ext: 'jpeg' }
         ]
-        // Add more as they become available
       };
 
       function getWeekKey(date = new Date()) {
@@ -627,9 +626,6 @@
           const randomIndex = Math.floor(Math.random() * availableImages.length);
           const selected = availableImages[randomIndex];
           selectedImageUrl = `./assets/cars/${modelKey}/${selected.num}.${selected.ext}`;
-          
-          // Optional: Log that we've reset (for debugging)
-          console.log(`All images for ${modelKey} used, resetting pool`);
         }
         
         // Assign and save
@@ -1065,6 +1061,4 @@
 
       wireUI();
       loadCars();
-    </script>
-  </body>
-</html>
+   
