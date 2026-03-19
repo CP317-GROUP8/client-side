@@ -9,6 +9,7 @@ const IMAGE_ASSIGNMENTS_KEY = 'carImageAssignments';
 const IMAGE_MANIFEST_KEY = 'carImageManifest';
 
 // Define all possible image combinations that exist in your assets
+// This is your "manifest" of what images actually exist
 const IMAGE_MANIFEST = {
   'honda/civic': [
     { num: 1, ext: 'jpeg' },
@@ -46,7 +47,7 @@ function formatDate(dateStr) {
   if (!dateStr) return "—";
   const [y, m, d] = dateStr.slice(0, 10).split("-");
   return new Date(y, m - 1, d).toLocaleDateString("en-CA", { month: "short", day: "numeric", year: "numeric" });
-}
+} 
 
 function requireSession() {
   const email = localStorage.getItem("userEmail");
@@ -76,65 +77,68 @@ function saveImageAssignments(assignments) {
 }
 
 // Get or create an image assignment for a specific vehicle
-// Uses local assets for known cars, Unsplash for everything else
 function getOrCreateImageAssignment(vehicleId, manufacturer, model) {
   if (!vehicleId || !manufacturer || !model) {
     return './assets/cars/dummy.png';
   }
-
+  
   const manufacturerLower = manufacturer.toLowerCase().trim();
   const modelLower = model.toLowerCase().trim();
   const modelKey = `${manufacturerLower}/${modelLower}`;
-
+  
   // Get existing assignments
   const assignments = loadImageAssignments();
-
+  
   // Check if this specific vehicle already has an assigned image
   if (assignments[vehicleId]) {
     return assignments[vehicleId];
   }
-
+  
   // Get available images for this model from manifest
   const availableImages = IMAGE_MANIFEST[modelKey] || [];
-
-  // ── Not in manifest → use Unsplash (free, no API key) ──
   if (availableImages.length === 0) {
-    const query = encodeURIComponent(`${manufacturer} ${model} car`);
-    const seed  = encodeURIComponent(vehicleId);
-    const unsplashUrl = `https://source.unsplash.com/seed/${seed}/600x400/?${query}`;
-    assignments[vehicleId] = unsplashUrl;
-    saveImageAssignments(assignments);
-    return unsplashUrl;
+    return './assets/cars/dummy.png';
   }
-
-  // ── In manifest → pick from local assets ──
+  
+  // Find which images are already assigned to OTHER vehicles of the same model
   const assignedImagesForModel = new Set();
   Object.entries(assignments).forEach(([vid, imageUrl]) => {
-    if (vid !== vehicleId && imageUrl.includes(`/assets/cars/${modelKey}/`)) {
-      assignedImagesForModel.add(imageUrl);
+    // Only consider other vehicles
+    if (vid !== vehicleId) {
+      // Extract the path and check if it matches this model
+      if (imageUrl.includes(`/assets/cars/${modelKey}/`)) {
+        assignedImagesForModel.add(imageUrl);
+      }
     }
   });
-
+  
+  // Find unassigned images for this model
   const unassignedImages = availableImages.filter(img => {
     const imageUrl = `./assets/cars/${modelKey}/${img.num}.${img.ext}`;
     return !assignedImagesForModel.has(imageUrl);
   });
-
+  
   let selectedImageUrl;
-
+  
   if (unassignedImages.length > 0) {
+    // Randomly select from unassigned images
     const randomIndex = Math.floor(Math.random() * unassignedImages.length);
     const selected = unassignedImages[randomIndex];
     selectedImageUrl = `./assets/cars/${modelKey}/${selected.num}.${selected.ext}`;
   } else {
+    // All images are used up, reset and randomly select from all available
     const randomIndex = Math.floor(Math.random() * availableImages.length);
     const selected = availableImages[randomIndex];
     selectedImageUrl = `./assets/cars/${modelKey}/${selected.num}.${selected.ext}`;
+    
+    // Optional: Log that we've reset (for debugging)
     console.log(`All images for ${modelKey} used, resetting pool`);
   }
-
+  
+  // Assign and save
   assignments[vehicleId] = selectedImageUrl;
   saveImageAssignments(assignments);
+  
   return selectedImageUrl;
 }
 
@@ -230,10 +234,11 @@ async function loadCarDetails() {
     carAvail.textContent = "Available";
     carAvail.className = "pill ok";
 
-    // Use the image assignment system (local assets + Unsplash fallback)
+    // Use the new image assignment system
     const imageUrl = getOrCreateImageAssignment(id, manufacturer, model);
     carImg.src = imageUrl;
-
+    
+    // Fallback error handler
     carImg.onerror = () => {
       console.error(`Failed to load image: ${imageUrl}`);
       carImg.src = './assets/cars/dummy.png';
@@ -249,6 +254,7 @@ async function loadCarDetails() {
 }
 
 function bookCar() {
+
   const fromDate = fromDateEl.value;
   const toDate = toDateEl.value;
   const pickupLocation = (pickupLocationEl?.value || "").trim();
