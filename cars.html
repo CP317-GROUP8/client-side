@@ -372,10 +372,7 @@
         // Not in manifest → use Unsplash (free, no API key)
         if (available.length === 0) {
           const query = encodeURIComponent(`${manufacturer} ${model} car`);
-          const url = `https://source.unsplash.com/seed/${encodeURIComponent(vehicleId)}/600x400/?${query}`;
-          assignments[vehicleId] = url;
-          saveImageAssignments(assignments);
-          return url;
+          return `https://source.unsplash.com/seed/${encodeURIComponent(vehicleId)}/600x400/?${query}`;
         }
 
         // In manifest → pick from local assets
