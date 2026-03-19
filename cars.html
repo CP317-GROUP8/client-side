@@ -15,7 +15,6 @@
         transition: background 0.2s, color 0.2s;
       }
 
-
       .container { max-width: 1400px; margin: auto; padding: 40px; }
 
       header { display: flex; justify-content: space-between; align-items: center; }
@@ -31,7 +30,6 @@
         gap: 16px;
       }
 
-
       button {
         padding: 12px 18px;
         border-radius: 14px;
@@ -39,7 +37,6 @@
         cursor: pointer;
         transition: filter 0.15s;
       }
-
 
       button:hover { filter: brightness(0.95); }
 
@@ -51,7 +48,6 @@
         color: var(--ink, #0d1117);
       }
 
-
       .searchBox {
         height: 46px;
         border-radius: 14px;
@@ -62,7 +58,6 @@
         color: var(--ink, #0d1117);
       }
 
-
       .searchBox::placeholder { color: var(--muted, #8891a0); }
 
       .grid {
@@ -70,7 +65,6 @@
         grid-template-columns: repeat(3, 1fr);
         gap: 24px;
       }
-
 
       .card {
         background: var(--surface, white);
@@ -81,14 +75,12 @@
         border: 1px solid var(--border, transparent);
       }
 
-
       .card img {
         width: 100%;
         height: 220px;
         object-fit: cover;
         background: var(--surface2, #ddd);
       }
-
 
       .cardBody { padding: 18px; }
 
@@ -107,7 +99,6 @@
         margin: 8px 0;
       }
 
-
       .available   { background: #dcfce7; color: #166534; }
       .unavailable { background: var(--danger-light, #fee2e2); color: var(--danger, #991b1b); }
 
@@ -124,7 +115,6 @@
         font-weight: 600;
       }
 
-
       .viewBtn { background: var(--accent, #4f46e5); color: white; }
 
       .bookBtn {
@@ -133,9 +123,7 @@
         background: var(--surface, white);
       }
 
-
       /* ── FILTER PANEL ── */
-
       #filterPanel {
         display: none;
         margin: 10px 0 22px;
@@ -147,7 +135,6 @@
         border: 1px solid var(--border, rgba(148,163,184,0.35));
         box-shadow: 0 16px 45px rgba(15,23,42,0.1);
       }
-
 
       #filterPanel select {
         height: 44px;
@@ -161,12 +148,10 @@
         transition: box-shadow 0.15s ease, border-color 0.15s ease;
       }
 
-
       #filterPanel select:focus {
         border-color: rgba(79,70,229,0.55);
         box-shadow: 0 0 0 4px rgba(79,70,229,0.15);
       }
-
 
       #filterPanel input[type="range"] {
         width: 260px;
@@ -175,7 +160,6 @@
         background: var(--border, rgba(148,163,184,0.35));
         outline: none;
       }
-
 
       #filterPanel input[type="range"]::-webkit-slider-thumb {
         -webkit-appearance: none;
@@ -187,7 +171,6 @@
         cursor: pointer;
       }
 
-
       #filterPanel input[type="range"]::-moz-range-thumb {
         width: 18px; height: 18px;
         border-radius: 999px;
@@ -196,13 +179,11 @@
         cursor: pointer;
       }
 
-
       #clearFilters {
         border: 1px solid var(--border, rgba(148,163,184,0.55));
         background: var(--surface, rgba(255,255,255,0.85));
         color: var(--ink, #0d1117);
       }
-
 
       .card.clickable:hover {
         transform: translateY(-4px);
@@ -210,9 +191,7 @@
         transition: all 0.2s ease;
       }
 
-
       /* ── MODAL ── */
-
       #vehicleModal {
         display: none;
         position: fixed;
@@ -222,7 +201,6 @@
         align-items: center;
         justify-content: center;
       }
-
 
       .modalInner {
         background: var(--surface, white);
@@ -237,7 +215,6 @@
         border: 1px solid var(--border, transparent);
       }
 
-
       .modalClose {
         position: absolute;
         top: 16px; right: 16px;
@@ -248,7 +225,6 @@
         color: var(--muted, #64748b);
         padding: 4px 8px;
       }
-
 
       #modalTitle { margin: 0 0 4px; color: var(--ink, #0d1117); }
 
@@ -261,7 +237,6 @@
         .topRow { flex-direction: column; align-items: stretch; }
         .searchBox { width: 100%; }
       }
-
     </style>
   </head>
 
@@ -343,11 +318,13 @@
         ? "http://localhost:10000"
         : "https://server-side-zqaz.onrender.com";
 
-      const params      = new URLSearchParams(window.location.search);
-      const isPreview   = params.get("preview") === "1";
-      const searchWhere = normalizeCity(params.get("where"));
+      const params    = new URLSearchParams(window.location.search);
+      const isPreview = params.get("preview") === "1";
 
-      // ── IMAGE FUNCTIONS handled by images.js ──
+      // ── define normalizeCity BEFORE using it ──
+      function normalizeCity(v) { return String(v || "").trim().toLowerCase().replace(/,.*$/, ""); }
+
+      const searchWhere = normalizeCity(params.get("where"));
 
       // ── POPULARITY ──
       function getWeekKey(date = new Date()) {
@@ -356,7 +333,6 @@
         d.setDate(d.getDate() + diffToMonday);
         return d.toISOString().slice(0,10);
       }
-
       function popularityStorageKey() { return `popularity:${getWeekKey()}`; }
       function loadPopularityMap() { const raw = localStorage.getItem(popularityStorageKey()); const obj = raw ? JSON.parse(raw) : {}; return obj && typeof obj === "object" ? obj : {}; }
       function savePopularityMap(map) { localStorage.setItem(popularityStorageKey(), JSON.stringify(map)); }
@@ -372,13 +348,9 @@
           ["userEmail","loggedInAt","isAdmin"].forEach(k => localStorage.removeItem(k));
           window.location.replace("index.html"); throw new Error("Session expired");
         }
-
         return email;
       }
-
       const userEmail = isPreview ? localStorage.getItem("userEmail") || "preview@example.com" : requireSession();
-
-      // Image functions provided by images.js (loaded before this script)
 
       // ── FAVOURITES ──
       function favStorageKey() { return `favs:${userEmail}`; }
@@ -389,7 +361,6 @@
       let allCars = [], filteredCars = [];
 
       function safeStr(v) { return (v ?? "").toString().trim(); }
-      function normalizeCity(v) { return String(v || "").trim().toLowerCase().replace(/,.*$/, ""); }
 
       function normalizeCar(car) {
         const id           = safeStr(car["Vehicle ID"] ?? car.vehicleId ?? car.id);
@@ -407,7 +378,6 @@
         const favKey       = carKeyFromParts(manufacturer, model, drivetrain, cleanPriceNum ?? NaN);
         return { id, manufacturer, model, type, drivetrain, city, isAvailable, priceText, imgUrl, priceNum: cleanPriceNum, favKey };
       }
-
 
       function carDetailsHref(vehicleId) { if (!vehicleId) return "#"; return `car-details.html?id=${encodeURIComponent(vehicleId)}${isPreview ? "&preview=1" : ""}`; }
       function carBookHref(vehicleId)    { return carDetailsHref(vehicleId); }
@@ -438,7 +408,6 @@
         document.getElementById("modalBookBtn").setAttribute("data-vehicle-id", car.id || "");
         document.getElementById("vehicleModal").style.display = "flex";
       }
-
 
       function closeModal() { document.getElementById("vehicleModal").style.display = "none"; }
 
@@ -495,7 +464,7 @@
 
           grid.appendChild(card);
 
-          // Load image with Wikipedia fallback
+          // Load image via images.js (Unsplash fallback for unknown cars)
           const imgEl = card.querySelector('img[data-vid]');
           if (imgEl) setImageOnElement(imgEl, car.id, car.manufacturer, car.model);
         });
@@ -521,7 +490,6 @@
         });
       }
 
-
       // ── FILTERS ──
       function getSearchQuery()  { return (document.getElementById("searchInput")?.value  || "").trim().toLowerCase(); }
       function getSelectedType() { return (document.getElementById("filterType")?.value   || "").trim(); }
@@ -535,7 +503,6 @@
         const max = Number(slider.max), val = Number(slider.value);
         label.textContent = (!Number.isFinite(val) || !Number.isFinite(max) || val >= max) ? "Any" : `$${val}`;
       }
-
 
       function applyAllFilters() {
         const q          = getSearchQuery();
@@ -553,7 +520,6 @@
         renderCars(filteredCars);
       }
 
-
       // ── LOAD ──
       async function loadCars() {
         const grid     = document.getElementById("carsGrid");
@@ -570,7 +536,6 @@
               ? `<span id="availableCount">${allCars.length}</span> cars in ${params.get("where")}`
               : `<span id="availableCount">${allCars.length}</span> available vehicles • Updated in real-time`;
           }
-
           const prices   = allCars.map(c => c.priceNum).filter(n => Number.isFinite(n));
           const maxPrice = prices.length ? Math.max(...prices) : 2000;
           const slider   = document.getElementById("filterPrice");
@@ -580,7 +545,6 @@
           console.error(e);
           document.getElementById("carsGrid").innerHTML = `<div style="color:var(--danger,#b91c1c);">Failed to load cars.</div>`;
         }
-
       }
 
       // ── WIRE UI ──
