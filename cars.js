@@ -34,7 +34,7 @@ const IMAGE_MANIFEST = {
   'bmw/i4':             [{ num: 1, ext: 'jpeg' }],
   'bmw/x5':             [{ num: 1, ext: 'jpeg' }],
   'subaru/crosstrek':   [{ num: 1, ext: 'jpeg' }],
-
+  'subaru/forester':  [{ num: 1, ext: 'jpeg' }],
 };
 
 function requireSession() {
