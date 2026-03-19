@@ -5,82 +5,101 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Favourites</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
-
 <style>
-*{ box-sizing:border-box; font-family:Inter,system-ui; }
-body{ margin:0; background:linear-gradient(180deg,#eef2ff,#f8fafc); }
-.container{ max-width:1400px; margin:auto; padding:40px; }
+* { box-sizing: border-box; font-family: Inter, system-ui; }
 
-header{ display:flex; justify-content:space-between; align-items:center; }
-h1{ font-size:44px; margin:0; }
-.sub{ color:#555; }
-
-button{
-  padding:12px 18px;
-  border-radius:14px;
-  border:none;
-  cursor:pointer;
-}
-.secondary{ background:white;border:1px solid #ccc; }
-
-.grid{
-  display:grid;
-  grid-template-columns:repeat(3,1fr);
-  gap:24px;
-  margin-top:24px;
+body {
+  margin: 0;
+  background: var(--bg, #f4f6f9);
+  color: var(--ink, #0d1117);
+  transition: background 0.2s, color 0.2s;
 }
 
-.card{
-  background:white;
-  border-radius:20px;
-  overflow:hidden;
-  box-shadow:0 12px 30px rgba(0,0,0,.06);
+.container { max-width: 1400px; margin: auto; padding: 40px; }
+
+header { display: flex; justify-content: space-between; align-items: center; }
+
+h1 { font-size: 44px; margin: 0; color: var(--ink, #0d1117); }
+
+.sub { color: var(--muted, #555); }
+
+button {
+  padding: 12px 18px;
+  border-radius: 14px;
+  border: 1px solid var(--border, #ccc);
+  cursor: pointer;
+  background: var(--surface, white);
+  color: var(--ink, #0d1117);
+  font-weight: 600;
+  transition: filter 0.15s;
+}
+button:hover { filter: brightness(0.95); }
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+  margin-top: 24px;
 }
 
-.card img{
-  width:100%;
-  height:220px;
-  object-fit:cover;
-  background:#ddd;
+.card {
+  background: var(--surface, white);
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 12px 30px rgba(0,0,0,.06);
+  border: 1px solid var(--border, transparent);
 }
 
-.cardBody{ padding:18px; }
-.titleRow{ display:flex; justify-content:space-between; align-items:flex-start; gap:12px; }
-.price{ font-weight:600; }
-.meta{ color:#555;font-size:14px; margin-top:6px; }
+.card img {
+  width: 100%;
+  height: 220px;
+  object-fit: cover;
+  background: var(--surface2, #ddd);
+}
 
-.removeBtn{
-  padding:10px 12px;
-  border-radius:12px;
-  background: #fee2e2;
-  color: #991b1b;
+.cardBody { padding: 18px; }
+
+.titleRow { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+
+.price { font-weight: 600; color: var(--ink, #0d1117); }
+
+.meta { color: var(--muted, #555); font-size: 14px; margin-top: 6px; }
+
+.carName { margin: 0; color: var(--ink, #0d1117); }
+
+.removeBtn {
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--danger-light, #fee2e2);
+  color: var(--danger, #991b1b);
   border: 1px solid rgba(153,27,27,0.2);
-  cursor:pointer;
-  font-weight:600;
+  cursor: pointer;
+  font-weight: 600;
+  transition: filter 0.15s;
 }
+.removeBtn:hover { filter: brightness(0.95); }
 
-@media(max-width:900px){
-  .grid{grid-template-columns:1fr;}
-}
+@media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
 </style>
 </head>
 
 <body>
 <div class="container">
 
-<header>
-  <div>
-    <h1>Favourites</h1>
-    <div class="sub">Saved cars for this account</div>
-  </div>
-  <div style="display:flex; gap:12px;">
-    <button class="secondary" onclick="location.href='cars.html?preview=1'">← Back to Cars</button>
-    <button class="secondary" onclick="location.href='home.html?v=7'">← Home</button>
-  </div>
-</header>
+  <header>
+    <div>
+      <h1>Favourites</h1>
+      <div class="sub">Saved cars for this account</div>
+    </div>
+    <div style="display:flex; gap:12px;">
+      <button onclick="location.href='cars.html?preview=1'">← Back to Cars</button>
+      <button onclick="location.href='home.html?v=7'">← Home</button>
+      <button class="dm-toggle">🌙</button>
+    </div>
+  </header>
 
-<div class="sub" id="status" style="margin-top:16px;"></div>
-<div class="grid" id="favGrid"></div>
+  <div class="sub" id="status" style="margin-top:16px;"></div>
+  <div class="grid" id="favGrid"></div>
 
 </div>
 
@@ -88,44 +107,18 @@ button{
 const API = window.location.hostname === "localhost"
   ? "http://localhost:10000"
   : "https://server-side-zqaz.onrender.com";
-const params = new URLSearchParams(window.location.search);
+const params    = new URLSearchParams(window.location.search);
 const isPreview = params.get("preview") === "1";
 
-// Image cache keys
 const IMAGE_ASSIGNMENTS_KEY = 'carImageAssignments';
 
-// Define all possible image combinations that exist in your assets
 const IMAGE_MANIFEST = {
-  'honda/civic': [
-    { num: 1, ext: 'jpeg' },
-    { num: 2, ext: 'jpeg' },
-    { num: 3, ext: 'jpeg' }
-  ],
-  'toyota/corolla': [
-    { num: 1, ext: 'png' },
-    { num: 2, ext: 'png' },
-    { num: 3, ext: 'jpeg' }
-  ],
-  'toyota/highlander': [
-    { num: 1, ext: 'png' },
-    { num: 2, ext: 'png' },
-    { num: 3, ext: 'jpeg' }
-  ],
-  'porsche/911': [
-    { num: 1, ext: 'jpeg' },
-    { num: 2, ext: 'jpeg' },
-    { num: 3, ext: 'jpeg' }
-  ],
-  'kia/k4': [
-    { num: 1, ext: 'jpeg' },
-    { num: 2, ext: 'jpeg' },
-    { num: 3, ext: 'jpeg' }
-  ],
-  'dodge/challenger': [
-    { num: 1, ext: 'png' },
-    { num: 2, ext: 'png' },
-    { num: 3, ext: 'jpeg' }
-  ]
+  'honda/civic':       [{num:1,ext:'jpeg'},{num:2,ext:'jpeg'},{num:3,ext:'jpeg'}],
+  'toyota/corolla':    [{num:1,ext:'png' },{num:2,ext:'png' },{num:3,ext:'jpeg'}],
+  'toyota/highlander': [{num:1,ext:'png' },{num:2,ext:'png' },{num:3,ext:'jpeg'}],
+  'porsche/911':       [{num:1,ext:'jpeg'},{num:2,ext:'jpeg'},{num:3,ext:'jpeg'}],
+  'kia/k4':            [{num:1,ext:'jpeg'},{num:2,ext:'jpeg'},{num:3,ext:'jpeg'}],
+  'dodge/challenger':  [{num:1,ext:'png' },{num:2,ext:'png' },{num:3,ext:'jpeg'}]
 };
 
 const SESSION_MS = 12 * 60 * 60 * 1000;
@@ -133,189 +126,82 @@ const SESSION_MS = 12 * 60 * 60 * 1000;
 function requireSession() {
   const email = localStorage.getItem("userEmail");
   const loggedInAt = Number(localStorage.getItem("loggedInAt") || "0");
-  if (!email || !loggedInAt) {
-    window.location.replace("index.html");
-    throw new Error("No session");
-  }
+  if (!email || !loggedInAt) { window.location.replace("index.html"); throw new Error("No session"); }
   if (Date.now() - loggedInAt > SESSION_MS) {
-    localStorage.removeItem("userEmail");
-    localStorage.removeItem("loggedInAt");
-    localStorage.removeItem("isAdmin");
-    window.location.replace("index.html");
-    throw new Error("Session expired");
+    ["userEmail","loggedInAt","isAdmin"].forEach(k => localStorage.removeItem(k));
+    window.location.replace("index.html"); throw new Error("Session expired");
   }
   return email;
 }
-const userEmail = isPreview
-  ? (localStorage.getItem("userEmail") || "preview@example.com")
-  : requireSession();
+const userEmail = isPreview ? (localStorage.getItem("userEmail") || "preview@example.com") : requireSession();
 
-// Load image assignments from localStorage
-function loadImageAssignments() {
-  const raw = localStorage.getItem(IMAGE_ASSIGNMENTS_KEY);
-  return raw ? JSON.parse(raw) : {};
-}
+function loadImageAssignments() { const raw = localStorage.getItem(IMAGE_ASSIGNMENTS_KEY); return raw ? JSON.parse(raw) : {}; }
+function saveImageAssignments(a) { localStorage.setItem(IMAGE_ASSIGNMENTS_KEY, JSON.stringify(a)); }
 
-// Save image assignments to localStorage
-function saveImageAssignments(assignments) {
-  localStorage.setItem(IMAGE_ASSIGNMENTS_KEY, JSON.stringify(assignments));
-}
-
-// Get or create an image assignment for a specific vehicle
 function getOrCreateImageAssignment(vehicleId, manufacturer, model) {
-  if (!vehicleId || !manufacturer || !model) {
-    return './assets/cars/dummy.png';
-  }
-  
-  const manufacturerLower = manufacturer.toLowerCase().trim();
-  const modelLower = model.toLowerCase().trim();
-  const modelKey = `${manufacturerLower}/${modelLower}`;
-  
-  // Get existing assignments
+  if (!vehicleId || !manufacturer || !model) return './assets/cars/dummy.png';
+  const modelKey = `${manufacturer.toLowerCase().trim()}/${model.toLowerCase().trim()}`;
   const assignments = loadImageAssignments();
-  
-  // Check if this specific vehicle already has an assigned image
   if (assignments[vehicleId]) {
-    // Double-check that the existing assignment is still valid
-    const validPaths = new Set();
-    const availableImages = IMAGE_MANIFEST[modelKey] || [];
-    availableImages.forEach(img => {
-      validPaths.add(`./assets/cars/${modelKey}/${img.num}.${img.ext}`);
-    });
-    
-    if (validPaths.has(assignments[vehicleId])) {
-      return assignments[vehicleId];
-    } else {
-      // Invalid assignment, remove it
-      delete assignments[vehicleId];
-      saveImageAssignments(assignments);
-    }
+    const validPaths = new Set((IMAGE_MANIFEST[modelKey] || []).map(i => `./assets/cars/${modelKey}/${i.num}.${i.ext}`));
+    if (validPaths.has(assignments[vehicleId])) return assignments[vehicleId];
+    delete assignments[vehicleId]; saveImageAssignments(assignments);
   }
-  
-  // Get available images for this model from manifest
-  const availableImages = IMAGE_MANIFEST[modelKey] || [];
-  if (availableImages.length === 0) {
-    return './assets/cars/dummy.png';
-  }
-  
-  // Find which images are already assigned to OTHER vehicles of the same model
-  const assignedImagesForModel = new Set();
-  Object.entries(assignments).forEach(([vid, imageUrl]) => {
-    // Only consider other vehicles
-    if (vid !== vehicleId) {
-      // Extract the path and check if it matches this model
-      if (imageUrl.includes(`/assets/cars/${modelKey}/`)) {
-        assignedImagesForModel.add(imageUrl);
-      }
-    }
-  });
-  
-  // Find unassigned images for this model
-  const unassignedImages = availableImages.filter(img => {
-    const imageUrl = `./assets/cars/${modelKey}/${img.num}.${img.ext}`;
-    return !assignedImagesForModel.has(imageUrl);
-  });
-  
-  let selectedImageUrl;
-  
-  if (unassignedImages.length > 0) {
-    // Randomly select from unassigned images
-    const randomIndex = Math.floor(Math.random() * unassignedImages.length);
-    const selected = unassignedImages[randomIndex];
-    selectedImageUrl = `./assets/cars/${modelKey}/${selected.num}.${selected.ext}`;
-  } else {
-    // All images are used up, reset and randomly select from all available
-    const randomIndex = Math.floor(Math.random() * availableImages.length);
-    const selected = availableImages[randomIndex];
-    selectedImageUrl = `./assets/cars/${modelKey}/${selected.num}.${selected.ext}`;
-  }
-  
-  // Assign and save
-  assignments[vehicleId] = selectedImageUrl;
-  saveImageAssignments(assignments);
-  
-  return selectedImageUrl;
+  const available = IMAGE_MANIFEST[modelKey] || [];
+  if (!available.length) return './assets/cars/dummy.png';
+  const usedUrls = new Set(Object.entries(assignments).filter(([vid]) => vid !== vehicleId).map(([,url]) => url).filter(url => url.includes(`/assets/cars/${modelKey}/`)));
+  const pool = available.filter(i => !usedUrls.has(`./assets/cars/${modelKey}/${i.num}.${i.ext}`));
+  const chosen = (pool.length ? pool : available)[Math.floor(Math.random() * (pool.length || available.length))];
+  const url = `./assets/cars/${modelKey}/${chosen.num}.${chosen.ext}`;
+  assignments[vehicleId] = url; saveImageAssignments(assignments);
+  return url;
 }
 
-function favStorageKey(){ return `favs:${userEmail}`; }
-function loadFavsSet(){
-  const raw = localStorage.getItem(favStorageKey());
-  const arr = raw ? JSON.parse(raw) : [];
-  return new Set(Array.isArray(arr) ? arr : []);
-}
-function saveFavsSet(set){
-  localStorage.setItem(favStorageKey(), JSON.stringify([...set]));
-}
+function favStorageKey() { return `favs:${userEmail}`; }
+function loadFavsSet() { const raw = localStorage.getItem(favStorageKey()); const arr = raw ? JSON.parse(raw) : []; return new Set(Array.isArray(arr) ? arr : []); }
+function saveFavsSet(set) { localStorage.setItem(favStorageKey(), JSON.stringify([...set])); }
+function carKeyFromParts(manufacturer, model, drivetrain, priceNum) { const p = Number.isFinite(priceNum) ? priceNum.toFixed(2) : "NA"; return `${manufacturer}|${model}|${drivetrain}|${p}`; }
+function safeStr(v) { return (v ?? "").toString().trim(); }
 
-function carKeyFromParts(manufacturer, model, drivetrain, priceNum){
-  const p = Number.isFinite(priceNum) ? priceNum.toFixed(2) : "NA";
-  return `${manufacturer}|${model}|${drivetrain}|${p}`;
-}
-function safeStr(v){ return (v ?? "").toString().trim(); }
-
-function normalizeCar(car){
-  const id = safeStr(car["Vehicle ID"] ?? car.vehicleId ?? car.id);
+function normalizeCar(car) {
+  const id           = safeStr(car["Vehicle ID"] ?? car.vehicleId ?? car.id);
   const manufacturer = safeStr(car["Manufacturer"]);
   const model        = safeStr(car["Model"]);
   const type         = safeStr(car["Vehicle Type"]);
   const drivetrain   = safeStr(car["Drivetrain"]);
   const city         = safeStr(car["City"] ?? car.city ?? car["Available City"] ?? car.availableCity);
   const priceRaw     = car["Price"];
-
-  const priceNum = Number(priceRaw);
+  const priceNum     = Number(priceRaw);
   const cleanPriceNum = Number.isFinite(priceNum) ? priceNum : null;
-  const priceText = Number.isFinite(priceNum) ? `$${priceNum.toFixed(2)}/day` : `$${priceRaw}/day`;
-
-  // Use manifest-based image assignment
-  const imgUrl = getOrCreateImageAssignment(id, manufacturer, model);
-
-  const favKey = carKeyFromParts(manufacturer, model, drivetrain, cleanPriceNum ?? NaN);
-
-  return { 
-    id,
-    manufacturer, 
-    model, 
-    type, 
-    drivetrain, 
-    city, 
-    priceText, 
-    imgUrl, 
-    favKey 
-  };
+  const priceText    = Number.isFinite(priceNum) ? `$${priceNum.toFixed(2)}/day` : `$${priceRaw}/day`;
+  const imgUrl       = getOrCreateImageAssignment(id, manufacturer, model);
+  const favKey       = carKeyFromParts(manufacturer, model, drivetrain, cleanPriceNum ?? NaN);
+  return { id, manufacturer, model, type, drivetrain, city, priceText, imgUrl, favKey };
 }
 
-async function loadFavouriteCars(){
+async function loadFavouriteCars() {
   const status = document.getElementById("status");
-  const grid = document.getElementById("favGrid");
+  const grid   = document.getElementById("favGrid");
+  const favs   = loadFavsSet();
 
-  const favs = loadFavsSet();
-  if (!favs.size){
-    status.textContent = "No favourites yet. Go to Cars and tap the heart.";
-    grid.innerHTML = "";
-    return;
-  }
+  if (!favs.size) { status.textContent = "No favourites yet. Go to Cars and tap the heart."; grid.innerHTML = ""; return; }
 
   status.textContent = "Loading favourites…";
   grid.innerHTML = "";
 
-  const res = await fetch(`${API}/cars`);
+  const res  = await fetch(`${API}/cars`);
   const data = await res.json().catch(() => []);
   const rawCars = Array.isArray(data) ? data : (data.cars ?? data.vehicles ?? []);
   const cars = rawCars.map(normalizeCar);
-
   const favCars = cars.filter(c => favs.has(c.favKey));
+
+  if (!favCars.length) { status.textContent = "Your saved cars are not currently available in the DB list."; return; }
 
   status.textContent = `${favCars.length} saved car(s)`;
 
-  if (!favCars.length){
-    status.textContent = "Your saved cars are not currently available in the DB list.";
-    return;
-  }
-
   favCars.forEach(c => {
-    const name = `${c.manufacturer} ${c.model}`.trim();
+    const name     = `${c.manufacturer} ${c.model}`.trim();
     const metaBits = [c.city, c.type, c.drivetrain].filter(Boolean);
-
     const card = document.createElement("div");
     card.className = "card";
     card.innerHTML = `
@@ -323,28 +209,22 @@ async function loadFavouriteCars(){
       <div class="cardBody">
         <div class="titleRow">
           <div>
-            <h3 style="margin:0;">${name}</h3>
+            <h3 class="carName">${name}</h3>
             <div class="meta">${metaBits.join(" • ") || "—"}</div>
           </div>
           <div class="price">${c.priceText}</div>
         </div>
-
         <div style="margin-top:14px; display:flex; justify-content:flex-end;">
-          <button class="removeBtn" type="button" data-remove="${encodeURIComponent(c.favKey)}">
-            Remove
-          </button>
+          <button class="removeBtn" type="button" data-remove="${encodeURIComponent(c.favKey)}">Remove</button>
         </div>
-      </div>
-    `;
+      </div>`;
     grid.appendChild(card);
   });
 
   grid.querySelectorAll("[data-remove]").forEach(btn => {
     btn.addEventListener("click", () => {
       const key = decodeURIComponent(btn.getAttribute("data-remove") || "");
-      const favs = loadFavsSet();
-      favs.delete(key);
-      saveFavsSet(favs);
+      const favs = loadFavsSet(); favs.delete(key); saveFavsSet(favs);
       loadFavouriteCars();
     });
   });
@@ -352,5 +232,6 @@ async function loadFavouriteCars(){
 
 loadFavouriteCars();
 </script>
+<script src="darkm.js"></script>
 </body>
 </html>

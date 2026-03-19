@@ -5,25 +5,25 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Car Details</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
-
   <style>
     * { box-sizing: border-box; font-family: Inter, system-ui; }
+
     body {
       margin: 0;
-      background: linear-gradient(180deg, #eef2ff, #f8fafc);
-      color: #0f172a;
+      background: var(--bg, #f4f6f9);
+      color: var(--ink, #0f172a);
+      transition: background 0.2s, color 0.2s;
     }
-    .container {
-      max-width: 1100px;
-      margin: 0 auto;
-      padding: 40px 20px;
-    }
+
+    .container { max-width: 1100px; margin: 0 auto; padding: 40px 20px; }
+
     .topbar {
       display: flex;
       justify-content: space-between;
       align-items: center;
       margin-bottom: 20px;
     }
+
     .btn {
       border: none;
       cursor: pointer;
@@ -33,9 +33,9 @@
       transition: transform .05s ease, opacity .2s ease;
     }
     .btn:active { transform: translateY(1px); }
-    .btn.secondary { background: white; border: 1px solid #cbd5e1; }
-    .btn.primary { background: #4f46e5; color: white; }
-    .btn.danger { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+    .btn.secondary { background: var(--surface, white); border: 1px solid var(--border, #cbd5e1); color: var(--ink, #0f172a); }
+    .btn.primary   { background: var(--accent, #4f46e5); color: white; }
+    .btn.danger    { background: var(--danger-light, #fee2e2); color: var(--danger, #991b1b); border: 1px solid #fecaca; }
 
     .grid {
       display: grid;
@@ -45,143 +45,89 @@
     }
 
     .card {
-      background: white;
+      background: var(--surface, white);
       border-radius: 20px;
       box-shadow: 0 12px 30px rgba(0,0,0,.06);
       overflow: hidden;
+      border: 1px solid var(--border, transparent);
     }
 
-    .hero {
-      display: grid;
-      grid-template-columns: 1fr;
-    }
     .heroImg {
       width: 100%;
       height: 360px;
       object-fit: cover;
-      background: #e2e8f0;
+      background: var(--surface2, #e2e8f0);
     }
-    .heroBody {
-      padding: 18px 18px 8px;
-    }
+
+    .heroBody { padding: 18px 18px 8px; }
+
     .titleRow {
       display: flex;
       align-items: flex-start;
       justify-content: space-between;
       gap: 16px;
     }
-    h1 {
-      font-size: 30px;
-      margin: 0;
-      line-height: 1.2;
-    }
-    .price {
-      font-size: 18px;
-      font-weight: 700;
-      color: #111827;
-      white-space: nowrap;
-    }
-    .pillRow {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      margin: 12px 0 4px;
-    }
+
+    h1 { font-size: 30px; margin: 0; line-height: 1.2; color: var(--ink, #0f172a); }
+
+    .price { font-size: 18px; font-weight: 700; color: var(--ink, #111827); white-space: nowrap; }
+
+    .pillRow { display: flex; flex-wrap: wrap; gap: 10px; margin: 12px 0 4px; }
+
     .pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 8px 12px;
-      border-radius: 999px;
-      font-size: 12px;
-      border: 1px solid #e2e8f0;
-      background: #f8fafc;
-      color: #334155;
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 8px 12px; border-radius: 999px; font-size: 12px;
+      border: 1px solid var(--border, #e2e8f0);
+      background: var(--surface2, #f8fafc);
+      color: var(--ink2, #334155);
     }
-    .pill.ok { background: #dcfce7; border-color: #bbf7d0; color: #166534; }
-    .pill.bad { background: #fee2e2; border-color: #fecaca; color: #991b1b; }
+    .pill.ok  { background: #dcfce7; border-color: #bbf7d0; color: #166534; }
+    .pill.bad { background: var(--danger-light, #fee2e2); border-color: #fecaca; color: var(--danger, #991b1b); }
 
     /* Vehicle Table */
-    .vehicleTable {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 4px;
-    }
+    .vehicleTable { width: 100%; border-collapse: collapse; margin-top: 4px; }
     .vehicleTable th {
-      text-align: left;
-      padding: 10px 18px;
-      font-size: 12px;
-      font-weight: 600;
-      color: #64748b;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      background: #f8fafc;
-      border-bottom: 1px solid #e2e8f0;
+      text-align: left; padding: 10px 18px;
+      font-size: 12px; font-weight: 600; color: var(--muted, #64748b);
+      text-transform: uppercase; letter-spacing: 0.05em;
+      background: var(--surface2, #f8fafc);
+      border-bottom: 1px solid var(--border, #e2e8f0);
     }
     .vehicleTable td {
-      padding: 12px 18px;
-      font-size: 14px;
-      border-bottom: 1px solid #f1f5f9;
-      color: #0f172a;
+      padding: 12px 18px; font-size: 14px;
+      border-bottom: 1px solid var(--border, #f1f5f9);
+      color: var(--ink, #0f172a);
     }
-    .vehicleTable tr:last-child td {
-      border-bottom: none;
-    }
-    .vehicleTable tr:hover td {
-      background: #fafbff;
-    }
-    .vehicleTable td:first-child {
-      font-weight: 600;
-      color: #475569;
-      width: 40%;
-    }
+    .vehicleTable tr:last-child td { border-bottom: none; }
+    .vehicleTable tr:hover td { background: var(--surface2, #fafbff); }
+    .vehicleTable td:first-child { font-weight: 600; color: var(--muted, #475569); width: 40%; }
 
-    .section {
-      padding: 18px;
-    }
-    .section h2 {
-      font-size: 16px;
-      margin: 0 0 12px;
-    }
+    .section { padding: 18px; }
+    .section h2 { font-size: 16px; margin: 0 0 12px; color: var(--ink, #0f172a); }
 
-    .formRow {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-      margin-bottom: 12px;
-    }
-    label {
-      display: block;
-      font-size: 12px;
-      color: #475569;
-      margin-bottom: 6px;
-      font-weight: 600;
-    }
-    input[type="date"] {
-      width: 100%;
-      padding: 12px 12px;
-      border-radius: 14px;
-      border: 1px solid #e2e8f0;
+    .formRow { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+
+    label { display: block; font-size: 12px; color: var(--muted, #475569); margin-bottom: 6px; font-weight: 600; }
+
+    input[type="date"], input[type="text"] {
+      width: 100%; padding: 12px 12px;
+      border-radius: 14px; border: 1px solid var(--border, #e2e8f0);
       outline: none;
-      background: white;
+      background: var(--surface2, white);
+      color: var(--ink, #0f172a);
+      transition: border-color 0.15s;
     }
-    input[type="date"]:focus {
+    input[type="date"]:focus, input[type="text"]:focus {
       border-color: #a5b4fc;
       box-shadow: 0 0 0 4px rgba(79,70,229,.12);
     }
+    input::placeholder { color: var(--muted, #8891a0); }
 
-    .status {
-      margin-top: 14px;
-      font-size: 13px;
-      color: #334155;
-    }
-    .status.error { color: #b91c1c; }
-    .status.ok { color: #166534; }
+    .status { margin-top: 14px; font-size: 13px; color: var(--ink2, #334155); }
+    .status.error { color: var(--danger, #b91c1c); }
+    .status.ok    { color: var(--success, #166534); }
 
-    .skeleton {
-      padding: 22px;
-      color: #64748b;
-    }
+    .skeleton { padding: 22px; color: var(--muted, #64748b); }
 
     @media (max-width: 900px) {
       .grid { grid-template-columns: 1fr; }
@@ -194,26 +140,25 @@
   <div class="container">
     <div class="topbar">
       <button class="btn secondary" onclick="history.back()">← Back</button>
-      <button class="btn secondary" id="allCarsBtn" onclick="location.href='cars.html'">All Cars</button>
+      <div style="display:flex;gap:10px;">
+        <button class="btn secondary dm-toggle">🌙</button>
+        <button class="btn secondary" id="allCarsBtn" onclick="location.href='cars.html'">All Cars</button>
+      </div>
     </div>
 
     <div class="grid">
       <div class="card" id="detailsCard">
         <div class="skeleton" id="loadingState">
-          <b>Loading car details…</b><br><br>
-          If this never loads, your API route for fetching one car is missing.
+          <b>Loading car details…</b>
         </div>
-
         <div id="detailsUI" style="display:none;">
           <div class="hero">
             <img id="carImg" class="heroImg" alt="Car image" onerror="this.src='./assets/cars/dummy.png'" />
-
             <div class="heroBody">
               <div class="titleRow">
                 <h1 id="carName">—</h1>
                 <div class="price" id="carPrice">—</div>
               </div>
-
               <div class="pillRow">
                 <span class="pill" id="carType">Type: —</span>
                 <span class="pill" id="carDrive">Drivetrain: —</span>
@@ -221,49 +166,24 @@
               </div>
             </div>
           </div>
-
-          <!-- Vehicle Table -->
           <table class="vehicleTable">
-            <thead>
-              <tr>
-                <th>Property</th>
-                <th>Value</th>
-              </tr>
-            </thead>
-            <tbody id="vehicleTableBody">
-              <!-- Populated by car-details.js -->
-            </tbody>
+            <thead><tr><th>Property</th><th>Value</th></tr></thead>
+            <tbody id="vehicleTableBody"></tbody>
           </table>
-
         </div>
       </div>
 
       <div class="card">
         <div class="section">
           <h2>Book this car</h2>
-
           <div class="formRow">
-            <div>
-              <label for="fromDate">From</label>
-              <input id="fromDate" type="date" />
-            </div>
-            <div>
-              <label for="toDate">To</label>
-              <input id="toDate" type="date" />
-            </div>
+            <div><label for="fromDate">From</label><input id="fromDate" type="date" /></div>
+            <div><label for="toDate">To</label><input id="toDate" type="date" /></div>
           </div>
-
           <div class="formRow">
-            <div>
-              <label for="pickupLocation">Pickup Location</label>
-              <input id="pickupLocation" type="text" placeholder="Downtown Toronto" />
-            </div>
-            <div>
-              <label for="dropoffLocation">Dropoff Location</label>
-              <input id="dropoffLocation" type="text" placeholder="Toronto Pearson Airport" />
-            </div>
+            <div><label for="pickupLocation">Pickup Location</label><input id="pickupLocation" type="text" placeholder="Downtown Toronto" /></div>
+            <div><label for="dropoffLocation">Dropoff Location</label><input id="dropoffLocation" type="text" placeholder="Toronto Pearson Airport" /></div>
           </div>
-
           <button class="btn primary" id="bookBtn" style="width:100%;">Book Now</button>
           <div class="status" id="statusText">Pick dates then book.</div>
         </div>
@@ -272,5 +192,6 @@
   </div>
 
   <script src="car-details.js"></script>
+  <script src="darkm.js"></script>
 </body>
 </html>

@@ -9,24 +9,10 @@
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-    :root {
-      --bg: #eef2ff;
-      --surface: #ffffff;
-      --surface2: #f4f6f9;
-      --border: #e4e8ee;
-      --accent: #4f46e5;
-      --accent2: #4f46e5;
-      --green: #10b981;
-      --green-light: #d1fae5;
-      --text: #0d1117;
-      --muted: #8891a0;
-      --danger: #ef4444;
-    }
-
     body {
       font-family: 'DM Sans', sans-serif;
-      background: var(--bg);
-      color: var(--text);
+      background: var(--bg, #eef2ff);
+      color: var(--ink, #0d1117);
       min-height: 100vh;
       display: flex;
       flex-direction: column;
@@ -35,340 +21,183 @@
       padding: 24px;
       position: relative;
       overflow-x: hidden;
+      transition: background 0.2s, color 0.2s;
     }
 
     body::before {
       content: '';
       position: fixed;
-      width: 600px;
-      height: 600px;
+      width: 600px; height: 600px;
       border-radius: 50%;
       background: radial-gradient(circle, rgba(79,70,229,0.08) 0%, transparent 70%);
-      top: -200px;
-      left: 50%;
+      top: -200px; left: 50%;
       transform: translateX(-50%);
       pointer-events: none;
     }
 
     .wrap { width: 100%; max-width: 480px; position: relative; z-index: 1; }
 
-    .steps {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 0;
-      margin-bottom: 36px;
-      animation: fadeUp 0.4s ease both;
-    }
-
-    .step {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      font-size: 13px;
-      font-weight: 500;
-      color: var(--muted);
-    }
-
-    .step.active { color: var(--text); }
-    .step.done { color: var(--green); }
-
+    /* Steps */
+    .steps { display: flex; align-items: center; justify-content: center; gap: 0; margin-bottom: 36px; animation: fadeUp 0.4s ease both; }
+    .step { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 500; color: var(--muted, #8891a0); }
+    .step.active { color: var(--ink, #0d1117); }
+    .step.done   { color: var(--success, #10b981); }
     .step-num {
-      width: 28px;
-      height: 28px;
-      border-radius: 50%;
-      border: 1.5px solid var(--border);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 12px;
-      font-weight: 700;
-      background: var(--surface);
+      width: 28px; height: 28px; border-radius: 50%;
+      border: 1.5px solid var(--border, #e4e8ee);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px; font-weight: 700;
+      background: var(--surface, white);
+      color: var(--ink, #0d1117);
     }
+    .step.active .step-num { border-color: var(--accent, #4f46e5); background: var(--accent, #4f46e5); color: white; }
+    .step.done   .step-num { border-color: var(--success, #10b981); background: var(--success, #10b981); color: white; }
+    .step-line { width: 40px; height: 1.5px; background: var(--border, #e4e8ee); margin: 0 4px; }
 
-    .step.active .step-num { border-color: var(--accent); background: var(--accent); color: white; }
-    .step.done .step-num { border-color: var(--green); background: var(--green); color: white; }
-
-    .step-line { width: 40px; height: 1.5px; background: var(--border); margin: 0 4px; }
-
+    /* Card */
     .card {
-      background: var(--surface);
-      border: 1px solid var(--border);
+      background: var(--surface, white);
+      border: 1px solid var(--border, #e4e8ee);
       border-radius: 24px;
       overflow: hidden;
       animation: fadeUp 0.4s 0.05s ease both;
     }
 
+    /* Summary */
     .summary {
-      background: var(--surface2);
-      border-bottom: 1px solid var(--border);
+      background: var(--surface2, #f4f6f9);
+      border-bottom: 1px solid var(--border, #e4e8ee);
       padding: 20px 28px;
-      display: flex;
-      gap: 16px;
-      align-items: center;
+      display: flex; gap: 16px; align-items: center;
     }
-
     .summary img {
-      width: 80px;
-      height: 60px;
-      object-fit: cover;
-      border-radius: 10px;
-      border: 1px solid var(--border);
-      flex-shrink: 0;
+      width: 80px; height: 60px; object-fit: cover;
+      border-radius: 10px; border: 1px solid var(--border, #e4e8ee); flex-shrink: 0;
     }
-
     .summary-info { flex: 1; min-width: 0; }
-
     .summary-name {
-      font-family: 'Syne', sans-serif;
-      font-size: 17px;
-      font-weight: 700;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
+      font-family: 'Syne', sans-serif; font-size: 17px; font-weight: 700;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      color: var(--ink, #0d1117);
     }
-
-    .summary-meta { font-size: 12px; color: var(--muted); margin-top: 3px; }
-
+    .summary-meta { font-size: 12px; color: var(--muted, #8891a0); margin-top: 3px; }
     .summary-price {
-      font-family: 'Syne', sans-serif;
-      font-size: 22px;
-      font-weight: 800;
-      color: var(--accent2);
-      white-space: nowrap;
-      flex-shrink: 0;
+      font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 800;
+      color: var(--accent, #4f46e5); white-space: nowrap; flex-shrink: 0;
     }
+    .summary-price span { font-size: 12px; font-weight: 400; color: var(--muted, #8891a0); font-family: 'DM Sans', sans-serif; }
 
-    .summary-price span {
-      font-size: 12px;
-      font-weight: 400;
-      color: var(--muted);
-      font-family: 'DM Sans', sans-serif;
-    }
-
+    /* Form */
     .form-body { padding: 28px; }
-
     .section-label {
-      font-family: 'Syne', sans-serif;
-      font-size: 11px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.1em;
-      color: var(--muted);
-      margin-bottom: 16px;
+      font-family: 'Syne', sans-serif; font-size: 11px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.1em;
+      color: var(--muted, #8891a0); margin-bottom: 16px;
     }
-
     .field { margin-bottom: 14px; }
-
-    .field label {
-      display: block;
-      font-size: 12px;
-      font-weight: 500;
-      color: var(--muted);
-      margin-bottom: 6px;
-    }
-
+    .field label { display: block; font-size: 12px; font-weight: 500; color: var(--muted, #8891a0); margin-bottom: 6px; }
     .field input {
       width: 100%;
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 13px 16px;
-      font-family: 'DM Sans', sans-serif;
-      font-size: 15px;
-      color: var(--text);
-      outline: none;
-      transition: border-color 0.15s;
+      background: var(--surface2, #f4f6f9);
+      border: 1px solid var(--border, #e4e8ee);
+      border-radius: 12px; padding: 13px 16px;
+      font-family: 'DM Sans', sans-serif; font-size: 15px;
+      color: var(--ink, #0d1117); outline: none; transition: border-color 0.15s;
     }
-
-    .field input:focus { border-color: var(--accent); }
-    .field input::placeholder { color: var(--muted); }
+    .field input:focus { border-color: var(--accent, #4f46e5); }
+    .field input::placeholder { color: var(--muted, #8891a0); }
     .field input.mock { font-family: 'Courier New', monospace; letter-spacing: 0.05em; }
-
     .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 
     .fake-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      background: rgba(79,70,229,0.08);
+      display: inline-flex; align-items: center; gap: 6px;
+      background: var(--accent-light, rgba(79,70,229,0.08));
       border: 1px solid rgba(79,70,229,0.2);
-      border-radius: 999px;
-      padding: 4px 12px;
-      font-size: 11px;
-      font-weight: 600;
-      color: var(--accent);
+      border-radius: 999px; padding: 4px 12px;
+      font-size: 11px; font-weight: 600; color: var(--accent, #4f46e5);
       margin-bottom: 20px;
     }
 
-    .divider { border: none; border-top: 1px solid var(--border); margin: 22px 0; }
+    .divider { border: none; border-top: 1px solid var(--border, #e4e8ee); margin: 22px 0; }
 
-    .total-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 20px;
-    }
-
-    .total-label { font-size: 14px; color: var(--muted); }
-
-    .total-value {
-      font-family: 'Syne', sans-serif;
-      font-size: 26px;
-      font-weight: 800;
-      color: var(--text);
-    }
+    .total-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    .total-label { font-size: 14px; color: var(--muted, #8891a0); }
+    .total-value { font-family: 'Syne', sans-serif; font-size: 26px; font-weight: 800; color: var(--ink, #0d1117); }
 
     .pay-btn {
-      width: 100%;
-      padding: 16px;
-      border-radius: 14px;
-      border: none;
-      background: linear-gradient(135deg, var(--accent), #9333ea);
-      color: white;
-      font-family: 'Syne', sans-serif;
-      font-size: 16px;
-      font-weight: 700;
-      cursor: pointer;
-      letter-spacing: 0.02em;
-      transition: all 0.2s;
-      position: relative;
-      overflow: hidden;
+      width: 100%; padding: 16px; border-radius: 14px; border: none;
+      background: linear-gradient(135deg, var(--accent, #4f46e5), #9333ea);
+      color: white; font-family: 'Syne', sans-serif; font-size: 16px; font-weight: 700;
+      cursor: pointer; letter-spacing: 0.02em; transition: all 0.2s; position: relative; overflow: hidden;
     }
-
     .pay-btn:hover { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(108,99,255,0.4); }
     .pay-btn:active { transform: translateY(0); }
     .pay-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
-
-    .pay-btn .spinner {
-      display: none;
-      width: 18px;
-      height: 18px;
-      border: 2.5px solid rgba(255,255,255,0.3);
-      border-top-color: white;
-      border-radius: 50%;
-      animation: spin 0.7s linear infinite;
-      margin: 0 auto;
-    }
-
+    .pay-btn .spinner { display: none; width: 18px; height: 18px; border: 2.5px solid rgba(255,255,255,0.3); border-top-color: white; border-radius: 50%; animation: spin 0.7s linear infinite; margin: 0 auto; }
     .pay-btn.loading .btn-text { display: none; }
     .pay-btn.loading .spinner { display: block; }
 
-    .success-screen {
-      display: none;
-      padding: 40px 28px;
-      text-align: center;
-      animation: fadeUp 0.5s ease both;
-    }
-
+    /* Success */
+    .success-screen { display: none; padding: 40px 28px; text-align: center; animation: fadeUp 0.5s ease both; }
     .success-icon {
-      width: 72px;
-      height: 72px;
-      border-radius: 50%;
-      background: rgba(16,185,129,0.12);
-      border: 2px solid var(--green);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 32px;
-      margin: 0 auto 20px;
-      animation: popIn 0.4s 0.1s ease both;
+      width: 72px; height: 72px; border-radius: 50%;
+      background: rgba(16,185,129,0.12); border: 2px solid var(--success, #10b981);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 32px; margin: 0 auto 20px; animation: popIn 0.4s 0.1s ease both;
     }
-
-    .success-title { font-family: 'Syne', sans-serif; font-size: 26px; font-weight: 800; margin-bottom: 8px; }
-    .success-sub { font-size: 14px; color: var(--muted); margin-bottom: 28px; line-height: 1.6; }
+    .success-title { font-family: 'Syne', sans-serif; font-size: 26px; font-weight: 800; margin-bottom: 8px; color: var(--ink, #0d1117); }
+    .success-sub { font-size: 14px; color: var(--muted, #8891a0); margin-bottom: 28px; line-height: 1.6; }
 
     .ref-box {
-      background: var(--surface2);
-      border: 1px dashed var(--border);
-      border-radius: 16px;
-      padding: 20px;
-      margin-bottom: 28px;
+      background: var(--surface2, #f4f6f9);
+      border: 1px dashed var(--border, #e4e8ee);
+      border-radius: 16px; padding: 20px; margin-bottom: 28px;
     }
-
-    .ref-label {
-      font-size: 11px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.1em;
-      color: var(--muted);
-      margin-bottom: 8px;
-    }
-
-    .ref-number {
-      font-family: 'Syne', sans-serif;
-      font-size: 28px;
-      font-weight: 800;
-      color: var(--accent2);
-      letter-spacing: 0.06em;
-    }
-
-    .ref-hint { font-size: 12px; color: var(--muted); margin-top: 6px; }
+    .ref-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted, #8891a0); margin-bottom: 8px; }
+    .ref-number { font-family: 'Syne', sans-serif; font-size: 28px; font-weight: 800; color: var(--accent, #4f46e5); letter-spacing: 0.06em; }
+    .ref-hint { font-size: 12px; color: var(--muted, #8891a0); margin-top: 6px; }
 
     .success-btns { display: flex; flex-direction: column; gap: 10px; }
-
     .success-btn {
-      padding: 13px;
-      border-radius: 12px;
-      border: 1px solid var(--border);
-      background: var(--surface2);
-      color: var(--text);
-      font-family: 'DM Sans', sans-serif;
-      font-size: 14px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.15s;
-      text-decoration: none;
-      display: block;
+      padding: 13px; border-radius: 12px;
+      border: 1px solid var(--border, #e4e8ee);
+      background: var(--surface2, #f4f6f9);
+      color: var(--ink, #0d1117);
+      font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600;
+      cursor: pointer; transition: all 0.15s; text-decoration: none; display: block;
     }
-
-    .success-btn:hover { border-color: var(--accent); color: var(--accent2); }
-    .success-btn.primary-btn { background: linear-gradient(135deg, var(--accent), #9333ea); border-color: transparent; color: white; }
+    .success-btn:hover { border-color: var(--accent, #4f46e5); color: var(--accent, #4f46e5); }
+    .success-btn.primary-btn { background: linear-gradient(135deg, var(--accent, #4f46e5), #9333ea); border-color: transparent; color: white; }
     .success-btn.primary-btn:hover { opacity: 0.9; color: white; }
 
-    .err-msg { font-size: 13px; color: var(--danger); margin-top: 12px; text-align: center; min-height: 18px; }
+    .err-msg { font-size: 13px; color: var(--danger, #ef4444); margin-top: 12px; text-align: center; min-height: 18px; }
 
-    .secure-note {
-      text-align: center;
-      font-size: 12px;
-      color: var(--muted);
-      margin-top: 16px;
-      animation: fadeUp 0.4s 0.1s ease both;
-    }
+    .secure-note { text-align: center; font-size: 12px; color: var(--muted, #8891a0); margin-top: 16px; animation: fadeUp 0.4s 0.1s ease both; }
 
     @keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
-    @keyframes popIn { from { opacity: 0; transform: scale(0.6); } to { opacity: 1; transform: scale(1); } }
-    @keyframes spin { to { transform: rotate(360deg); } }
+    @keyframes popIn  { from { opacity: 0; transform: scale(0.6); } to { opacity: 1; transform: scale(1); } }
+    @keyframes spin   { to { transform: rotate(360deg); } }
 
-    @media (max-width: 500px) {
-      .summary { flex-wrap: wrap; }
-      .row2 { grid-template-columns: 1fr; }
-    }
+    @media (max-width: 500px) { .summary { flex-wrap: wrap; } .row2 { grid-template-columns: 1fr; } }
   </style>
 </head>
 <body>
 
   <div class="wrap">
 
+    <div style="display:flex;justify-content:flex-end;margin-bottom:12px;">
+      <button class="dm-toggle" style="padding:8px 14px;border-radius:10px;border:1px solid var(--border,#e4e8ee);background:var(--surface,white);color:var(--ink,#0d1117);cursor:pointer;font-size:14px;">🌙</button>
+    </div>
+
     <div class="steps">
-      <div class="step done">
-        <div class="step-num">✓</div>
-        <span>Details</span>
-      </div>
+      <div class="step done"><div class="step-num">✓</div><span>Details</span></div>
       <div class="step-line"></div>
-      <div class="step active">
-        <div class="step-num">2</div>
-        <span>Payment</span>
-      </div>
+      <div class="step active"><div class="step-num">2</div><span>Payment</span></div>
       <div class="step-line"></div>
-      <div class="step" id="step3">
-        <div class="step-num">3</div>
-        <span>Confirmed</span>
-      </div>
+      <div class="step" id="step3"><div class="step-num">3</div><span>Confirmed</span></div>
     </div>
 
     <div class="card">
-
       <div class="summary">
         <img id="carImg" src="" alt="Car" onerror="this.src='./assets/cars/placeholder.png'">
         <div class="summary-info">
@@ -380,42 +209,22 @@
 
       <div class="form-body" id="paymentForm">
         <div class="fake-badge">🔒 Simulated Payment — No real charge</div>
-
         <div class="section-label">Card Details</div>
-
-        <div class="field">
-          <label>Cardholder Name</label>
-          <input type="text" id="cardName" placeholder="Jane Smith" autocomplete="cc-name">
-        </div>
-
-        <div class="field">
-          <label>Card Number</label>
-          <input type="text" id="cardNumber" class="mock" placeholder="1234 5678 9012 3456" maxlength="19" autocomplete="cc-number">
-        </div>
-
+        <div class="field"><label>Cardholder Name</label><input type="text" id="cardName" placeholder="Jane Smith" autocomplete="cc-name"></div>
+        <div class="field"><label>Card Number</label><input type="text" id="cardNumber" class="mock" placeholder="1234 5678 9012 3456" maxlength="19" autocomplete="cc-number"></div>
         <div class="row2">
-          <div class="field">
-            <label>Expiry Date</label>
-            <input type="text" id="cardExpiry" class="mock" placeholder="MM / YY" maxlength="7" autocomplete="cc-exp">
-          </div>
-          <div class="field">
-            <label>CVV</label>
-            <input type="text" id="cardCvv" class="mock" placeholder="•••" maxlength="3" autocomplete="cc-csc">
-          </div>
+          <div class="field"><label>Expiry Date</label><input type="text" id="cardExpiry" class="mock" placeholder="MM / YY" maxlength="7" autocomplete="cc-exp"></div>
+          <div class="field"><label>CVV</label><input type="text" id="cardCvv" class="mock" placeholder="•••" maxlength="3" autocomplete="cc-csc"></div>
         </div>
-
         <hr class="divider">
-
         <div class="total-row">
           <span class="total-label">Total Due</span>
           <span class="total-value" id="totalDue">—</span>
         </div>
-
         <button class="pay-btn" id="payBtn" onclick="handlePay()">
           <span class="btn-text">Pay & Confirm Booking</span>
           <div class="spinner"></div>
         </button>
-
         <div class="err-msg" id="errMsg"></div>
       </div>
 
@@ -423,35 +232,29 @@
         <div class="success-icon">✓</div>
         <div class="success-title">Booking Confirmed!</div>
         <div class="success-sub">Your payment was processed and your booking is confirmed. Save your reference number below.</div>
-
         <div class="ref-box">
           <div class="ref-label">Reference Number</div>
           <div class="ref-number" id="refNumber">—</div>
           <div class="ref-hint">Keep this for your records</div>
         </div>
-
         <div class="success-btns">
           <a class="success-btn primary-btn" href="my-bookings.html">View My Bookings</a>
           <a class="success-btn" href="cars.html">Browse More Cars</a>
           <a class="success-btn" href="home.html">Back to Home</a>
         </div>
       </div>
-
     </div>
 
     <div class="secure-note">🔒 This is a simulated payment for demo purposes only</div>
-
   </div>
 
   <script>
     const API_BASE   = "https://server-side-zqaz.onrender.com";
     const SESSION_MS = 12 * 60 * 60 * 1000;
 
-    // ── EmailJS credentials ─────────────────────────────────────────────────
     const HIERMONA_SERVICE  = "service_fvcm81h";
     const HIERMONA_TEMPLATE = "template_vgeh0gt";
     const HIERMONA_KEY      = "xKlqbLg8GDzQWAvbx";
-
     const KEERTHANA_SERVICE  = "service_v914ueg";
     const KEERTHANA_TEMPLATE = "template_m5nti5o";
     const KEERTHANA_KEY      = "H3F1dxhmOW-hMSZij";
@@ -478,14 +281,12 @@
       if (!email || !loggedInAt) { window.location.replace("index.html"); throw new Error("No session"); }
       if (Date.now() - loggedInAt > SESSION_MS) {
         ["userEmail","loggedInAt","isAdmin","userData"].forEach(k => localStorage.removeItem(k));
-        window.location.replace("index.html");
-        throw new Error("Session expired");
+        window.location.replace("index.html"); throw new Error("Session expired");
       }
       return email;
     }
 
     const userEmail = requireSession();
-
     const params    = new URLSearchParams(window.location.search);
     const vehicleId = params.get("id");
     const fromDate  = params.get("from");
@@ -519,13 +320,11 @@
       let v = this.value.replace(/\D/g, "").slice(0, 16);
       this.value = v.replace(/(.{4})/g, "$1 ").trim();
     });
-
     document.getElementById("cardExpiry").addEventListener("input", function () {
       let v = this.value.replace(/\D/g, "").slice(0, 4);
       if (v.length >= 3) v = v.slice(0, 2) + " / " + v.slice(2);
       this.value = v;
     });
-
     document.getElementById("cardCvv").addEventListener("input", function () {
       this.value = this.value.replace(/\D/g, "").slice(0, 3);
     });
@@ -535,159 +334,107 @@
       try {
         const res = await fetch(`${API_BASE}/cars/${vehicleId}`);
         const car = await res.json();
-
         const mfr   = car["Manufacturer"] || car.manufacturer || "";
         const model = car["Model"]        || car.model        || "";
         const drv   = car["Drivetrain"]   || car.drivetrain   || "";
         const price = Number(car["Price"] || car.price || 0);
         const days  = daysBetween(fromDate, toDate);
         const total = price * days;
-
         document.getElementById("carImg").src = getImage(mfr, model, drv);
         document.getElementById("carName").textContent = `${mfr} ${model}`.trim();
         document.getElementById("carDates").textContent = `${formatDate(fromDate)} → ${formatDate(toDate)} · ${days} day${days !== 1 ? "s" : ""}`;
-        document.getElementById("carPrice").innerHTML = `$${price.toFixed(2)}<span>/day</span>`;
+        document.getElementById("carPrice").innerHTML  = `$${price.toFixed(2)}<span>/day</span>`;
         document.getElementById("totalDue").textContent = `$${total.toFixed(2)}`;
-
         const userData = JSON.parse(localStorage.getItem("userData") || "{}");
         const fullName = `${userData.firstName || ""} ${userData.lastName || ""}`.trim();
         if (fullName) document.getElementById("cardName").value = fullName;
-
       } catch (e) {
         document.getElementById("carName").textContent = `Vehicle #${vehicleId}`;
       }
     }
-
     loadCar();
 
     async function handlePay() {
-      const errEl = document.getElementById("errMsg");
-      const btn   = document.getElementById("payBtn");
+      const errEl  = document.getElementById("errMsg");
+      const btn    = document.getElementById("payBtn");
       errEl.textContent = "";
-
       const name   = document.getElementById("cardName").value.trim();
       const number = document.getElementById("cardNumber").value.replace(/\s/g, "");
       const expiry = document.getElementById("cardExpiry").value.trim();
       const cvv    = document.getElementById("cardCvv").value.trim();
-
       if (!name)              { errEl.textContent = "Please enter the cardholder name."; return; }
       if (number.length < 16) { errEl.textContent = "Please enter a valid 16-digit card number."; return; }
       if (!expiry)            { errEl.textContent = "Please enter the expiry date."; return; }
-
       const expiryClean = expiry.replace(/\s/g, "");
       const expiryMatch = expiryClean.match(/^(\d{2})\/(\d{2})$/);
       if (!expiryMatch) { errEl.textContent = "Expiry must be in MM / YY format (e.g. 08 / 27)."; return; }
-
       const expMonth = parseInt(expiryMatch[1], 10);
       const expYear  = 2000 + parseInt(expiryMatch[2], 10);
       if (expMonth < 1 || expMonth > 12) { errEl.textContent = "Expiry month must be between 01 and 12."; return; }
-
       const now = new Date();
-      if (new Date(expYear, expMonth - 1, 1) < new Date(now.getFullYear(), now.getMonth(), 1)) {
-        errEl.textContent = "Your card has expired. Please use a valid card."; return;
-      }
-
+      if (new Date(expYear, expMonth - 1, 1) < new Date(now.getFullYear(), now.getMonth(), 1)) { errEl.textContent = "Your card has expired."; return; }
       if (cvv.length < 3) { errEl.textContent = "Please enter a valid CVV."; return; }
-
-      btn.disabled = true;
-      btn.classList.add("loading");
-
+      btn.disabled = true; btn.classList.add("loading");
       await new Promise(r => setTimeout(r, 1800));
-
       try {
         const res = await fetch(`${API_BASE}/cars/${vehicleId}/book`, {
           method: "POST",
           headers: { "Content-Type": "application/json", "X-User-Email": userEmail },
           body: JSON.stringify({ fromDate, toDate, pickupLocation: pickup, dropoffLocation: dropoff }),
         });
-
         const data = await res.json().catch(() => ({}));
         if (!res.ok) throw new Error(data.error || "Booking failed");
-
-        const ref = generateRef();
+        const ref  = generateRef();
         const refs = JSON.parse(localStorage.getItem("bookingRefs") || "{}");
         refs[data.saleId] = ref;
         localStorage.setItem("bookingRefs", JSON.stringify(refs));
-
         showSuccess(ref, data);
-
       } catch (err) {
-        btn.disabled = false;
-        btn.classList.remove("loading");
+        btn.disabled = false; btn.classList.remove("loading");
         errEl.textContent = `Error: ${err.message}`;
       }
     }
 
-    // ── Email 1: Hiermona's booking confirmation ────────────────────────────
     async function sendConfirmationEmail(ref) {
       try {
         const userData  = JSON.parse(localStorage.getItem("userData") || "{}");
         const firstName = userData.firstName || userData["First Name"] || "";
         const lastName  = userData.lastName  || userData["Last Name"]  || "";
         const toName    = `${firstName} ${lastName}`.trim() || "Valued Customer";
-
-        const days     = daysBetween(fromDate, toDate);
+        const days      = daysBetween(fromDate, toDate);
         const priceText = document.getElementById("carPrice")?.textContent || "";
         const priceNum  = parseFloat(priceText.replace(/[^0-9.]/g, "")) || 0;
         const total     = `$${(priceNum * days).toFixed(2)}`;
-
         await emailjs.send(HIERMONA_SERVICE, HIERMONA_TEMPLATE, {
-          to_name:    toName,
-          email:      userEmail,
-          ref_number: ref,
-          car_name:   document.getElementById("carName")?.textContent || `Vehicle #${vehicleId}`,
-          from_date:  fromDate,
-          to_date:    toDate,
-          pickup:     pickup  || "—",
-          dropoff:    dropoff || "—",
-          total:      total,
-        }, HIERMONA_KEY); // ← Hiermona's key passed directly
-        console.log("✅ Booking confirmation email sent!");
-      } catch (err) {
-        console.warn("Confirmation email failed:", err);
-      }
+          to_name: toName, email: userEmail, ref_number: ref,
+          car_name: document.getElementById("carName")?.textContent || `Vehicle #${vehicleId}`,
+          from_date: fromDate, to_date: toDate, pickup: pickup || "—", dropoff: dropoff || "—", total,
+        }, HIERMONA_KEY);
+      } catch (err) { console.warn("Confirmation email failed:", err); }
     }
 
-    // ── Email 2: Pickup reminder ────────────────────────────────────────────
     async function sendPickupEmail(carName, userName) {
       try {
         await emailjs.send(KEERTHANA_SERVICE, KEERTHANA_TEMPLATE, {
-          user_name:       userName,
-          user_email:      userEmail,
-          car_name:        carName,
-          pickup_date:     formatDate(fromDate),
-          dropoff_date:    formatDate(toDate),
-          pickup_location: pickup || "—",
-          email_type:      "Booking Confirmed + Pickup Details",
-          email_message:   "This is a reminder that your rental pickup is tomorrow!",
-          location_label:  "Pickup Location",
-          sale_id:         "see booking confirmation",
-        }, KEERTHANA_KEY); // ← Keerthana's key passed directly
-        console.log("✅ Pickup reminder email sent!");
-      } catch (err) {
-        console.warn("Pickup email failed:", err);
-      }
+          user_name: userName, user_email: userEmail, car_name: carName,
+          pickup_date: formatDate(fromDate), dropoff_date: formatDate(toDate),
+          pickup_location: pickup || "—", email_type: "Booking Confirmed + Pickup Details",
+          email_message: "This is a reminder that your rental pickup is tomorrow!", location_label: "Pickup Location",
+          sale_id: "see booking confirmation",
+        }, KEERTHANA_KEY);
+      } catch (err) { console.warn("Pickup email failed:", err); }
     }
 
-    // ── Email 3: Return reminder ────────────────────────────────────────────
     async function sendReturnEmail(carName, userName) {
       try {
         await emailjs.send(KEERTHANA_SERVICE, KEERTHANA_TEMPLATE, {
-          user_name:       userName,
-          user_email:      userEmail,
-          car_name:        carName,
-          pickup_date:     formatDate(fromDate),
-          dropoff_date:    formatDate(toDate),
-          pickup_location: dropoff || "—",
-          email_type:      "Return Details",
-          email_message:   "This is a reminder that your rental return is tomorrow!",
-          location_label:  "Dropoff Location",
-          sale_id:         "see booking confirmation",
-        }, KEERTHANA_KEY); // ← Keerthana's key passed directly
-        console.log("✅ Return reminder email sent!");
-      } catch (err) {
-        console.warn("Return email failed:", err);
-      }
+          user_name: userName, user_email: userEmail, car_name: carName,
+          pickup_date: formatDate(fromDate), dropoff_date: formatDate(toDate),
+          pickup_location: dropoff || "—", email_type: "Return Details",
+          email_message: "This is a reminder that your rental return is tomorrow!", location_label: "Dropoff Location",
+          sale_id: "see booking confirmation",
+        }, KEERTHANA_KEY);
+      } catch (err) { console.warn("Return email failed:", err); }
     }
 
     async function showSuccess(ref, data) {
@@ -695,16 +442,14 @@
       document.getElementById("paymentForm").style.display = "none";
       document.getElementById("refNumber").textContent = ref;
       document.getElementById("successScreen").style.display = "block";
-
       const userData = JSON.parse(localStorage.getItem("userData") || "{}");
       const userName = `${userData.firstName || ""} ${userData.lastName || ""}`.trim() || userEmail;
       const carName  = document.getElementById("carName")?.textContent || `Vehicle #${vehicleId}`;
-
-      // Fire all 3 emails
       await sendConfirmationEmail(ref);
       await sendPickupEmail(carName, userName);
       await sendReturnEmail(carName, userName);
     }
   </script>
+  <script src="darkm.js"></script>
 </body>
 </html>
