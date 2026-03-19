@@ -626,7 +626,21 @@
         const bRes = await fetch(`${API_BASE}/me/bookings`, { headers: { "X-User-Email": userEmail } });
         const bData = await bRes.json().catch(() => ({}));
         if (!bRes.ok) throw new Error(bData.error || "Failed to load bookings");
-        populateBookings(Array.isArray(bData.rows) ? bData.rows : []);
+        const bookingRows = Array.isArray(bData.rows) ? bData.rows : [];
+        populateBookings(bookingRows);
+
+        // ✅ Recalculate total spent live from actual bookings
+        const liveSpent = bookingRows.reduce((sum, b) => sum + Number(b.priceSoldAt || b["Price Sold At"] || 0), 0);
+        document.getElementById("statSpent").textContent = formatMoney(liveSpent);
+        updateLoyaltyCard(liveSpent);
+
+        // Update cached userData with accurate spent
+        try {
+          const userData = JSON.parse(localStorage.getItem("userData") || "{}");
+          userData.totalSpent = liveSpent;
+          localStorage.setItem("userData", JSON.stringify(userData));
+        } catch {}
+
         if (!cached) {
           populateProfile({ email: userEmail, firstName: "", lastName: "", administrator: localStorage.getItem("isAdmin") === "true" ? 1 : 0 });
         }
