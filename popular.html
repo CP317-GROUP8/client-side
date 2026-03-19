@@ -99,16 +99,11 @@ button:hover { filter: brightness(0.95); }
 </head>
 <body>
 <div class="container">
-  <header>
+  <header style="margin-top: 20px;">
     <div>
       <h1>Popular Cars This Week</h1>
       <div class="sub">Ranked from views, favourites, and book clicks this week.</div>
       <div class="summary" id="summary">Loading popularity data...</div>
-    </div>
-    <div style="display:flex; gap:10px;">
-      <button onclick="location.href='home.html?v=7'">← Home</button>
-      <button onclick="location.href='cars.html?preview=1'">All Cars</button>
-      <button class="dm-toggle">🌙</button>
     </div>
   </header>
 
@@ -117,6 +112,7 @@ button:hover { filter: brightness(0.95); }
 </div>
 
 <script src="popular.js"></script>
+<script src="navbar.js"></script>
 <script src="darkm.js"></script>
 </body>
 </html>

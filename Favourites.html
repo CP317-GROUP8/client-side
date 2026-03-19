@@ -86,15 +86,10 @@ button:hover { filter: brightness(0.95); }
 <body>
 <div class="container">
 
-  <header>
+  <header style="margin-top: 20px;">
     <div>
       <h1>Favourites</h1>
       <div class="sub">Saved cars for this account</div>
-    </div>
-    <div style="display:flex; gap:12px;">
-      <button onclick="location.href='cars.html?preview=1'">← Back to Cars</button>
-      <button onclick="location.href='home.html?v=7'">← Home</button>
-      <button class="dm-toggle">🌙</button>
     </div>
   </header>
 
@@ -232,6 +227,7 @@ async function loadFavouriteCars() {
 
 loadFavouriteCars();
 </script>
+<script src="navbar.js"></script>
 <script src="darkm.js"></script>
 </body>
 </html>
