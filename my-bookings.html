@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>My Bookings</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
-  <!-- EmailJS -->
   <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 
   <style>
@@ -13,9 +12,10 @@
 
     body {
       margin: 0;
-      background: linear-gradient(180deg, #eef2ff, #f8fafc);
+      background: var(--bg, #f4f6f9);
       min-height: 100vh;
-      color: #0f172a;
+      color: var(--ink, #0f172a);
+      transition: background 0.2s, color 0.2s;
     }
 
     .container {
@@ -31,36 +31,38 @@
       margin-bottom: 32px;
     }
 
-    .topbar h1 { font-size: 36px; font-weight: 700; margin: 0; }
-    .topbar .sub { font-size: 14px; color: #64748b; margin-top: 4px; }
+    .topbar h1 { font-size: 36px; font-weight: 700; margin: 0; color: var(--ink, #0f172a); }
+    .topbar .sub { font-size: 14px; color: var(--muted, #64748b); margin-top: 4px; }
 
     .btn {
-      border: 1px solid #e2e8f0;
+      border: 1px solid var(--border, #e2e8f0);
       cursor: pointer;
       border-radius: 12px;
       padding: 11px 16px;
       font-weight: 600;
       font-size: 14px;
-      background: white;
-      color: #0f172a;
+      background: var(--surface, white);
+      color: var(--ink, #0f172a);
+      transition: filter 0.15s;
     }
     .btn:hover { filter: brightness(0.96); }
 
     .bookingCard {
-      background: white;
+      background: var(--surface, white);
       border-radius: 20px;
       box-shadow: 0 12px 30px rgba(0,0,0,.06);
       overflow: hidden;
       margin-bottom: 20px;
       display: grid;
       grid-template-columns: 240px 1fr;
+      border: 1px solid var(--border, transparent);
     }
 
     .bookingCard img {
       width: 100%;
       height: 100%;
       object-fit: cover;
-      background: #e2e8f0;
+      background: var(--surface2, #e2e8f0);
       min-height: 160px;
     }
 
@@ -78,9 +80,9 @@
       gap: 12px;
     }
 
-    .bookingTop h2 { font-size: 20px; font-weight: 700; margin: 0; }
-    .saleId { font-size: 12px; color: #94a3b8; margin-top: 4px; }
-    .price { font-size: 20px; font-weight: 700; color: #4f46e5; white-space: nowrap; }
+    .bookingTop h2 { font-size: 20px; font-weight: 700; margin: 0; color: var(--ink, #0f172a); }
+    .saleId { font-size: 12px; color: var(--muted, #94a3b8); margin-top: 4px; }
+    .price { font-size: 20px; font-weight: 700; color: var(--accent, #4f46e5); white-space: nowrap; }
 
     .pillRow { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
 
@@ -88,9 +90,9 @@
       padding: 5px 12px;
       border-radius: 999px;
       font-size: 12px;
-      border: 1px solid #e2e8f0;
-      background: #f8fafc;
-      color: #334155;
+      border: 1px solid var(--border, #e2e8f0);
+      background: var(--surface2, #f8fafc);
+      color: var(--ink2, #334155);
     }
 
     .pill-ref {
@@ -98,9 +100,9 @@
       border-radius: 999px;
       font-size: 12px;
       font-weight: 700;
-      border: 1px solid #c7d2fe;
-      background: #eef2ff;
-      color: #4f46e5;
+      border: 1px solid var(--accent-light, #c7d2fe);
+      background: var(--accent-light, #eef2ff);
+      color: var(--accent, #4f46e5);
       font-family: 'Courier New', monospace;
       letter-spacing: 0.04em;
     }
@@ -116,31 +118,31 @@
     .dates { display: flex; gap: 12px; }
 
     .dateBox {
-      background: #f8fafc;
-      border: 1px solid #e2e8f0;
+      background: var(--surface2, #f8fafc);
+      border: 1px solid var(--border, #e2e8f0);
       border-radius: 12px;
       padding: 10px 16px;
     }
 
     .dateBox .label {
       font-size: 11px;
-      color: #94a3b8;
+      color: var(--muted, #94a3b8);
       font-weight: 600;
       text-transform: uppercase;
       letter-spacing: 0.05em;
     }
 
-    .dateBox .value { font-size: 14px; font-weight: 600; margin-top: 2px; }
+    .dateBox .value { font-size: 14px; font-weight: 600; margin-top: 2px; color: var(--ink, #0f172a); }
 
     .cancelBtn {
-      border: 1px solid #fecaca;
+      border: 1px solid var(--danger, #ef4444);
       cursor: pointer;
       border-radius: 12px;
       padding: 10px 18px;
       font-weight: 600;
       font-size: 13px;
-      background: #fee2e2;
-      color: #991b1b;
+      background: var(--danger-light, #fee2e2);
+      color: var(--danger, #991b1b);
       transition: filter 0.15s;
       white-space: nowrap;
     }
@@ -148,16 +150,17 @@
     .cancelBtn:disabled { opacity: 0.5; cursor: not-allowed; }
 
     .stateBox {
-      background: white;
+      background: var(--surface, white);
       border-radius: 20px;
       box-shadow: 0 12px 30px rgba(0,0,0,.06);
       padding: 60px 40px;
       text-align: center;
-      color: #64748b;
+      color: var(--muted, #64748b);
+      border: 1px solid var(--border, transparent);
     }
 
     .stateBox .emoji { font-size: 40px; margin-bottom: 12px; }
-    .stateBox h2 { margin: 0 0 8px; font-size: 20px; color: #0f172a; }
+    .stateBox h2 { margin: 0 0 8px; font-size: 20px; color: var(--ink, #0f172a); }
     .stateBox p { margin: 0; font-size: 14px; }
 
     @media (max-width: 700px) {
@@ -194,53 +197,23 @@
     const API_BASE   = "https://server-side-zqaz.onrender.com";
     const SESSION_MS = 12 * 60 * 60 * 1000;
 
-    // Image cache keys
     const IMAGE_ASSIGNMENTS_KEY = 'carImageAssignments';
 
-    // Define all possible image combinations that exist in your assets
     const IMAGE_MANIFEST = {
-      'honda/civic': [
-        { num: 1, ext: 'jpeg' },
-        { num: 2, ext: 'jpeg' },
-        { num: 3, ext: 'jpeg' }
-      ],
-      'toyota/corolla': [
-        { num: 1, ext: 'png' },
-        { num: 2, ext: 'png' },
-        { num: 3, ext: 'jpeg' }
-      ],
-      'toyota/highlander': [
-        { num: 1, ext: 'png' },
-        { num: 2, ext: 'png' },
-        { num: 3, ext: 'jpeg' }
-      ],
-      'porsche/911': [
-        { num: 1, ext: 'jpeg' },
-        { num: 2, ext: 'jpeg' },
-        { num: 3, ext: 'jpeg' }
-      ],
-      'kia/k4': [
-        { num: 1, ext: 'jpeg' },
-        { num: 2, ext: 'jpeg' },
-        { num: 3, ext: 'jpeg' }
-      ],
-      'dodge/challenger': [
-        { num: 1, ext: 'png' },
-        { num: 2, ext: 'png' },
-        { num: 3, ext: 'jpeg' }
-      ]
+      'honda/civic':       [{ num:1,ext:'jpeg'},{num:2,ext:'jpeg'},{num:3,ext:'jpeg'}],
+      'toyota/corolla':    [{ num:1,ext:'png' },{num:2,ext:'png' },{num:3,ext:'jpeg'}],
+      'toyota/highlander': [{ num:1,ext:'png' },{num:2,ext:'png' },{num:3,ext:'jpeg'}],
+      'porsche/911':       [{ num:1,ext:'jpeg'},{num:2,ext:'jpeg'},{num:3,ext:'jpeg'}],
+      'kia/k4':            [{ num:1,ext:'jpeg'},{num:2,ext:'jpeg'},{num:3,ext:'jpeg'}],
+      'dodge/challenger':  [{ num:1,ext:'png' },{num:2,ext:'png' },{num:3,ext:'jpeg'}]
     };
 
-    // ── EmailJS config ──────────────────────────────────────────────────────
-    const EMAILJS_PUBLIC_KEY           = "H3F1dxhmOW-hMSZij";
-    const EMAILJS_SERVICE_ID           = "service_v914ueg";
-    const EMAILJS_CANCEL_TEMPLATE      = "template_rwz6pma";
+    const EMAILJS_PUBLIC_KEY      = "H3F1dxhmOW-hMSZij";
+    const EMAILJS_SERVICE_ID      = "service_v914ueg";
+    const EMAILJS_CANCEL_TEMPLATE = "template_rwz6pma";
 
     emailjs.init(EMAILJS_PUBLIC_KEY);
 
-    /**
-     * Sends a cancellation confirmation email via EmailJS.
-     */
     async function sendCancellationEmail({ userEmail, userName, carName, pickupDate, dropoffDate, saleId }) {
       try {
         await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_CANCEL_TEMPLATE, {
@@ -257,7 +230,6 @@
       }
     }
 
-    // ── Session ─────────────────────────────────────────────────────────────
     function requireSession() {
       const email = localStorage.getItem("userEmail");
       const loggedInAt = Number(localStorage.getItem("loggedInAt") || "0");
@@ -274,7 +246,6 @@
 
     const userEmail = requireSession();
 
-    // ── Image Assignment Functions ──────────────────────────────────────────
     function loadImageAssignments() {
       const raw = localStorage.getItem(IMAGE_ASSIGNMENTS_KEY);
       return raw ? JSON.parse(raw) : {};
@@ -285,64 +256,31 @@
     }
 
     function getOrCreateImageAssignment(vehicleId, manufacturer, model) {
-      if (!vehicleId || !manufacturer || !model) {
-        return './assets/cars/dummy.png';
-      }
-      
-      const manufacturerLower = manufacturer.toLowerCase().trim();
-      const modelLower = model.toLowerCase().trim();
-      const modelKey = `${manufacturerLower}/${modelLower}`;
-      
+      if (!vehicleId || !manufacturer || !model) return './assets/cars/dummy.png';
+      const modelKey = `${manufacturer.toLowerCase().trim()}/${model.toLowerCase().trim()}`;
       const assignments = loadImageAssignments();
-      
+
       if (assignments[vehicleId]) {
-        const validPaths = new Set();
-        const availableImages = IMAGE_MANIFEST[modelKey] || [];
-        availableImages.forEach(img => {
-          validPaths.add(`./assets/cars/${modelKey}/${img.num}.${img.ext}`);
-        });
-        
-        if (validPaths.has(assignments[vehicleId])) {
-          return assignments[vehicleId];
-        } else {
-          delete assignments[vehicleId];
-          saveImageAssignments(assignments);
-        }
+        const validPaths = new Set((IMAGE_MANIFEST[modelKey] || []).map(i => `./assets/cars/${modelKey}/${i.num}.${i.ext}`));
+        if (validPaths.has(assignments[vehicleId])) return assignments[vehicleId];
+        delete assignments[vehicleId];
+        saveImageAssignments(assignments);
       }
-      
-      const availableImages = IMAGE_MANIFEST[modelKey] || [];
-      if (availableImages.length === 0) {
-        return './assets/cars/dummy.png';
-      }
-      
-      const assignedImagesForModel = new Set();
-      Object.entries(assignments).forEach(([vid, imageUrl]) => {
-        if (vid !== vehicleId && imageUrl.includes(`/assets/cars/${modelKey}/`)) {
-          assignedImagesForModel.add(imageUrl);
-        }
-      });
-      
-      const unassignedImages = availableImages.filter(img => {
-        const imageUrl = `./assets/cars/${modelKey}/${img.num}.${img.ext}`;
-        return !assignedImagesForModel.has(imageUrl);
-      });
-      
-      let selectedImageUrl;
-      
-      if (unassignedImages.length > 0) {
-        const randomIndex = Math.floor(Math.random() * unassignedImages.length);
-        const selected = unassignedImages[randomIndex];
-        selectedImageUrl = `./assets/cars/${modelKey}/${selected.num}.${selected.ext}`;
-      } else {
-        const randomIndex = Math.floor(Math.random() * availableImages.length);
-        const selected = availableImages[randomIndex];
-        selectedImageUrl = `./assets/cars/${modelKey}/${selected.num}.${selected.ext}`;
-      }
-      
-      assignments[vehicleId] = selectedImageUrl;
+
+      const available = IMAGE_MANIFEST[modelKey] || [];
+      if (!available.length) return './assets/cars/dummy.png';
+
+      const usedUrls = new Set(Object.entries(assignments)
+        .filter(([vid]) => vid !== vehicleId)
+        .map(([, url]) => url)
+        .filter(url => url.includes(`/assets/cars/${modelKey}/`)));
+
+      const pool = available.filter(i => !usedUrls.has(`./assets/cars/${modelKey}/${i.num}.${i.ext}`));
+      const chosen = (pool.length ? pool : available)[Math.floor(Math.random() * (pool.length || available.length))];
+      const url = `./assets/cars/${modelKey}/${chosen.num}.${chosen.ext}`;
+      assignments[vehicleId] = url;
       saveImageAssignments(assignments);
-      
-      return selectedImageUrl;
+      return url;
     }
 
     function formatDate(dateStr) {
@@ -351,22 +289,17 @@
       return new Date(year, month - 1, day).toLocaleDateString("en-CA", { year: "numeric", month: "short", day: "numeric" });
     }
 
-    function formatMoney(val) {
-      return `$${Number(val || 0).toFixed(2)}`;
-    }
+    function formatMoney(val) { return `$${Number(val || 0).toFixed(2)}`; }
 
     function getRowValue(row, ...keys) {
       for (const key of keys) {
-        if (row && row[key] !== undefined && row[key] !== null && String(row[key]).trim() !== "") {
-          return row[key];
-        }
+        if (row && row[key] !== undefined && row[key] !== null && String(row[key]).trim() !== "") return row[key];
       }
       return "";
     }
 
     async function cancelBooking(saleId, carName, fromDate, toDate, btnEl) {
       if (!confirm("Cancel this booking? The car will be made available again.")) return;
-
       btnEl.disabled = true;
       btnEl.textContent = "Cancelling...";
 
@@ -375,23 +308,18 @@
           method: "DELETE",
           headers: { "X-User-Email": userEmail }
         });
-
         const data = await res.json().catch(() => ({}));
         if (!res.ok) throw new Error(data.error || "Cancel failed");
 
-        // Send cancellation email
         const userData = JSON.parse(localStorage.getItem("userData") || "{}");
         const userName = `${userData.firstName || ""} ${userData.lastName || ""}`.trim() || userEmail;
         await sendCancellationEmail({
-          userEmail:   userEmail,
-          userName:    userName,
-          carName:     carName,
+          userEmail, userName, carName,
           pickupDate:  formatDate(fromDate),
           dropoffDate: formatDate(toDate),
-          saleId:      saleId,
+          saleId,
         });
 
-        // Remove reference number from localStorage
         const refs = JSON.parse(localStorage.getItem("bookingRefs") || "{}");
         delete refs[saleId];
         localStorage.setItem("bookingRefs", JSON.stringify(refs));
@@ -406,9 +334,8 @@
               <div class="stateBox">
                 <div class="emoji">🚗</div>
                 <h2>No bookings yet</h2>
-                <p>You haven't rented any cars yet. <a href="cars.html" style="color:#4f46e5;">Browse cars</a> to get started.</p>
-              </div>
-            `;
+                <p>You haven't rented any cars yet. <a href="cars.html" style="color:var(--accent,#4f46e5);">Browse cars</a> to get started.</p>
+              </div>`;
           }
         }, 300);
       } catch (err) {
@@ -420,12 +347,8 @@
 
     async function loadBookings() {
       const container = document.getElementById("bookingsContainer");
-
       try {
-        const res = await fetch(`${API_BASE}/me/bookings`, {
-          headers: { "X-User-Email": userEmail }
-        });
-
+        const res = await fetch(`${API_BASE}/me/bookings`, { headers: { "X-User-Email": userEmail } });
         const data = await res.json().catch(() => ({}));
         if (!res.ok) throw new Error(data.error || "Could not load bookings");
 
@@ -437,22 +360,18 @@
             <div class="stateBox">
               <div class="emoji">🚗</div>
               <h2>No bookings yet</h2>
-              <p>You haven't rented any cars yet. <a href="cars.html" style="color:#4f46e5;">Browse cars</a> to get started.</p>
-            </div>
-          `;
+              <p>You haven't rented any cars yet. <a href="cars.html" style="color:var(--accent,#4f46e5);">Browse cars</a> to get started.</p>
+            </div>`;
           return;
         }
 
         container.innerHTML = rows.map(booking => {
-          const vehicleId = booking.vehicleId || booking["Vehicle ID"] || "";
+          const vehicleId    = booking.vehicleId    || booking["Vehicle ID"]   || "";
           const manufacturer = booking.manufacturer || booking["Manufacturer"] || "";
-          const model = booking.model || booking["Model"] || "";
+          const model        = booking.model        || booking["Model"]        || "";
           const name = `${manufacturer} ${model}`.trim() || "Unknown Vehicle";
-          
-          // Get image using manifest-based assignment
           const imgSrc = getOrCreateImageAssignment(vehicleId, manufacturer, model);
-          
-          const pickupLocation  = getRowValue(booking, "pickupLocation", "pickup_location", "Pickup Location");
+          const pickupLocation  = getRowValue(booking, "pickupLocation",  "pickup_location",  "Pickup Location");
           const dropoffLocation = getRowValue(booking, "dropoffLocation", "dropoff_location", "Drop Off Location", "Dropoff Location");
           const refNum = refs[booking.saleId] || null;
 
@@ -474,8 +393,8 @@
                   </div>
                   <div class="pillRow">
                     <span class="pill">${booking.vehicleType || booking["Vehicle Type"] || "—"}</span>
-                    <span class="pill">${booking.drivetrain || booking["Drivetrain"] || "—"}</span>
-                    <span class="pill">Pickup: ${pickupLocation || "—"}</span>
+                    <span class="pill">${booking.drivetrain  || booking["Drivetrain"]   || "—"}</span>
+                    <span class="pill">Pickup: ${pickupLocation  || "—"}</span>
                     <span class="pill">Dropoff: ${dropoffLocation || "—"}</span>
                     ${refNum ? `<span class="pill-ref">🔖 Ref: ${refNum}</span>` : ""}
                   </div>
@@ -494,11 +413,9 @@
                   <button class="cancelBtn" data-saleid="${booking.saleId}">Cancel Booking</button>
                 </div>
               </div>
-            </div>
-          `;
+            </div>`;
         }).join("");
 
-        // Attach cancel listeners with booking data for the email
         container.querySelectorAll(".cancelBtn").forEach(btn => {
           btn.addEventListener("click", () => {
             const card = btn.closest(".bookingCard");
@@ -518,8 +435,7 @@
             <div class="emoji">⚠️</div>
             <h2>Could not load bookings</h2>
             <p>${err.message}</p>
-          </div>
-        `;
+          </div>`;
       }
     }
 
