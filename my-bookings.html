@@ -134,6 +134,13 @@
 
     .dateBox .value { font-size: 14px; font-weight: 600; margin-top: 2px; color: var(--ink, #0f172a); }
 
+    .actionBtns {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
     .cancelBtn {
       border: 1px solid var(--danger, #ef4444);
       cursor: pointer;
@@ -148,6 +155,21 @@
     }
     .cancelBtn:hover { filter: brightness(0.95); }
     .cancelBtn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* ✅ Print button */
+    .printBtn {
+      border: 1px solid #c7d2fe;
+      cursor: pointer;
+      border-radius: 12px;
+      padding: 10px 18px;
+      font-weight: 600;
+      font-size: 13px;
+      background: #eef2ff;
+      color: #4f46e5;
+      transition: filter 0.15s;
+      white-space: nowrap;
+    }
+    .printBtn:hover { filter: brightness(0.95); }
 
     .stateBox {
       background: var(--surface, white);
@@ -194,7 +216,6 @@
   <script>
     const API_BASE   = "https://server-side-zqaz.onrender.com";
     const SESSION_MS = 12 * 60 * 60 * 1000;
-
     const IMAGE_ASSIGNMENTS_KEY = 'carImageAssignments';
 
     const IMAGE_MANIFEST = {
@@ -296,6 +317,78 @@
       return "";
     }
 
+    // ✅ Print booking receipt
+    function printBooking({ name, saleId, refNum, price, pickupDate, dropoffDate, pickupLocation, dropoffLocation, vehicleType, drivetrain, imgSrc }) {
+      const userData = JSON.parse(localStorage.getItem("userData") || "{}");
+      const userName = `${userData.firstName || ""} ${userData.lastName || ""}`.trim() || userEmail;
+
+      const win = window.open("", "_blank", "width=600,height=700");
+      win.document.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>Booking Receipt — ${name}</title>
+          <style>
+            * { box-sizing: border-box; margin: 0; padding: 0; font-family: Inter, Arial, sans-serif; }
+            body { background: #f8fafc; padding: 40px; color: #0f172a; }
+            .receipt { background: white; border-radius: 16px; padding: 36px; max-width: 500px; margin: 0 auto; box-shadow: 0 4px 24px rgba(0,0,0,0.08); }
+            .header { text-align: center; margin-bottom: 28px; border-bottom: 2px solid #eef2ff; padding-bottom: 24px; }
+            .logo { font-size: 22px; font-weight: 800; color: #4f46e5; margin-bottom: 4px; }
+            .logo span { color: #0f172a; }
+            .title { font-size: 13px; color: #64748b; }
+            .car-img { width: 100%; height: 160px; object-fit: cover; border-radius: 12px; margin-bottom: 20px; }
+            .car-name { font-size: 22px; font-weight: 700; margin-bottom: 4px; }
+            .sale-id { font-size: 12px; color: #94a3b8; margin-bottom: 16px; }
+            .ref-box { background: #eef2ff; border: 1px dashed #c7d2fe; border-radius: 10px; padding: 12px 16px; margin-bottom: 20px; text-align: center; }
+            .ref-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: #64748b; }
+            .ref-num { font-size: 20px; font-weight: 800; color: #4f46e5; font-family: 'Courier New', monospace; letter-spacing: 0.06em; }
+            .row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #f1f5f9; font-size: 14px; }
+            .row:last-child { border-bottom: none; }
+            .row .label { color: #64748b; }
+            .row .val { font-weight: 600; text-align: right; }
+            .total-row { display: flex; justify-content: space-between; padding: 14px 0 0; font-size: 16px; font-weight: 700; }
+            .footer { text-align: center; margin-top: 24px; font-size: 12px; color: #94a3b8; }
+            @media print {
+              body { background: white; padding: 0; }
+              .receipt { box-shadow: none; }
+              .no-print { display: none; }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="receipt">
+            <div class="header">
+              <div class="logo">CP317 <span>Car Rentals</span></div>
+              <div class="title">Booking Receipt</div>
+            </div>
+            <img class="car-img" src="${window.location.origin}/${imgSrc.replace('./', '')}" onerror="this.style.display='none'" alt="${name}">
+            <div class="car-name">${name}</div>
+            <div class="sale-id">Sale ID #${saleId}</div>
+            ${refNum ? `
+            <div class="ref-box">
+              <div class="ref-label">Reference Number</div>
+              <div class="ref-num">${refNum}</div>
+            </div>` : ""}
+            <div class="row"><span class="label">Customer</span><span class="val">${userName}</span></div>
+            <div class="row"><span class="label">Vehicle Type</span><span class="val">${vehicleType}</span></div>
+            <div class="row"><span class="label">Drivetrain</span><span class="val">${drivetrain}</span></div>
+            <div class="row"><span class="label">Pickup Date</span><span class="val">${pickupDate}</span></div>
+            <div class="row"><span class="label">Dropoff Date</span><span class="val">${dropoffDate}</span></div>
+            <div class="row"><span class="label">Pickup Location</span><span class="val">${pickupLocation}</span></div>
+            <div class="row"><span class="label">Dropoff Location</span><span class="val">${dropoffLocation}</span></div>
+            <div class="total-row"><span>Total Paid</span><span style="color:#4f46e5">${price}</span></div>
+            <div class="footer">
+              Thank you for renting with CP317 Car Rentals!<br>
+              Printed on ${new Date().toLocaleDateString("en-CA", { year:"numeric", month:"long", day:"numeric" })}
+            </div>
+          </div>
+          <script>window.onload = () => window.print();<\/script>
+        </body>
+        </html>
+      `);
+      win.document.close();
+    }
+
     async function cancelBooking(saleId, carName, fromDate, toDate, btnEl) {
       if (!confirm("Cancel this booking? The car will be made available again.")) return;
       btnEl.disabled = true;
@@ -378,7 +471,14 @@
               data-saleid="${booking.saleId}"
               data-carname="${name}"
               data-fromdate="${booking.fromDate || ""}"
-              data-todate="${booking.toDate || ""}">
+              data-todate="${booking.toDate || ""}"
+              data-vehicletype="${booking.vehicleType || booking["Vehicle Type"] || "—"}"
+              data-drivetrain="${booking.drivetrain || booking["Drivetrain"] || "—"}"
+              data-pickuplocation="${pickupLocation || "—"}"
+              data-dropofflocation="${dropoffLocation || "—"}"
+              data-price="${formatMoney(booking.priceSoldAt)}"
+              data-imgsrc="${imgSrc}"
+              data-refnum="${refNum || ""}">
               <img src="${imgSrc}" alt="${name}" onerror="this.src='./assets/cars/dummy.png'">
               <div class="bookingBody">
                 <div>
@@ -408,12 +508,16 @@
                       <div class="value">${formatDate(booking.toDate)}</div>
                     </div>
                   </div>
-                  <button class="cancelBtn" data-saleid="${booking.saleId}">Cancel Booking</button>
+                  <div class="actionBtns">
+                    <button class="printBtn" data-saleid="${booking.saleId}">🖨️ Print</button>
+                    <button class="cancelBtn" data-saleid="${booking.saleId}">Cancel Booking</button>
+                  </div>
                 </div>
               </div>
             </div>`;
         }).join("");
 
+        // Cancel listeners
         container.querySelectorAll(".cancelBtn").forEach(btn => {
           btn.addEventListener("click", () => {
             const card = btn.closest(".bookingCard");
@@ -424,6 +528,26 @@
               card.getAttribute("data-todate"),
               btn
             );
+          });
+        });
+
+        // ✅ Print listeners
+        container.querySelectorAll(".printBtn").forEach(btn => {
+          btn.addEventListener("click", () => {
+            const card = btn.closest(".bookingCard");
+            printBooking({
+              name:             card.getAttribute("data-carname"),
+              saleId:           card.getAttribute("data-saleid"),
+              refNum:           card.getAttribute("data-refnum"),
+              price:            card.getAttribute("data-price"),
+              pickupDate:       formatDate(card.getAttribute("data-fromdate")),
+              dropoffDate:      formatDate(card.getAttribute("data-todate")),
+              pickupLocation:   card.getAttribute("data-pickuplocation"),
+              dropoffLocation:  card.getAttribute("data-dropofflocation"),
+              vehicleType:      card.getAttribute("data-vehicletype"),
+              drivetrain:       card.getAttribute("data-drivetrain"),
+              imgSrc:           card.getAttribute("data-imgsrc"),
+            });
           });
         });
 
@@ -440,6 +564,6 @@
     loadBookings();
   </script>
   <script src="navbar.js"></script>
-<script src="darkm.js"></script>
+  <script src="darkm.js"></script>
 </body>
 </html>
