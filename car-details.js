@@ -33,6 +33,7 @@ const IMAGE_MANIFEST = {
   'toyota/gr86':        [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
   'toyota/highlander':  [{ num: 1, ext: 'png'  }, { num: 2, ext: 'png'  }, { num: 3, ext: 'jpeg' }],
   'volkswagen/jetta':   [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+  'bmw/i4':             [{ num: 1, ext: 'jpeg' }],
 };
 
 function formatDate(dateStr) {
