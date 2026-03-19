@@ -373,6 +373,73 @@
       to   { opacity: 1; transform: translateY(0); }
     }
 
+    /* ── EDIT MODAL ── */
+    .modal-overlay {
+      position: fixed; inset: 0; background: rgba(13,17,23,0.55);
+      backdrop-filter: blur(4px); z-index: 200;
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0; pointer-events: none; transition: opacity 0.2s;
+    }
+    .modal-overlay.open { opacity: 1; pointer-events: all; }
+
+    .modal {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 20px; padding: 32px; width: 100%; max-width: 400px;
+      box-shadow: 0 24px 60px rgba(0,0,0,0.15);
+      transform: translateY(16px); transition: transform 0.2s;
+    }
+    .modal-overlay.open .modal { transform: translateY(0); }
+
+    .modal-title {
+      font-family: 'DM Serif Display', serif; font-size: 22px;
+      color: var(--ink); margin-bottom: 6px;
+    }
+    .modal-sub { font-size: 13px; color: var(--muted); margin-bottom: 24px; }
+
+    .field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
+    .field label { font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.07em; }
+    .field input {
+      padding: 11px 14px; border-radius: 12px; border: 1px solid var(--border);
+      font-family: 'DM Sans', sans-serif; font-size: 15px; color: var(--ink);
+      background: var(--surface2); outline: none; transition: border-color 0.15s;
+    }
+    .field input:focus { border-color: var(--accent); background: var(--surface); }
+
+    .modal-actions { display: flex; gap: 10px; margin-top: 24px; }
+    .btn-save {
+      flex: 1; padding: 12px; border-radius: 12px; border: none;
+      background: var(--accent); color: white;
+      font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 700;
+      cursor: pointer; transition: opacity 0.15s;
+    }
+    .btn-save:hover { opacity: 0.88; }
+    .btn-save:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-cancel {
+      padding: 12px 20px; border-radius: 12px; border: 1px solid var(--border);
+      background: var(--surface2); color: var(--ink2);
+      font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600;
+      cursor: pointer; transition: background 0.15s;
+    }
+    .btn-cancel:hover { background: var(--border); }
+
+    .toast {
+      position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(20px);
+      background: var(--ink); color: white; padding: 12px 22px; border-radius: 12px;
+      font-size: 14px; font-weight: 500; z-index: 300;
+      opacity: 0; transition: all 0.25s; pointer-events: none; white-space: nowrap;
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    .toast.success { background: var(--success); }
+    .toast.error   { background: var(--danger); }
+
+    .edit-btn {
+      padding: 7px 14px; border-radius: 10px; border: 1px solid var(--border);
+      background: var(--surface2); font-family: 'DM Sans', sans-serif;
+      font-size: 12px; font-weight: 600; color: var(--ink2); cursor: pointer;
+      transition: all 0.15s;
+    }
+    .edit-btn:hover { background: var(--accent-light); color: var(--accent); border-color: #c7d2fe; }
+
     /* ── RESPONSIVE ── */
     @media (max-width: 768px) {
       .grid { grid-template-columns: 1fr; }
@@ -405,6 +472,13 @@
       <div>
         <!-- Profile Card -->
         <div class="card">
+
+          <!-- Profile card header with Edit button -->
+          <div class="card-header" style="border-bottom:none; padding-bottom:0;">
+            <span class="card-title">Profile</span>
+            <button class="edit-btn" onclick="openEditModal()">✏️ Edit</button>
+          </div>
+
           <div class="avatar-wrap">
             <div class="avatar" id="avatarEl">?</div>
             <div class="profile-name" id="profileName">
@@ -488,6 +562,29 @@
     </div>
   </main>
 
+  <!-- EDIT PROFILE MODAL -->
+  <div class="modal-overlay" id="editModal">
+    <div class="modal">
+      <div class="modal-title">Edit Profile</div>
+      <p class="modal-sub">Update your first and last name.</p>
+      <div class="field">
+        <label>First Name</label>
+        <input type="text" id="editFirst" placeholder="First name" />
+      </div>
+      <div class="field">
+        <label>Last Name</label>
+        <input type="text" id="editLast" placeholder="Last name" />
+      </div>
+      <div class="modal-actions">
+        <button class="btn-cancel" onclick="closeEditModal()">Cancel</button>
+        <button class="btn-save" id="saveBtn" onclick="saveProfile()">Save Changes</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST NOTIFICATION -->
+  <div class="toast" id="toast"></div>
+
   <script>
     const API_BASE = "https://server-side-zqaz.onrender.com";
     const SESSION_MS = 12 * 60 * 60 * 1000;
@@ -558,20 +655,20 @@
       if (!vehicleId || !manufacturer || !model) {
         return './assets/cars/dummy.png';
       }
-      
+
       const manufacturerLower = manufacturer.toLowerCase().trim();
       const modelLower = model.toLowerCase().trim();
       const modelKey = `${manufacturerLower}/${modelLower}`;
-      
+
       const assignments = loadImageAssignments();
-      
+
       if (assignments[vehicleId]) {
         const validPaths = new Set();
         const availableImages = IMAGE_MANIFEST[modelKey] || [];
         availableImages.forEach(img => {
           validPaths.add(`./assets/cars/${modelKey}/${img.num}.${img.ext}`);
         });
-        
+
         if (validPaths.has(assignments[vehicleId])) {
           return assignments[vehicleId];
         } else {
@@ -579,26 +676,26 @@
           saveImageAssignments(assignments);
         }
       }
-      
+
       const availableImages = IMAGE_MANIFEST[modelKey] || [];
       if (availableImages.length === 0) {
         return './assets/cars/dummy.png';
       }
-      
+
       const assignedImagesForModel = new Set();
       Object.entries(assignments).forEach(([vid, imageUrl]) => {
         if (vid !== vehicleId && imageUrl.includes(`/assets/cars/${modelKey}/`)) {
           assignedImagesForModel.add(imageUrl);
         }
       });
-      
+
       const unassignedImages = availableImages.filter(img => {
         const imageUrl = `./assets/cars/${modelKey}/${img.num}.${img.ext}`;
         return !assignedImagesForModel.has(imageUrl);
       });
-      
+
       let selectedImageUrl;
-      
+
       if (unassignedImages.length > 0) {
         const randomIndex = Math.floor(Math.random() * unassignedImages.length);
         const selected = unassignedImages[randomIndex];
@@ -608,10 +705,10 @@
         const selected = availableImages[randomIndex];
         selectedImageUrl = `./assets/cars/${modelKey}/${selected.num}.${selected.ext}`;
       }
-      
+
       assignments[vehicleId] = selectedImageUrl;
       saveImageAssignments(assignments);
-      
+
       return selectedImageUrl;
     }
 
@@ -683,10 +780,9 @@
         const manufacturer = b.manufacturer || b["Manufacturer"] || "";
         const model = b.model || b["Model"] || "";
         const name = `${manufacturer} ${model}`.trim() || "Unknown Vehicle";
-        
-        // Get image using manifest-based assignment
+
         const imgSrc = getOrCreateImageAssignment(vehicleId, manufacturer, model);
-        
+
         return `
           <div class="booking-item">
             <img class="booking-thumb" src="${imgSrc}" alt="${name}" onerror="this.src='./assets/cars/dummy.png'">
@@ -743,6 +839,57 @@
       if (!confirm("Sign out of your account?")) return;
       ["userEmail", "loggedInAt", "isAdmin", "userData"].forEach(k => localStorage.removeItem(k));
       window.location.replace("index.html");
+    }
+
+    // ── EDIT PROFILE MODAL ──
+    function openEditModal() {
+      document.getElementById("editFirst").value = document.getElementById("infoFirst").textContent.replace("—","").trim();
+      document.getElementById("editLast").value  = document.getElementById("infoLast").textContent.replace("—","").trim();
+      document.getElementById("editModal").classList.add("open");
+    }
+
+    function closeEditModal() {
+      document.getElementById("editModal").classList.remove("open");
+    }
+
+    document.getElementById("editModal").addEventListener("click", function(e) {
+      if (e.target === this) closeEditModal();
+    });
+
+    function showToast(msg, type = "success") {
+      const t = document.getElementById("toast");
+      t.textContent = msg;
+      t.className = `toast ${type} show`;
+      setTimeout(() => t.classList.remove("show"), 3000);
+    }
+
+    async function saveProfile() {
+      const firstName = document.getElementById("editFirst").value.trim();
+      const lastName  = document.getElementById("editLast").value.trim();
+      if (!firstName && !lastName) return showToast("Please enter at least one name.", "error");
+
+      const btn = document.getElementById("saveBtn");
+      btn.disabled = true;
+      btn.textContent = "Saving…";
+
+      try {
+        const res = await fetch(`${API_BASE}/me/profile`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json", "X-User-Email": userEmail },
+          body: JSON.stringify({ firstName, lastName })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Failed to save");
+
+        populateProfile(data.user);
+        closeEditModal();
+        showToast("✅ Profile updated successfully!");
+      } catch (err) {
+        showToast(err.message, "error");
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "Save Changes";
+      }
     }
 
     loadAll();
