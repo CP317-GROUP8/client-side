@@ -47,6 +47,9 @@ const IMAGE_MANIFEST = {
         'toyota/sienna':               [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }, { num: 4, ext: 'jpeg' }],
         'toyota/supra':                [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }, { num: 4, ext: 'jpeg' }],
         'vauxhall/frontera':           [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+        'volkswagen/id.2all':  [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+        'volkswagen/tiguan':   [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+        'toyota/tacoma':       [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
       };
 
 function requireSession() {
