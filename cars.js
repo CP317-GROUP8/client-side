@@ -146,14 +146,9 @@ function getOrCreateImageAssignment(vehicleId, manufacturer, model) {
   // Get available images for this model from manifest
   const availableImages = IMAGE_MANIFEST[modelKey];
   
-  if (!availableImages) {
-    console.warn(`No manifest entry for model: ${modelKey}`);
-    return './assets/cars/dummy.png';
-  }
-  
-  if (availableImages.length === 0) {
-    console.warn(`Empty manifest for model: ${modelKey}`);
-    return './assets/cars/dummy.png';
+  if (!availableImages || availableImages.length === 0) {
+    const query = encodeURIComponent(`${manufacturer} ${model} car`);
+    return `https://source.unsplash.com/seed/${encodeURIComponent(vehicleId)}/600x400/?${query}`;
   }
   
   // Find which images are already assigned to OTHER vehicles of the same model

@@ -109,8 +109,10 @@ function getOrCreateImageAssignment(vehicleId, manufacturer, model) {
   // Get available images for this model from manifest
   const availableImages = IMAGE_MANIFEST[modelKey] || [];
   if (availableImages.length === 0) {
-    return './assets/cars/dummy.png';
+    const query = encodeURIComponent(`${manufacturer} ${model} car`);
+    return `https://source.unsplash.com/seed/${encodeURIComponent(vehicleId)}/600x400/?${query}`;
   }
+
   
   // Find which images are already assigned to OTHER vehicles of the same model
   const assignedImagesForModel = new Set();
