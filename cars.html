@@ -104,7 +104,7 @@
 
       .meta { color: var(--muted, #555); font-size: 14px; }
 
-      .cardActions { display: flex; gap: 12px; margin-top: 14px; }
+      .cardActions { display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap; }
 
       .linkBtn {
         flex: 1;
@@ -113,6 +113,7 @@
         border-radius: 12px;
         text-decoration: none;
         font-weight: 600;
+        font-size: 13px;
       }
 
       .viewBtn { background: var(--accent, #4f46e5); color: white; }
@@ -121,6 +122,32 @@
         border: 1px solid var(--border, #ccc);
         color: var(--ink, #0d1117);
         background: var(--surface, white);
+      }
+
+      /* ✅ Compare button */
+      .compareBtn {
+        flex: 1;
+        text-align: center;
+        padding: 10px;
+        border-radius: 12px;
+        font-weight: 600;
+        font-size: 13px;
+        border: 1px solid #c7d2fe;
+        background: #eef2ff;
+        color: #4f46e5;
+        cursor: pointer;
+        transition: all 0.15s;
+      }
+
+      .compareBtn.selected {
+        background: #4f46e5;
+        color: white;
+        border-color: #4f46e5;
+      }
+
+      .compareBtn:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
       }
 
       /* ── FILTER PANEL ── */
@@ -154,8 +181,7 @@
       }
 
       #filterPanel input[type="range"] {
-        width: 260px;
-        height: 6px;
+        width: 260px; height: 6px;
         border-radius: 999px;
         background: var(--border, rgba(148,163,184,0.35));
         outline: none;
@@ -163,20 +189,14 @@
 
       #filterPanel input[type="range"]::-webkit-slider-thumb {
         -webkit-appearance: none;
-        width: 18px; height: 18px;
-        border-radius: 999px;
-        background: var(--accent, #4f46e5);
-        border: 2px solid white;
-        box-shadow: 0 10px 18px rgba(79,70,229,0.25);
-        cursor: pointer;
+        width: 18px; height: 18px; border-radius: 999px;
+        background: var(--accent, #4f46e5); border: 2px solid white;
+        box-shadow: 0 10px 18px rgba(79,70,229,0.25); cursor: pointer;
       }
 
       #filterPanel input[type="range"]::-moz-range-thumb {
-        width: 18px; height: 18px;
-        border-radius: 999px;
-        background: var(--accent, #4f46e5);
-        border: 2px solid white;
-        cursor: pointer;
+        width: 18px; height: 18px; border-radius: 999px;
+        background: var(--accent, #4f46e5); border: 2px solid white; cursor: pointer;
       }
 
       #clearFilters {
@@ -191,11 +211,10 @@
         transition: all 0.2s ease;
       }
 
-      /* ── MODAL ── */
+      /* ── VEHICLE MODAL ── */
       #vehicleModal {
         display: none;
-        position: fixed;
-        inset: 0;
+        position: fixed; inset: 0;
         background: rgba(0,0,0,0.5);
         z-index: 1000;
         align-items: center;
@@ -204,38 +223,237 @@
 
       .modalInner {
         background: var(--surface, white);
-        border-radius: 20px;
-        padding: 32px;
-        max-width: 560px;
-        width: 90%;
-        max-height: 85vh;
-        overflow-y: auto;
+        border-radius: 20px; padding: 32px;
+        max-width: 560px; width: 90%;
+        max-height: 85vh; overflow-y: auto;
         box-shadow: 0 20px 60px rgba(0,0,0,0.25);
         position: relative;
         border: 1px solid var(--border, transparent);
       }
 
       .modalClose {
-        position: absolute;
-        top: 16px; right: 16px;
-        background: none;
-        border: none;
-        font-size: 22px;
-        cursor: pointer;
-        color: var(--muted, #64748b);
-        padding: 4px 8px;
+        position: absolute; top: 16px; right: 16px;
+        background: none; border: none; font-size: 22px;
+        cursor: pointer; color: var(--muted, #64748b); padding: 4px 8px;
       }
 
       #modalTitle { margin: 0 0 4px; color: var(--ink, #0d1117); }
-
       .modalTableRow { border-bottom: 1px solid var(--border, #f1f5f9); }
       .modalTableLabel { padding: 10px 8px; color: var(--muted, #64748b); font-weight: 600; width: 40%; }
       .modalTableValue { padding: 10px 8px; color: var(--ink, #0d1117); }
+
+      /* ── COMPARE BAR ── */
+      #compareBar {
+        display: none;
+        position: fixed;
+        bottom: 0; left: 0; right: 0;
+        background: white;
+        border-top: 2px solid #4f46e5;
+        padding: 14px 32px;
+        z-index: 500;
+        box-shadow: 0 -8px 30px rgba(0,0,0,0.12);
+        align-items: center;
+        gap: 20px;
+      }
+
+      .compareBar-slots {
+        display: flex;
+        gap: 12px;
+        flex: 1;
+      }
+
+      .compareBar-slot {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        background: #f8fafc;
+        border: 2px dashed #c7d2fe;
+        border-radius: 14px;
+        padding: 10px 16px;
+        min-width: 200px;
+        font-size: 14px;
+        color: #64748b;
+        font-weight: 500;
+      }
+
+      .compareBar-slot.filled {
+        background: #eef2ff;
+        border-style: solid;
+        border-color: #4f46e5;
+        color: #4f46e5;
+        font-weight: 600;
+      }
+
+      .compareBar-slot img {
+        width: 48px; height: 36px;
+        object-fit: cover;
+        border-radius: 8px;
+      }
+
+      .compareBar-slot .slot-remove {
+        margin-left: auto;
+        cursor: pointer;
+        font-size: 16px;
+        opacity: 0.6;
+      }
+      .compareBar-slot .slot-remove:hover { opacity: 1; }
+
+      .compareBar-actions { display: flex; gap: 10px; }
+
+      .compareNowBtn {
+        background: #4f46e5; color: white;
+        border: none; border-radius: 12px;
+        padding: 12px 24px; font-weight: 700;
+        font-size: 14px; cursor: pointer;
+        transition: opacity 0.15s;
+      }
+      .compareNowBtn:hover { opacity: 0.9; }
+      .compareNowBtn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+      .compareClearBtn {
+        background: #f1f5f9; color: #64748b;
+        border: 1px solid #e2e8f0; border-radius: 12px;
+        padding: 12px 18px; font-weight: 600;
+        font-size: 14px; cursor: pointer;
+      }
+
+      /* ── COMPARE MODAL ── */
+      #compareModal {
+        display: none;
+        position: fixed; inset: 0;
+        background: rgba(0,0,0,0.6);
+        z-index: 2000;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+      }
+
+      .compareModalInner {
+        background: var(--surface, white);
+        border-radius: 24px;
+        width: 100%; max-width: 820px;
+        max-height: 90vh; overflow-y: auto;
+        box-shadow: 0 24px 80px rgba(0,0,0,0.3);
+        position: relative;
+      }
+
+      .compareModalHeader {
+        padding: 24px 28px 16px;
+        border-bottom: 1px solid #f1f5f9;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        position: sticky; top: 0;
+        background: white;
+        z-index: 10;
+        border-radius: 24px 24px 0 0;
+      }
+
+      .compareModalTitle {
+        font-size: 20px; font-weight: 700; color: #0d1117;
+      }
+
+      .compareModalClose {
+        background: none; border: none;
+        font-size: 22px; cursor: pointer;
+        color: #64748b; padding: 4px 8px;
+      }
+
+      .compareGrid {
+        display: grid;
+        grid-template-columns: 180px 1fr 1fr;
+        gap: 0;
+      }
+
+      .compareGrid .col-label {
+        padding: 12px 16px;
+        font-size: 12px;
+        font-weight: 700;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        border-bottom: 1px solid #f1f5f9;
+        background: #f8fafc;
+        display: flex;
+        align-items: center;
+      }
+
+      .compareGrid .col-a,
+      .compareGrid .col-b {
+        padding: 12px 16px;
+        border-bottom: 1px solid #f1f5f9;
+        font-size: 14px;
+        color: #0d1117;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+      }
+
+      .compareGrid .col-a { border-left: 1px solid #f1f5f9; }
+
+      .compareGrid .col-header-label {
+        background: #f8fafc;
+        border-bottom: 2px solid #e2e8f0;
+      }
+
+      .compareGrid .col-header-a,
+      .compareGrid .col-header-b {
+        padding: 16px;
+        border-bottom: 2px solid #e2e8f0;
+        border-left: 1px solid #f1f5f9;
+        text-align: center;
+      }
+
+      .compareGrid .col-header-a img,
+      .compareGrid .col-header-b img {
+        width: 100%; height: 120px;
+        object-fit: cover; border-radius: 12px;
+        margin-bottom: 8px;
+      }
+
+      .compareGrid .car-title {
+        font-size: 16px; font-weight: 700; color: #0d1117;
+      }
+
+      .compareGrid .car-price {
+        font-size: 14px; color: #4f46e5; font-weight: 600; margin-top: 2px;
+      }
+
+      .compareGrid .highlight-better {
+        background: #dcfce7; color: #166534; border-radius: 8px;
+        padding: 2px 8px; font-weight: 700;
+      }
+
+      .compareGrid .row-even .col-label,
+      .compareGrid .row-even .col-a,
+      .compareGrid .row-even .col-b { background: #fafbff; }
+
+      .compareModalFooter {
+        padding: 20px 28px;
+        display: flex; gap: 12px;
+        border-top: 1px solid #f1f5f9;
+      }
+
+      .compareBookBtn {
+        flex: 1; padding: 12px; border-radius: 12px;
+        background: #4f46e5; color: white;
+        border: none; font-weight: 700; font-size: 14px;
+        cursor: pointer; text-decoration: none;
+        text-align: center; display: block;
+        transition: opacity 0.15s;
+      }
+      .compareBookBtn:hover { opacity: 0.9; }
+      .compareBookBtn.secondary-book {
+        background: white; color: #4f46e5;
+        border: 1px solid #c7d2fe;
+      }
 
       @media (max-width: 900px) {
         .grid { grid-template-columns: 1fr; }
         .topRow { flex-direction: column; align-items: stretch; }
         .searchBox { width: 100%; }
+        .compareGrid { grid-template-columns: 120px 1fr 1fr; }
+        #compareBar { padding: 12px 16px; flex-wrap: wrap; }
       }
     </style>
   </head>
@@ -291,7 +509,7 @@
       <div class="grid" id="carsGrid"></div>
     </div>
 
-    <!-- MODAL -->
+    <!-- VEHICLE MODAL -->
     <div id="vehicleModal">
       <div class="modalInner">
         <button class="modalClose" onclick="closeModal()">✕</button>
@@ -308,6 +526,35 @@
       </div>
     </div>
 
+    <!-- ✅ COMPARE BAR -->
+    <div id="compareBar">
+      <div class="compareBar-slots">
+        <div class="compareBar-slot" id="compareSlot0">
+          <span>Select a car to compare</span>
+        </div>
+        <div style="display:flex;align-items:center;color:#94a3b8;font-weight:700;font-size:18px;">VS</div>
+        <div class="compareBar-slot" id="compareSlot1">
+          <span>Select a car to compare</span>
+        </div>
+      </div>
+      <div class="compareBar-actions">
+        <button class="compareNowBtn" id="compareNowBtn" disabled onclick="openCompareModal()">Compare Now →</button>
+        <button class="compareClearBtn" onclick="clearCompare()">Clear</button>
+      </div>
+    </div>
+
+    <!-- ✅ COMPARE MODAL -->
+    <div id="compareModal">
+      <div class="compareModalInner">
+        <div class="compareModalHeader">
+          <div class="compareModalTitle">🚗 Side-by-Side Comparison</div>
+          <button class="compareModalClose" onclick="closeCompareModal()">✕</button>
+        </div>
+        <div id="compareContent"></div>
+        <div class="compareModalFooter" id="compareFooter"></div>
+      </div>
+    </div>
+
     <script>
       const API = window.location.hostname === "localhost"
         ? "http://localhost:10000"
@@ -317,10 +564,8 @@
       const isPreview = params.get("preview") === "1";
 
       function normalizeCity(v) { return String(v || "").trim().toLowerCase().replace(/,.*$/, ""); }
-
       const searchWhere = normalizeCity(params.get("where"));
 
-      // ── IMAGE MANIFEST ──
       const IMAGE_ASSIGNMENTS_KEY = 'carImageAssignments';
 
       const IMAGE_MANIFEST = {
@@ -358,67 +603,50 @@
         'tesla/model y':               [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
         'toyota/highlander hybrid':    [{ num: 1, ext: 'png'  }, { num: 2, ext: 'png'  }, { num: 3, ext: 'jpeg' }, { num: 4, ext: 'jpeg' }],
         'toyota/hilux':                [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
-        'toyota/rav4 plug-in hybrid': [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }],
+        'toyota/rav4 plug-in hybrid':  [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }],
         'toyota/sienna':               [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }, { num: 4, ext: 'jpeg' }],
         'toyota/supra':                [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }, { num: 4, ext: 'jpeg' }],
         'vauxhall/frontera':           [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
-        'volkswagen/id.2all':  [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
-        'volkswagen/tiguan':   [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
-        'toyota/tacoma':       [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
-        'porsche/911': [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
-        'chevrolet/equinox':  [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
-        'chevrolet/trax':     [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
-        'dodge/challenger':   [{ num: 1, ext: 'png'  }, { num: 2, ext: 'png'  }, { num: 3, ext: 'jpeg' }],
-        'ford/maverick':      [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
-        'honda/civic':        [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
-        'hyundai/elantra':    [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
-        'hyundai/tucson':     [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
-        'hyundai/venue':      [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
-        'kia/k4':             [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
-        'kia/soul':           [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
-        'kia/sportage':       [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
-        'mazda/mx-5 miata':   [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
-        'nissan/kicks':       [{ num: 1, ext: 'png'  }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
-        'nissan/sentra':      [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
-        'rivian/r1s':         [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
-        'subaru/brz':         [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
-        'toyota/corolla':     [{ num: 1, ext: 'png'  }, { num: 2, ext: 'png'  }, { num: 3, ext: 'jpeg' }],
-        'toyota/gr86':        [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
-        'toyota/highlander':  [{ num: 1, ext: 'png'  }, { num: 2, ext: 'png'  }, { num: 3, ext: 'jpeg' }],
-        'volkswagen/jetta':   [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+        'volkswagen/id.2all':          [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+        'volkswagen/tiguan':           [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+        'toyota/tacoma':               [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+        'porsche/911':                 [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+        'chevrolet/equinox':           [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+        'chevrolet/trax':              [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+        'dodge/challenger':            [{ num: 1, ext: 'png'  }, { num: 2, ext: 'png'  }, { num: 3, ext: 'jpeg' }],
+        'ford/maverick':               [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+        'honda/civic':                 [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+        'hyundai/elantra':             [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+        'hyundai/tucson':              [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+        'hyundai/venue':               [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+        'kia/k4':                      [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+        'kia/soul':                    [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+        'kia/sportage':                [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+        'mazda/mx-5 miata':            [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+        'nissan/kicks':                [{ num: 1, ext: 'png'  }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+        'nissan/sentra':               [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+        'rivian/r1s':                  [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+        'subaru/brz':                  [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+        'toyota/corolla':              [{ num: 1, ext: 'png'  }, { num: 2, ext: 'png'  }, { num: 3, ext: 'jpeg' }],
+        'toyota/gr86':                 [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+        'toyota/highlander':           [{ num: 1, ext: 'png'  }, { num: 2, ext: 'png'  }, { num: 3, ext: 'jpeg' }],
+        'volkswagen/jetta':            [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
       };
 
-      function loadImageAssignments() {
-        const raw = localStorage.getItem(IMAGE_ASSIGNMENTS_KEY);
-        return raw ? JSON.parse(raw) : {};
-      }
-
-      function saveImageAssignments(a) {
-        localStorage.setItem(IMAGE_ASSIGNMENTS_KEY, JSON.stringify(a));
-      }
+      function loadImageAssignments() { const raw = localStorage.getItem(IMAGE_ASSIGNMENTS_KEY); return raw ? JSON.parse(raw) : {}; }
+      function saveImageAssignments(a) { localStorage.setItem(IMAGE_ASSIGNMENTS_KEY, JSON.stringify(a)); }
 
       function getOrCreateImageAssignment(vehicleId, manufacturer, model) {
         if (!vehicleId || !manufacturer || !model) return './assets/cars/dummy.png';
         const modelKey = `${manufacturer.toLowerCase().trim()}/${model.toLowerCase().trim()}`;
         const assignments = loadImageAssignments();
-
         if (assignments[vehicleId]) return assignments[vehicleId];
-
         const available = IMAGE_MANIFEST[modelKey] || [];
-
-        // Not in manifest → use Unsplash (free, no API key)
         if (available.length === 0) {
           const query = encodeURIComponent(`${manufacturer} ${model} car`);
           return `https://source.unsplash.com/seed/${encodeURIComponent(vehicleId)}/600x400/?${query}`;
         }
-
-        // In manifest → pick from local assets
-        const usedUrls = new Set(
-          Object.entries(assignments)
-            .filter(([vid]) => vid !== vehicleId)
-            .map(([, url]) => url)
-            .filter(url => url.includes(`/assets/cars/${modelKey}/`))
-        );
+        const usedUrls = new Set(Object.entries(assignments).filter(([vid]) => vid !== vehicleId).map(([, url]) => url).filter(url => url.includes(`/assets/cars/${modelKey}/`)));
         const pool = available.filter(i => !usedUrls.has(`./assets/cars/${modelKey}/${i.num}.${i.ext}`));
         const chosen = (pool.length ? pool : available)[Math.floor(Math.random() * (pool.length || available.length))];
         const url = `./assets/cars/${modelKey}/${chosen.num}.${chosen.ext}`;
@@ -427,33 +655,22 @@
         return url;
       }
 
-      // ── POPULARITY ──
-      function getWeekKey(date = new Date()) {
-        const d = new Date(date); d.setHours(0,0,0,0);
-        const day = d.getDay(); const diffToMonday = day === 0 ? -6 : 1 - day;
-        d.setDate(d.getDate() + diffToMonday);
-        return d.toISOString().slice(0,10);
-      }
+      function getWeekKey(date = new Date()) { const d = new Date(date); d.setHours(0,0,0,0); const day = d.getDay(); const diffToMonday = day === 0 ? -6 : 1 - day; d.setDate(d.getDate() + diffToMonday); return d.toISOString().slice(0,10); }
       function popularityStorageKey() { return `popularity:${getWeekKey()}`; }
       function loadPopularityMap() { const raw = localStorage.getItem(popularityStorageKey()); const obj = raw ? JSON.parse(raw) : {}; return obj && typeof obj === "object" ? obj : {}; }
       function savePopularityMap(map) { localStorage.setItem(popularityStorageKey(), JSON.stringify(map)); }
       function bumpPopularity(vehicleId, amount) { if (!vehicleId) return; const map = loadPopularityMap(); map[String(vehicleId)] = Number(map[String(vehicleId)] || 0) + Number(amount || 0); savePopularityMap(map); }
 
-      // ── SESSION ──
       const SESSION_MS = 12 * 60 * 60 * 1000;
       function requireSession() {
         const email = localStorage.getItem("userEmail");
         const loggedInAt = Number(localStorage.getItem("loggedInAt") || "0");
         if (!email || !loggedInAt) { window.location.replace("index.html"); throw new Error("No session"); }
-        if (Date.now() - loggedInAt > SESSION_MS) {
-          ["userEmail","loggedInAt","isAdmin"].forEach(k => localStorage.removeItem(k));
-          window.location.replace("index.html"); throw new Error("Session expired");
-        }
+        if (Date.now() - loggedInAt > SESSION_MS) { ["userEmail","loggedInAt","isAdmin"].forEach(k => localStorage.removeItem(k)); window.location.replace("index.html"); throw new Error("Session expired"); }
         return email;
       }
       const userEmail = isPreview ? localStorage.getItem("userEmail") || "preview@example.com" : requireSession();
 
-      // ── FAVOURITES ──
       function favStorageKey() { return `favs:${userEmail}`; }
       function loadFavsSet() { const raw = localStorage.getItem(favStorageKey()); const arr = raw ? JSON.parse(raw) : []; return new Set(Array.isArray(arr) ? arr : []); }
       function saveFavsSet(set) { localStorage.setItem(favStorageKey(), JSON.stringify([...set])); }
@@ -461,6 +678,132 @@
 
       let allCars = [], filteredCars = [];
 
+      // ── COMPARE STATE ──────────────────────────────────────────────────────
+      let compareList = []; // max 2 cars
+
+      function updateCompareBar() {
+        const bar = document.getElementById("compareBar");
+        const btn = document.getElementById("compareNowBtn");
+        bar.style.display = "flex";
+
+        [0, 1].forEach(i => {
+          const slot = document.getElementById(`compareSlot${i}`);
+          const car  = compareList[i];
+          if (car) {
+            slot.className = "compareBar-slot filled";
+            slot.innerHTML = `
+              <img src="${car.imgUrl}" alt="${car.manufacturer}" onerror="this.src='./assets/cars/dummy.png'">
+              <span>${car.manufacturer} ${car.model}</span>
+              <span class="slot-remove" onclick="removeFromCompare('${car.id}')">✕</span>`;
+          } else {
+            slot.className = "compareBar-slot";
+            slot.innerHTML = `<span>Select a car to compare</span>`;
+          }
+        });
+
+        btn.disabled = compareList.length < 2;
+
+        // Update compare buttons on cards
+        document.querySelectorAll(".compareBtn").forEach(btn => {
+          const id = btn.getAttribute("data-compare-id");
+          const inList = compareList.some(c => c.id === id);
+          btn.classList.toggle("selected", inList);
+          btn.textContent = inList ? "✓ Comparing" : "Compare";
+          // Disable if 2 selected and this one isn't one of them
+          btn.disabled = compareList.length >= 2 && !inList;
+        });
+      }
+
+      function toggleCompare(car) {
+        const idx = compareList.findIndex(c => c.id === car.id);
+        if (idx > -1) {
+          compareList.splice(idx, 1);
+        } else {
+          if (compareList.length >= 2) return;
+          compareList.push(car);
+        }
+        updateCompareBar();
+      }
+
+      function removeFromCompare(id) {
+        compareList = compareList.filter(c => c.id !== id);
+        updateCompareBar();
+      }
+
+      function clearCompare() {
+        compareList = [];
+        updateCompareBar();
+      }
+
+      function openCompareModal() {
+        if (compareList.length < 2) return;
+        const [a, b] = compareList;
+        const nameA = `${a.manufacturer} ${a.model}`.trim();
+        const nameB = `${b.manufacturer} ${b.model}`.trim();
+
+        const specs = [
+          { label: "Price/Day", keyA: a.priceText, keyB: b.priceText, compare: true, rawA: a.priceNum, rawB: b.priceNum, lowerIsBetter: true },
+          { label: "Type",      keyA: a.type,       keyB: b.type },
+          { label: "Drivetrain",keyA: a.drivetrain,  keyB: b.drivetrain },
+          { label: "City",      keyA: a.city || "—", keyB: b.city || "—" },
+          { label: "Availability", keyA: a.isAvailable ? "✅ Available" : "❌ Unavailable", keyB: b.isAvailable ? "✅ Available" : "❌ Unavailable" },
+          { label: "Vehicle ID",keyA: a.id || "—",   keyB: b.id || "—" },
+        ];
+
+        let rows = specs.map((spec, i) => {
+          let valA = spec.keyA || "—";
+          let valB = spec.keyB || "—";
+          let highlightA = "", highlightB = "";
+
+          if (spec.compare && spec.rawA != null && spec.rawB != null) {
+            if (spec.lowerIsBetter) {
+              if (spec.rawA < spec.rawB) highlightA = "highlight-better";
+              else if (spec.rawB < spec.rawA) highlightB = "highlight-better";
+            } else {
+              if (spec.rawA > spec.rawB) highlightA = "highlight-better";
+              else if (spec.rawB > spec.rawA) highlightB = "highlight-better";
+            }
+          }
+
+          const rowClass = i % 2 === 0 ? "row-even" : "";
+          return `
+            <div class="col-label ${rowClass}">${spec.label}</div>
+            <div class="col-a ${rowClass}"><span class="${highlightA}">${valA}</span></div>
+            <div class="col-b ${rowClass}"><span class="${highlightB}">${valB}</span></div>`;
+        }).join("");
+
+        document.getElementById("compareContent").innerHTML = `
+          <div class="compareGrid">
+            <div class="col-header-label"></div>
+            <div class="col-header-a">
+              <img src="${a.imgUrl}" alt="${nameA}" onerror="this.src='./assets/cars/dummy.png'">
+              <div class="car-title">${nameA}</div>
+              <div class="car-price">${a.priceText}</div>
+            </div>
+            <div class="col-header-b">
+              <img src="${b.imgUrl}" alt="${nameB}" onerror="this.src='./assets/cars/dummy.png'">
+              <div class="car-title">${nameB}</div>
+              <div class="car-price">${b.priceText}</div>
+            </div>
+            ${rows}
+          </div>`;
+
+        document.getElementById("compareFooter").innerHTML = `
+          <a href="${carBookHref(a.id)}" class="compareBookBtn">Book ${nameA}</a>
+          <a href="${carBookHref(b.id)}" class="compareBookBtn secondary-book">Book ${nameB}</a>`;
+
+        document.getElementById("compareModal").style.display = "flex";
+      }
+
+      function closeCompareModal() {
+        document.getElementById("compareModal").style.display = "none";
+      }
+
+      document.getElementById("compareModal").addEventListener("click", function(e) {
+        if (e.target === this) closeCompareModal();
+      });
+
+      // ── HELPERS ──────────────────────────────────────────────────────────
       function safeStr(v) { return (v ?? "").toString().trim(); }
 
       function normalizeCar(car) {
@@ -511,9 +854,8 @@
       }
 
       function closeModal() { document.getElementById("vehicleModal").style.display = "none"; }
-
       document.getElementById("vehicleModal").addEventListener("click", function(e) { if (e.target === this) closeModal(); });
-      document.addEventListener("keydown", e => { if (e.key === "Escape") closeModal(); });
+      document.addEventListener("keydown", e => { if (e.key === "Escape") { closeModal(); closeCompareModal(); } });
 
       document.getElementById("modalViewBtn").addEventListener("click", function(e) {
         const vehicleId = this.getAttribute("data-vehicle-id") || "";
@@ -537,6 +879,8 @@
           const metaBits = [car.city, car.type, car.drivetrain].filter(Boolean);
           const favsSet  = loadFavsSet();
           const isFav    = favsSet.has(car.favKey);
+          const inCompare = compareList.some(c => c.id === car.id);
+          const compareDisabled = compareList.length >= 2 && !inCompare;
 
           const card = document.createElement("div");
           card.className = "card";
@@ -564,6 +908,7 @@
               <div class="cardActions">
                 <a class="linkBtn viewBtn" href="${carDetailsHref(car.id)}" data-vehicle-id="${car.id || ""}">View</a>
                 <a class="linkBtn bookBtn" href="${carBookHref(car.id)}"    data-vehicle-id="${car.id || ""}">Book</a>
+                <button class="compareBtn ${inCompare ? "selected" : ""}" data-compare-id="${car.id}" ${compareDisabled ? "disabled" : ""}>${inCompare ? "✓ Comparing" : "Compare"}</button>
               </div>
             </div>`;
 
@@ -588,6 +933,16 @@
         });
         grid.querySelectorAll(".bookBtn").forEach(link => {
           link.addEventListener("click", e => { const vid = link.getAttribute("data-vehicle-id") || ""; if (!vid) return; e.preventDefault(); e.stopPropagation(); bumpPopularity(vid, 4); window.location.assign(carBookHref(vid)); });
+        });
+
+        // ✅ Compare buttons
+        grid.querySelectorAll(".compareBtn").forEach(btn => {
+          btn.addEventListener("click", e => {
+            e.preventDefault(); e.stopPropagation();
+            const id = btn.getAttribute("data-compare-id");
+            const car = filteredCars.find(c => c.id === id) || allCars.find(c => c.id === id);
+            if (car) toggleCompare(car);
+          });
         });
       }
 
@@ -668,6 +1023,6 @@
       loadCars();
     </script>
     <script src="navbar.js"></script>
-<script src="darkm.js"></script>
+    <script src="darkm.js"></script>
   </body>
 </html>
