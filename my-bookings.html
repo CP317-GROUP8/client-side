@@ -214,7 +214,8 @@
   </div>
 
   <script>
-    const API_BASE   = "https://server-side-zqaz.onrender.com";
+    const isLocalPreview = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
+    const API_BASE   = isLocalPreview ? "http://localhost:10000" : "https://server-side-zqaz.onrender.com";
     const SESSION_MS = 12 * 60 * 60 * 1000;
     const IMAGE_ASSIGNMENTS_KEY = 'carImageAssignments';
 
@@ -252,11 +253,15 @@
     function requireSession() {
       const email = localStorage.getItem("userEmail");
       const loggedInAt = Number(localStorage.getItem("loggedInAt") || "0");
-      if (!email || !loggedInAt) { window.location.replace("index.html"); throw new Error("No session"); }
+      if (!email || !loggedInAt) {
+        if (isLocalPreview) return "";
+        window.location.replace("index.html"); throw new Error("No session");
+      }
       if (Date.now() - loggedInAt > SESSION_MS) {
         localStorage.removeItem("userEmail");
         localStorage.removeItem("loggedInAt");
         localStorage.removeItem("isAdmin");
+        if (isLocalPreview) return "";
         window.location.replace("index.html");
         throw new Error("Session expired");
       }
@@ -309,6 +314,26 @@
     }
 
     function formatMoney(val) { return `$${Number(val || 0).toFixed(2)}`; }
+
+    function normalizeLocation(value) {
+      const raw = String(value || "").trim();
+      if (!raw) return "";
+
+      const parts = raw
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, " ")
+        .trim()
+        .split(/\s+/)
+        .filter(Boolean);
+
+      if (!parts.length) return "";
+
+      return parts
+        .map((part, index) =>
+          index === 0 ? part : part.charAt(0).toUpperCase() + part.slice(1)
+        )
+        .join("");
+    }
 
     function getRowValue(row, ...keys) {
       for (const key of keys) {
@@ -438,6 +463,15 @@
 
     async function loadBookings() {
       const container = document.getElementById("bookingsContainer");
+      if (!userEmail) {
+        container.innerHTML = `
+          <div class="stateBox">
+            <div class="emoji">🔒</div>
+            <h2>Preview mode</h2>
+            <p>Local preview mode does not use Google sign-in. Sign in on the deployed app to view real bookings, or <a href="cars.html?preview=1" style="color:var(--accent,#4f46e5);">browse cars</a> here.</p>
+          </div>`;
+        return;
+      }
       try {
         const res = await fetch(`${API_BASE}/me/bookings`, { headers: { "X-User-Email": userEmail } });
         const data = await res.json().catch(() => ({}));
@@ -462,8 +496,8 @@
           const model        = booking.model        || booking["Model"]        || "";
           const name = `${manufacturer} ${model}`.trim() || "Unknown Vehicle";
           const imgSrc = getOrCreateImageAssignment(vehicleId, manufacturer, model);
-          const pickupLocation  = getRowValue(booking, "pickupLocation",  "pickup_location",  "Pickup Location");
-          const dropoffLocation = getRowValue(booking, "dropoffLocation", "dropoff_location", "Drop Off Location", "Dropoff Location");
+          const pickupLocation  = normalizeLocation(getRowValue(booking, "pickupLocation",  "pickup_location",  "Pickup Location"));
+          const dropoffLocation = normalizeLocation(getRowValue(booking, "dropoffLocation", "dropoff_location", "Drop Off Location", "Dropoff Location"));
           const refNum = refs[booking.saleId] || null;
 
           return `

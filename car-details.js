@@ -112,6 +112,26 @@ async function trackInteraction(eventType) {
   }
 }
 
+function normalizeLocation(value) {
+  const raw = String(value || "").trim();
+  if (!raw) return "";
+
+  const parts = raw
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+
+  if (!parts.length) return "";
+
+  return parts
+    .map((part, index) =>
+      index === 0 ? part : part.charAt(0).toUpperCase() + part.slice(1)
+    )
+    .join("");
+}
+
 // Load image assignments from localStorage
 function loadImageAssignments() {
   const raw = localStorage.getItem(IMAGE_ASSIGNMENTS_KEY);
@@ -307,8 +327,8 @@ function bookCar() {
 
   const fromDate = fromDateEl.value;
   const toDate = toDateEl.value;
-  const pickupLocation = (pickupLocationEl?.value || "").trim();
-  const dropoffLocation = (dropoffLocationEl?.value || "").trim();
+  const pickupLocation = normalizeLocation(pickupLocationEl?.value || "");
+  const dropoffLocation = normalizeLocation(dropoffLocationEl?.value || "");
 
   if (!id) {
     statusText.className = "status error";
@@ -355,6 +375,8 @@ function bookCar() {
   }
 
   // All good — redirect to payment
+  if (pickupLocationEl) pickupLocationEl.value = pickupLocation;
+  if (dropoffLocationEl) dropoffLocationEl.value = dropoffLocation;
   const qs = new URLSearchParams({ id, from: fromDate, to: toDate, pickup: pickupLocation, dropoff: dropoffLocation }).toString();
   window.location.href = `payment.html?${qs}`;
 }

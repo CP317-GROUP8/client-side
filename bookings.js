@@ -1,4 +1,5 @@
-const API_BASE = "https://server-side-zqaz.onrender.com";
+const isLocalPreview = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
+const API_BASE = isLocalPreview ? "http://localhost:10000" : "https://server-side-zqaz.onrender.com";
 const SESSION_MS = 12 * 60 * 60 * 1000;
 const SERVICE_FEE = 15;
 const TAX_RATE = 0.13;
@@ -57,11 +58,15 @@ async function sendReturnEmail({ userName, userEmail, carName, pickupDate, dropo
 function requireSession() {
   const email = localStorage.getItem("userEmail");
   const loggedInAt = Number(localStorage.getItem("loggedInAt") || "0");
-  if (!email || !loggedInAt) { window.location.replace("index.html"); throw new Error("No session"); }
+  if (!email || !loggedInAt) {
+    if (isLocalPreview) return "";
+    window.location.replace("index.html"); throw new Error("No session");
+  }
   if (Date.now() - loggedInAt > SESSION_MS) {
     localStorage.removeItem("userEmail");
     localStorage.removeItem("loggedInAt");
     localStorage.removeItem("isAdmin");
+    if (isLocalPreview) return "";
     window.location.replace("index.html");
     throw new Error("Session expired");
   }
@@ -95,6 +100,26 @@ function todayISO() {
 
 function formatMoney(value) {
   return `$${Number(value || 0).toFixed(2)}`;
+}
+
+function normalizeLocation(value) {
+  const raw = String(value || "").trim();
+  if (!raw) return "";
+
+  const parts = raw
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+
+  if (!parts.length) return "";
+
+  return parts
+    .map((part, index) =>
+      index === 0 ? part : part.charAt(0).toUpperCase() + part.slice(1)
+    )
+    .join("");
 }
 
 function formatDate(dateStr) {
@@ -146,8 +171,8 @@ function computeAndShowBreakdown() {
 function validateForm() {
   const from = document.getElementById("fromDate").value;
   const to = document.getElementById("toDate").value;
-  const pickup = document.getElementById("pickupLocation").value.trim();
-  const dropoff = document.getElementById("dropoffLocation").value.trim();
+  const pickup = normalizeLocation(document.getElementById("pickupLocation").value);
+  const dropoff = normalizeLocation(document.getElementById("dropoffLocation").value);
   if (!from || !to) return { ok: false, message: "Please select both pickup and dropoff dates." };
   if (from < todayISO()) return { ok: false, message: "Pickup date cannot be in the past." };
   if (to < from) return { ok: false, message: "Dropoff date cannot be before pickup date." };
@@ -229,11 +254,26 @@ async function loadCarAndShowForm() {
   toEl.addEventListener("change", refreshForm);
   document.getElementById("pickupLocation").addEventListener("input", refreshForm);
   document.getElementById("dropoffLocation").addEventListener("input", refreshForm);
+  document.getElementById("pickupLocation").addEventListener("blur", () => {
+    const el = document.getElementById("pickupLocation");
+    el.value = normalizeLocation(el.value);
+    refreshForm();
+  });
+  document.getElementById("dropoffLocation").addEventListener("blur", () => {
+    const el = document.getElementById("dropoffLocation");
+    el.value = normalizeLocation(el.value);
+    refreshForm();
+  });
   document.getElementById("bookNowBtn").addEventListener("click", submitBooking);
   document.getElementById("bookNowBtn").disabled = true;
 }
 
 async function submitBooking() {
+  if (!userEmail) {
+    setMsg("Sign in is required to complete a booking. Local preview mode only shows the form.", "error");
+    return;
+  }
+
   const v = validateForm();
   if (!v.ok) { setMsg(v.message, "error"); return; }
 
@@ -246,9 +286,12 @@ async function submitBooking() {
     const payload = {
       fromDate:        document.getElementById("fromDate").value,
       toDate:          document.getElementById("toDate").value,
-      pickupLocation:  document.getElementById("pickupLocation").value.trim(),
-      dropoffLocation: document.getElementById("dropoffLocation").value.trim(),
+      pickupLocation:  normalizeLocation(document.getElementById("pickupLocation").value),
+      dropoffLocation: normalizeLocation(document.getElementById("dropoffLocation").value),
     };
+
+    document.getElementById("pickupLocation").value = payload.pickupLocation;
+    document.getElementById("dropoffLocation").value = payload.dropoffLocation;
 
     const res = await fetch(`${API_BASE}/cars/${encodeURIComponent(carId)}/book`, {
       method: "POST",
