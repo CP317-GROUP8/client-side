@@ -7,203 +7,47 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
   <style>
     * { box-sizing: border-box; font-family: Inter, system-ui; }
-
-    body {
-      margin: 0;
-      background: var(--bg, #f4f6f9);
-      color: var(--ink, #0f172a);
-      transition: background 0.2s, color 0.2s;
-    }
-
+    body { margin: 0; background: var(--bg, #f4f6f9); color: var(--ink, #0f172a); transition: background 0.2s, color 0.2s; }
     .container { max-width: 1100px; margin: 0 auto; padding: 40px 20px; }
-
-    .topbar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 20px;
-    }
-
-    .btn {
-      border: none;
-      cursor: pointer;
-      padding: 12px 16px;
-      border-radius: 14px;
-      font-weight: 600;
-      transition: transform .05s ease, opacity .2s ease;
-    }
+    .topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    .btn { border: none; cursor: pointer; padding: 12px 16px; border-radius: 14px; font-weight: 600; transition: transform .05s ease, opacity .2s ease; }
     .btn:active { transform: translateY(1px); }
-    .btn.secondary {
-      background: var(--surface, white);
-      border: 1px solid var(--border, #cbd5e1);
-      color: var(--ink, #0f172a);
-    }
+    .btn.secondary { background: var(--surface, white); border: 1px solid var(--border, #cbd5e1); color: var(--ink, #0f172a); }
     .btn.primary { background: var(--accent, #4f46e5); color: white; }
-    .btn.danger {
-      background: var(--danger-light, #fee2e2);
-      color: var(--danger, #991b1b);
-      border: 1px solid #fecaca;
-    }
-
-    .grid {
-      display: grid;
-      grid-template-columns: 1.2fr 0.8fr;
-      gap: 22px;
-      margin-top: 18px;
-    }
-
-    .card {
-      background: var(--surface, white);
-      border-radius: 20px;
-      box-shadow: 0 12px 30px rgba(0,0,0,.06);
-      overflow: hidden;
-      border: 1px solid var(--border, transparent);
-    }
-
-    /* ── IMAGE QUALITY FIX ── */
-    .heroImg {
-      width: 100%;
-      height: 400px;
-      object-fit: cover;
-      object-position: center;
-      background: var(--surface2, #e2e8f0);
-      display: block;
-
-      /* Crisp rendering */
-      image-rendering: -webkit-optimize-contrast;
-      image-rendering: crisp-edges;
-
-      /* Smooth scaling for photos */
-      -webkit-transform: translateZ(0);
-      transform: translateZ(0);
-
-      /* Prevent blurry subpixel rendering */
-      backface-visibility: hidden;
-      -webkit-backface-visibility: hidden;
-    }
-
+    .btn.danger { background: var(--danger-light, #fee2e2); color: var(--danger, #991b1b); border: 1px solid #fecaca; }
+    .grid { display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 22px; margin-top: 18px; }
+    .card { background: var(--surface, white); border-radius: 20px; box-shadow: 0 12px 30px rgba(0,0,0,.06); overflow: hidden; border: 1px solid var(--border, transparent); }
+    .heroImg { width: 100%; height: 400px; object-fit: cover; object-position: center; background: var(--surface2, #e2e8f0); display: block; image-rendering: -webkit-optimize-contrast; image-rendering: crisp-edges; -webkit-transform: translateZ(0); transform: translateZ(0); backface-visibility: hidden; -webkit-backface-visibility: hidden; }
     .heroBody { padding: 18px 18px 8px; }
-
-    .titleRow {
-      display: flex;
-      align-items: flex-start;
-      justify-content: space-between;
-      gap: 16px;
-    }
-
+    .titleRow { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
     h1 { font-size: 30px; margin: 0; line-height: 1.2; color: var(--ink, #0f172a); }
-
-    .price {
-      font-size: 18px;
-      font-weight: 700;
-      color: var(--ink, #111827);
-      white-space: nowrap;
-    }
-
-    .pillRow {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      margin: 12px 0 4px;
-    }
-
-    .pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 8px 12px;
-      border-radius: 999px;
-      font-size: 12px;
-      border: 1px solid var(--border, #e2e8f0);
-      background: var(--surface2, #f8fafc);
-      color: var(--ink2, #334155);
-    }
+    .price { font-size: 18px; font-weight: 700; color: var(--ink, #111827); white-space: nowrap; }
+    .pillRow { display: flex; flex-wrap: wrap; gap: 10px; margin: 12px 0 4px; }
+    .pill { display: inline-flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 999px; font-size: 12px; border: 1px solid var(--border, #e2e8f0); background: var(--surface2, #f8fafc); color: var(--ink2, #334155); }
     .pill.ok  { background: #dcfce7; border-color: #bbf7d0; color: #166534; }
     .pill.bad { background: var(--danger-light, #fee2e2); border-color: #fecaca; color: var(--danger, #991b1b); }
-
-    /* Vehicle Table */
     .vehicleTable { width: 100%; border-collapse: collapse; margin-top: 4px; }
-
-    .vehicleTable th {
-      text-align: left;
-      padding: 10px 18px;
-      font-size: 12px;
-      font-weight: 600;
-      color: var(--muted, #64748b);
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      background: var(--surface2, #f8fafc);
-      border-bottom: 1px solid var(--border, #e2e8f0);
-    }
-
-    .vehicleTable td {
-      padding: 12px 18px;
-      font-size: 14px;
-      border-bottom: 1px solid var(--border, #f1f5f9);
-      color: var(--ink, #0f172a);
-    }
-
+    .vehicleTable th { text-align: left; padding: 10px 18px; font-size: 12px; font-weight: 600; color: var(--muted, #64748b); text-transform: uppercase; letter-spacing: 0.05em; background: var(--surface2, #f8fafc); border-bottom: 1px solid var(--border, #e2e8f0); }
+    .vehicleTable td { padding: 12px 18px; font-size: 14px; border-bottom: 1px solid var(--border, #f1f5f9); color: var(--ink, #0f172a); }
     .vehicleTable tr:last-child td { border-bottom: none; }
     .vehicleTable tr:hover td { background: var(--surface2, #fafbff); }
-
-    .vehicleTable td:first-child {
-      font-weight: 600;
-      color: var(--muted, #475569);
-      width: 40%;
-    }
-
+    .vehicleTable td:first-child { font-weight: 600; color: var(--muted, #475569); width: 40%; }
     .section { padding: 18px; }
     .section h2 { font-size: 16px; margin: 0 0 12px; color: var(--ink, #0f172a); }
-
-    .formRow {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-      margin-bottom: 12px;
-    }
-
-    label {
-      display: block;
-      font-size: 12px;
-      color: var(--muted, #475569);
-      margin-bottom: 6px;
-      font-weight: 600;
-    }
-
-    input[type="date"],
-    input[type="text"] {
-      width: 100%;
-      padding: 12px 12px;
-      border-radius: 14px;
-      border: 1px solid var(--border, #e2e8f0);
-      outline: none;
-      background: var(--surface2, #f4f6f9);
-      color: var(--ink, #0f172a);
-      font-size: 14px;
-      transition: border-color 0.15s;
-    }
-
-    input[type="date"]:focus,
-    input[type="text"]:focus {
-      border-color: #a5b4fc;
-      box-shadow: 0 0 0 4px rgba(79,70,229,.12);
-    }
-
+    .formRow { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+    label { display: block; font-size: 12px; color: var(--muted, #475569); margin-bottom: 6px; font-weight: 600; }
+    input[type="date"], input[type="text"] { width: 100%; padding: 12px 12px; border-radius: 14px; border: 1px solid var(--border, #e2e8f0); outline: none; background: var(--surface2, #f4f6f9); color: var(--ink, #0f172a); font-size: 14px; transition: border-color 0.15s; }
+    input[type="date"]:focus, input[type="text"]:focus { border-color: #a5b4fc; box-shadow: 0 0 0 4px rgba(79,70,229,.12); }
     input::placeholder { color: var(--muted, #8891a0); }
-
     .status { margin-top: 14px; font-size: 13px; color: var(--ink2, #334155); }
     .status.error { color: var(--danger, #b91c1c); }
     .status.ok    { color: var(--success, #166534); }
-
     .skeleton { padding: 22px; color: var(--muted, #64748b); }
-
-    @media (max-width: 900px) {
-      .grid { grid-template-columns: 1fr; }
-      .heroImg { height: 280px; }
-    }
+    /* ── Calendar icon visible in dark mode ── */
+    [data-theme="dark"] input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(1); }
+    @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } .heroImg { height: 280px; } }
   </style>
 </head>
-
 <body>
   <div class="container">
     <div class="topbar">
@@ -213,24 +57,12 @@
         <button class="btn secondary" id="allCarsBtn" onclick="location.href='cars.html'">All Cars</button>
       </div>
     </div>
-
     <div class="grid">
-      <!-- Left: Car details -->
       <div class="card" id="detailsCard">
-        <div class="skeleton" id="loadingState">
-          <b>Loading car details…</b>
-        </div>
-
+        <div class="skeleton" id="loadingState"><b>Loading car details…</b></div>
         <div id="detailsUI" style="display:none;">
           <div class="hero">
-            <img
-              id="carImg"
-              class="heroImg"
-              alt="Car image"
-              loading="eager"
-              decoding="sync"
-              onerror="this.src='./assets/cars/dummy.png'"
-            />
+            <img id="carImg" class="heroImg" alt="Car image" loading="eager" decoding="sync" onerror="this.src='./assets/cars/dummy.png'" />
             <div class="heroBody">
               <div class="titleRow">
                 <h1 id="carName">—</h1>
@@ -243,46 +75,23 @@
               </div>
             </div>
           </div>
-
           <table class="vehicleTable">
-            <thead>
-              <tr>
-                <th>Property</th>
-                <th>Value</th>
-              </tr>
-            </thead>
+            <thead><tr><th>Property</th><th>Value</th></tr></thead>
             <tbody id="vehicleTableBody"></tbody>
           </table>
         </div>
       </div>
-
-      <!-- Right: Booking form -->
       <div class="card">
         <div class="section">
           <h2>Book this car</h2>
-
           <div class="formRow">
-            <div>
-              <label for="fromDate">From</label>
-              <input id="fromDate" type="date" />
-            </div>
-            <div>
-              <label for="toDate">To</label>
-              <input id="toDate" type="date" />
-            </div>
+            <div><label for="fromDate">From</label><input id="fromDate" type="date" /></div>
+            <div><label for="toDate">To</label><input id="toDate" type="date" /></div>
           </div>
-
           <div class="formRow">
-            <div>
-              <label for="pickupLocation">Pickup Location</label>
-              <input id="pickupLocation" type="text" placeholder="Downtown Toronto" />
-            </div>
-            <div>
-              <label for="dropoffLocation">Dropoff Location</label>
-              <input id="dropoffLocation" type="text" placeholder="Toronto Pearson Airport" />
-            </div>
+            <div><label for="pickupLocation">Pickup Location</label><input id="pickupLocation" type="text" placeholder="Downtown Toronto" /></div>
+            <div><label for="dropoffLocation">Dropoff Location</label><input id="dropoffLocation" type="text" placeholder="Toronto Pearson Airport" /></div>
           </div>
-
           <button class="btn primary" id="bookBtn" style="width:100%;">Book Now</button>
           <div class="status" id="statusText">Pick dates then book.</div>
         </div>
@@ -292,7 +101,6 @@
   <script src="images.js"></script>
   <script src="car-details.js"></script>
   <script src="navbar.js"></script>
-<script src="darkm.js"></script>
+  <script src="darkm.js"></script>
 </body>
 </html>
-
