@@ -60,6 +60,23 @@
 
       .searchBox::placeholder { color: var(--muted, #8891a0); }
 
+      .criteriaBar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin: 0 0 22px;
+      }
+
+      .criteriaPill {
+        padding: 8px 12px;
+        border-radius: 999px;
+        border: 1px solid var(--border, #ddd);
+        background: var(--surface, white);
+        color: var(--ink2, #475569);
+        font-size: 13px;
+        font-weight: 600;
+      }
+
       .grid {
         display: grid;
         grid-template-columns: repeat(3, 1fr);
@@ -477,6 +494,12 @@
         <button id="filterBtn" class="secondary" type="button">Filter</button>
       </div>
 
+      <div class="criteriaBar" id="criteriaBar">
+        <span class="criteriaPill" id="criteriaWhere">Where: (any)</span>
+        <span class="criteriaPill" id="criteriaPickup">Pick Up: (any)</span>
+        <span class="criteriaPill" id="criteriaDropoff">Drop Off: (any)</span>
+      </div>
+
       <div id="filterPanel">
         <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:end;">
           <div>
@@ -571,7 +594,19 @@
       const isPreview = params.get("preview") === "1";
 
       function normalizeCity(v) { return String(v || "").trim().toLowerCase().replace(/,.*$/, ""); }
-      const searchWhere = normalizeCity(params.get("where"));
+      function normalizeText(v) { return String(v || "").trim(); }
+
+      const searchState = {
+        where: normalizeText(params.get("where")),
+        pickup: normalizeText(params.get("pickup")),
+        dropoff: normalizeText(params.get("dropoff")),
+        q: normalizeText(params.get("q")),
+        type: normalizeText(params.get("type")),
+        drive: normalizeText(params.get("drive")),
+        maxPrice: normalizeText(params.get("maxPrice")),
+      };
+
+      const searchWhere = normalizeCity(searchState.where);
 
       const IMAGE_ASSIGNMENTS_KEY = 'carImageAssignments';
 
@@ -1005,6 +1040,60 @@
       function getSelectedDrive(){ return (document.getElementById("filterDrive")?.value  || "").trim(); }
       function getMaxPrice()     { const v = Number(document.getElementById("filterPrice")?.value); return Number.isFinite(v) ? v : Infinity; }
 
+      function updateCriteriaBar() {
+        const whereEl = document.getElementById("criteriaWhere");
+        const pickupEl = document.getElementById("criteriaPickup");
+        const dropoffEl = document.getElementById("criteriaDropoff");
+        if (whereEl) whereEl.textContent = `Where: ${searchState.where || "(any)"}`;
+        if (pickupEl) pickupEl.textContent = `Pick Up: ${searchState.pickup || "(any)"}`;
+        if (dropoffEl) dropoffEl.textContent = `Drop Off: ${searchState.dropoff || "(any)"}`;
+      }
+
+      function syncUrlState() {
+        const next = new URLSearchParams();
+        if (isPreview) next.set("preview", "1");
+        if (searchState.where) next.set("where", searchState.where);
+        if (searchState.pickup) next.set("pickup", searchState.pickup);
+        if (searchState.dropoff) next.set("dropoff", searchState.dropoff);
+
+        const q = getSearchQuery();
+        const type = getSelectedType();
+        const drive = getSelectedDrive();
+        const maxPrice = getMaxPrice();
+
+        if (q) next.set("q", q);
+        if (type) next.set("type", type);
+        if (drive) next.set("drive", drive);
+        if (Number.isFinite(maxPrice)) next.set("maxPrice", String(maxPrice));
+
+        const nextUrl = `${window.location.pathname}?${next.toString()}`;
+        window.history.replaceState({}, "", nextUrl);
+      }
+
+      function hydrateUiFromQuery() {
+        const searchInput = document.getElementById("searchInput");
+        const typeSelect = document.getElementById("filterType");
+        const driveSelect = document.getElementById("filterDrive");
+        const priceSlider = document.getElementById("filterPrice");
+
+        if (searchInput) searchInput.value = searchState.q;
+        if (typeSelect) typeSelect.value = searchState.type;
+        if (driveSelect) driveSelect.value = searchState.drive;
+        if (priceSlider && searchState.maxPrice) priceSlider.value = searchState.maxPrice;
+
+        updateCriteriaBar();
+      }
+
+      function buildSubtitle(total) {
+        const parts = [];
+        if (searchState.where) parts.push(`in ${searchState.where}`);
+        if (searchState.pickup || searchState.dropoff) {
+          parts.push(`${searchState.pickup || "any pickup"} → ${searchState.dropoff || "any drop off"}`);
+        }
+        const detail = parts.length ? ` • ${parts.join(" • ")}` : " • Updated in real-time";
+        return `<span id="availableCount">${total}</span> available vehicles${detail}`;
+      }
+
       function updatePriceLabel() {
         const slider = document.getElementById("filterPrice");
         const label  = document.getElementById("priceLabel");
@@ -1020,7 +1109,9 @@
         const drive = getSelectedDrive();
         const maxPrice = getMaxPrice();
 
-        if (searchWhere) endpointParams.set("where", params.get("where"));
+        if (searchWhere) endpointParams.set("where", searchState.where);
+        if (searchState.pickup) endpointParams.set("pickup", searchState.pickup);
+        if (searchState.dropoff) endpointParams.set("dropoff", searchState.dropoff);
         if (q) endpointParams.set("q", q);
         if (type) endpointParams.set("type", type);
         if (drive) endpointParams.set("drive", drive);
@@ -1054,9 +1145,7 @@
           allCars = append ? [...allCars, ...nextCars] : nextCars;
 
           if (subtitle) {
-            subtitle.innerHTML = searchWhere
-              ? `<span id="availableCount">${totalCars}</span> cars in ${params.get("where")}`
-              : `<span id="availableCount">${totalCars}</span> available vehicles • Updated in real-time`;
+            subtitle.innerHTML = buildSubtitle(totalCars);
           }
 
           const slider = document.getElementById("filterPrice");
@@ -1082,6 +1171,7 @@
       }
 
       function applyAllFilters() {
+        syncUrlState();
         fetchCarsPage(1);
       }
 
@@ -1112,6 +1202,7 @@
           updatePriceLabel(); applyAllFilters();
         });
         updatePriceLabel();
+        hydrateUiFromQuery();
       }
 
       wireUI();
