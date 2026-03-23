@@ -302,6 +302,7 @@
               <div class="info-item"><span class="info-label">Username</span><span class="info-value" id="infoUsername">—</span></div>
               <div class="info-item"><span class="info-label">First Name</span><span class="info-value" id="infoFirst">—</span></div>
               <div class="info-item"><span class="info-label">Last Name</span><span class="info-value" id="infoLast">—</span></div>
+              <div class="info-item"><span class="info-label">Location</span><span class="info-value" id="infoLocation">—</span></div>
               <div class="info-item"><span class="info-label">Email</span><span class="info-value" id="infoEmail">—</span></div>
               <div class="info-item"><span class="info-label">Account Type</span><span class="info-value" id="infoRole">—</span></div>
               <div class="info-item"><span class="info-label">User ID</span><span class="info-value" id="infoId">—</span></div>
@@ -358,7 +359,7 @@
   <div class="modal-overlay" id="editModal">
     <div class="modal">
       <div class="modal-title">Edit Profile</div>
-      <p class="modal-sub">Update your first and last name.</p>
+      <p class="modal-sub">Update your name and location.</p>
       <div class="field">
         <label>First Name</label>
         <input type="text" id="editFirst" placeholder="First name" />
@@ -366,6 +367,10 @@
       <div class="field">
         <label>Last Name</label>
         <input type="text" id="editLast" placeholder="Last name" />
+      </div>
+      <div class="field">
+        <label>Location</label>
+        <input type="text" id="editLocation" placeholder="City or home location" />
       </div>
       <div class="modal-actions">
         <button class="btn-cancel" onclick="closeEditModal()">Cancel</button>
@@ -542,6 +547,7 @@
       const first   = user.firstName || user["First Name"] || "";
       const last    = user.lastName  || user["Last Name"]  || "";
       const email   = user.email     || user["Email Address"] || userEmail;
+      const location = user.location || user["Location"] || "";
       const isAdmin = Number(user.administrator ?? user["Administrator"]) === 1;
       const spent   = user.totalSpent ?? user["Total Amount Spent"] ?? 0;
       const userId  = user.userId    || user["User ID"] || "—";
@@ -562,6 +568,7 @@
       document.getElementById("statSpent").textContent = formatMoney(spent);
       document.getElementById("infoFirst").textContent = first || "—";
       document.getElementById("infoLast").textContent  = last  || "—";
+      document.getElementById("infoLocation").textContent = location || "—";
       document.getElementById("infoEmail").textContent = email;
       document.getElementById("infoRole").textContent  = isAdmin ? "Administrator" : "Member";
       document.getElementById("infoId").textContent    = `#${userId}`;
@@ -623,6 +630,11 @@
       loadProfilePicture();
 
       try {
+        const pRes = await fetch(`${API_BASE}/me/profile`, { headers: { "X-User-Email": userEmail } });
+        const pData = await pRes.json().catch(() => ({}));
+        if (!pRes.ok) throw new Error(pData.error || "Failed to load profile");
+        if (pData.user) populateProfile(pData.user);
+
         const bRes = await fetch(`${API_BASE}/me/bookings`, { headers: { "X-User-Email": userEmail } });
         const bData = await bRes.json().catch(() => ({}));
         if (!bRes.ok) throw new Error(bData.error || "Failed to load bookings");
@@ -659,6 +671,7 @@
     function openEditModal() {
       document.getElementById("editFirst").value = document.getElementById("infoFirst").textContent.replace("—","").trim();
       document.getElementById("editLast").value  = document.getElementById("infoLast").textContent.replace("—","").trim();
+      document.getElementById("editLocation").value = document.getElementById("infoLocation").textContent.replace("—","").trim();
       document.getElementById("editModal").classList.add("open");
     }
 
@@ -671,7 +684,8 @@
     async function saveProfile() {
       const firstName = document.getElementById("editFirst").value.trim();
       const lastName  = document.getElementById("editLast").value.trim();
-      if (!firstName && !lastName) return showToast("Please enter at least one name.", "error");
+      const location  = document.getElementById("editLocation").value.trim();
+      if (!firstName && !lastName && !location) return showToast("Please enter at least one profile field.", "error");
       const btn = document.getElementById("saveBtn");
       btn.disabled = true;
       btn.textContent = "Saving…";
@@ -679,7 +693,7 @@
         const res = await fetch(`${API_BASE}/me/profile`, {
           method: "PUT",
           headers: { "Content-Type": "application/json", "X-User-Email": userEmail },
-          body: JSON.stringify({ firstName, lastName })
+          body: JSON.stringify({ firstName, lastName, location })
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || "Failed to save");
