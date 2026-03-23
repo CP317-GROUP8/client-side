@@ -170,6 +170,96 @@
         cursor: not-allowed;
       }
 
+      .reviewsBtn {
+        flex: 1;
+        text-align: center;
+        padding: 10px;
+        border-radius: 12px;
+        font-weight: 600;
+        font-size: 13px;
+        border: 1px solid var(--border, #cbd5e1);
+        background: var(--surface2, #f8fafc);
+        color: var(--ink, #0d1117);
+        cursor: pointer;
+      }
+
+      .reviewsSection {
+        margin-top: 14px;
+        border-top: 1px solid var(--border, #e2e8f0);
+        padding-top: 14px;
+        display: none;
+      }
+
+      .reviewsSummary {
+        font-size: 13px;
+        color: var(--muted, #475569);
+        margin-bottom: 10px;
+      }
+
+      .reviewList {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        margin-bottom: 12px;
+      }
+
+      .reviewItem {
+        background: var(--surface2, #f8fafc);
+        border: 1px solid var(--border, #e2e8f0);
+        border-radius: 12px;
+        padding: 10px 12px;
+      }
+
+      .reviewHead {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 6px;
+        font-size: 12px;
+      }
+
+      .reviewAuthor { font-weight: 700; color: var(--ink, #0d1117); }
+      .reviewMeta { color: var(--muted, #64748b); }
+      .reviewComment { font-size: 13px; color: var(--ink2, #334155); line-height: 1.5; white-space: pre-wrap; }
+
+      .reviewForm {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      .reviewForm select,
+      .reviewForm textarea {
+        width: 100%;
+        border-radius: 12px;
+        border: 1px solid var(--border, #cbd5e1);
+        background: var(--surface, white);
+        color: var(--ink, #0d1117);
+        padding: 10px 12px;
+        font-size: 13px;
+      }
+
+      .reviewForm textarea {
+        min-height: 88px;
+        resize: vertical;
+      }
+
+      .reviewForm button {
+        align-self: flex-start;
+        padding: 10px 14px;
+        border-radius: 10px;
+        background: var(--accent, #4f46e5);
+        color: white;
+        border: none;
+        font-weight: 700;
+      }
+
+      .reviewStatus {
+        font-size: 12px;
+        color: var(--muted, #64748b);
+      }
+
       /* ── FILTER PANEL ── */
       #filterPanel {
         display: none;
@@ -749,6 +839,168 @@
       let totalCars = 0;
       const PAGE_SIZE = 24;
       let currentPage = 1;
+      const reviewCache = new Map();
+      const openReviewSections = new Set();
+
+      function escapeHtml(value) {
+        return String(value ?? "")
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#39;");
+      }
+
+      function formatReviewDate(value) {
+        if (!value) return "";
+        const dt = new Date(value);
+        if (Number.isNaN(dt.getTime())) return "";
+        return dt.toLocaleDateString("en-CA", { year: "numeric", month: "short", day: "numeric" });
+      }
+
+      async function fetchVehicleReviews(vehicleId, { force = false } = {}) {
+        const key = String(vehicleId || "");
+        if (!key) return { reviewCount: 0, averageRating: 0, rows: [] };
+        if (!force && reviewCache.has(key)) return reviewCache.get(key);
+
+        const res = await fetch(`${API}/cars/${encodeURIComponent(vehicleId)}/reviews`);
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.error || "Could not load reviews");
+        const normalized = {
+          reviewCount: Number(data.reviewCount || 0),
+          averageRating: Number(data.averageRating || 0),
+          rows: Array.isArray(data.rows) ? data.rows : [],
+        };
+        reviewCache.set(key, normalized);
+        return normalized;
+      }
+
+      function buildReviewSectionHtml(vehicleId, data) {
+        const rows = Array.isArray(data?.rows) ? data.rows : [];
+        const summary = data?.reviewCount
+          ? `⭐ ${Number(data.averageRating || 0).toFixed(1)} average from ${data.reviewCount} review(s)`
+          : "No reviews yet for this vehicle.";
+
+        const items = rows.length
+          ? rows.map((row) => `
+              <div class="reviewItem">
+                <div class="reviewHead">
+                  <div class="reviewAuthor">${escapeHtml(row.authorName || `User #${row.userId || "—"}`)}</div>
+                  <div class="reviewMeta">${"★".repeat(Number(row.rating || 0))}${"☆".repeat(Math.max(0, 5 - Number(row.rating || 0)))} • ${escapeHtml(formatReviewDate(row.updatedAt || row.createdAt))}</div>
+                </div>
+                <div class="reviewComment">${escapeHtml(row.comment || "")}</div>
+              </div>
+            `).join("")
+          : `<div class="reviewItem"><div class="reviewComment">Be the first to leave feedback.</div></div>`;
+
+        const canReview = Boolean(localStorage.getItem("userEmail"));
+        const form = canReview
+          ? `
+            <div class="reviewForm">
+              <select class="reviewRating" aria-label="Rating">
+                <option value="5">5 stars</option>
+                <option value="4">4 stars</option>
+                <option value="3">3 stars</option>
+                <option value="2">2 stars</option>
+                <option value="1">1 star</option>
+              </select>
+              <textarea class="reviewCommentInput" placeholder="Share your experience with this vehicle..."></textarea>
+              <button type="button" class="reviewSubmitBtn" data-vehicle-id="${escapeHtml(vehicleId)}">Post Review</button>
+              <div class="reviewStatus"></div>
+            </div>
+          `
+          : `<div class="reviewStatus">Sign in to leave a review.</div>`;
+
+        return `
+          <div class="reviewsSummary">${summary}</div>
+          <div class="reviewList">${items}</div>
+          ${form}
+        `;
+      }
+
+      function renderReviewSection(sectionEl, vehicleId, data) {
+        if (!sectionEl) return;
+        sectionEl.innerHTML = buildReviewSectionHtml(vehicleId, data);
+        sectionEl.style.display = "block";
+        const submitBtn = sectionEl.querySelector(".reviewSubmitBtn");
+        if (submitBtn) {
+          submitBtn.addEventListener("click", (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            submitVehicleReview(vehicleId, sectionEl, submitBtn);
+          });
+        }
+      }
+
+      async function toggleReviews(vehicleId, sectionEl) {
+        const key = String(vehicleId || "");
+        if (!key || !sectionEl) return;
+
+        if (openReviewSections.has(key)) {
+          openReviewSections.delete(key);
+          sectionEl.style.display = "none";
+          return;
+        }
+
+        openReviewSections.add(key);
+        sectionEl.style.display = "block";
+        sectionEl.innerHTML = `<div class="reviewStatus">Loading reviews...</div>`;
+
+        try {
+          const data = await fetchVehicleReviews(vehicleId);
+          renderReviewSection(sectionEl, vehicleId, data);
+        } catch (err) {
+          sectionEl.innerHTML = `<div class="reviewStatus">Error: ${escapeHtml(err.message)}</div>`;
+        }
+      }
+
+      async function submitVehicleReview(vehicleId, sectionEl, buttonEl) {
+        if (!vehicleId || !sectionEl || !buttonEl) return;
+        const ratingEl = sectionEl.querySelector(".reviewRating");
+        const commentEl = sectionEl.querySelector(".reviewCommentInput");
+        const statusEl = sectionEl.querySelector(".reviewStatus");
+        const rating = Number(ratingEl?.value || 0);
+        const comment = String(commentEl?.value || "").trim();
+
+        if (!localStorage.getItem("userEmail")) {
+          if (statusEl) statusEl.textContent = "Sign in to leave a review.";
+          return;
+        }
+
+        if (!Number.isFinite(rating) || rating < 1 || rating > 5) {
+          if (statusEl) statusEl.textContent = "Choose a rating between 1 and 5.";
+          return;
+        }
+        if (comment.length < 3) {
+          if (statusEl) statusEl.textContent = "Comment must be at least 3 characters.";
+          return;
+        }
+
+        buttonEl.disabled = true;
+        if (statusEl) statusEl.textContent = "Posting review...";
+
+        try {
+          const res = await fetch(`${API}/cars/${encodeURIComponent(vehicleId)}/reviews`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "X-User-Email": localStorage.getItem("userEmail"),
+            },
+            body: JSON.stringify({ rating, comment }),
+          });
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok) throw new Error(data.error || "Could not post review");
+
+          const refreshed = await fetchVehicleReviews(vehicleId, { force: true });
+          renderReviewSection(sectionEl, vehicleId, refreshed);
+          const nextStatus = sectionEl.querySelector(".reviewStatus");
+          if (nextStatus) nextStatus.textContent = "Review saved.";
+        } catch (err) {
+          if (statusEl) statusEl.textContent = err.message;
+        } finally {
+          buttonEl.disabled = false;
+        }
+      }
 
       // ── COMPARE STATE ──────────────────────────────────────────────────────
       let compareList = []; // max 2 cars
@@ -987,8 +1239,10 @@
               <div class="cardActions">
                 <a class="linkBtn viewBtn" href="${carDetailsHref(car.id)}" data-vehicle-id="${car.id || ""}">View</a>
                 <a class="linkBtn bookBtn" href="${carBookHref(car.id)}"    data-vehicle-id="${car.id || ""}">Book</a>
+                <button class="reviewsBtn" type="button" data-vehicle-id="${car.id || ""}">Reviews</button>
                 <button class="compareBtn ${inCompare ? "selected" : ""}" data-compare-id="${car.id}" ${compareDisabled ? "disabled" : ""}>${inCompare ? "✓ Comparing" : "Compare"}</button>
               </div>
+              <div class="reviewsSection" data-review-section="${car.id || ""}"></div>
             </div>`;
 
           grid.appendChild(card);
@@ -1014,6 +1268,14 @@
         grid.querySelectorAll(".bookBtn").forEach(link => {
           link.addEventListener("click", e => { const vid = link.getAttribute("data-vehicle-id") || ""; if (!vid) return; e.preventDefault(); e.stopPropagation(); bumpPopularity(vid, 4); postMetricInteraction(vid, "book_click"); window.location.assign(carBookHref(vid)); });
         });
+        grid.querySelectorAll(".reviewsBtn").forEach(btn => {
+          btn.addEventListener("click", e => {
+            e.preventDefault(); e.stopPropagation();
+            const vid = btn.getAttribute("data-vehicle-id") || "";
+            const section = btn.closest(".cardBody")?.querySelector(`.reviewsSection[data-review-section="${CSS.escape(vid)}"]`);
+            toggleReviews(vid, section);
+          });
+        });
 
         if (loadMoreWrap && loadMoreBtn && resultsMeta) {
           const shown = cars.length;
@@ -1031,6 +1293,14 @@
             const car = cars.find(c => c.id === id) || allCars.find(c => c.id === id);
             if (car) toggleCompare(car);
           });
+        });
+        openReviewSections.forEach((vehicleId) => {
+          const section = grid.querySelector(`.reviewsSection[data-review-section="${CSS.escape(vehicleId)}"]`);
+          if (section) {
+            const cached = reviewCache.get(vehicleId);
+            if (cached) renderReviewSection(section, vehicleId, cached);
+            else toggleReviews(vehicleId, section);
+          }
         });
       }
 
