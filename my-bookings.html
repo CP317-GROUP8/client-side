@@ -171,6 +171,75 @@
     }
     .printBtn:hover { filter: brightness(0.95); }
 
+    .reviewBtn {
+      border: none;
+      cursor: pointer;
+      border-radius: 12px;
+      padding: 11px 16px;
+      font-weight: 700;
+      font-size: 14px;
+      background: var(--surface2, #eef2ff);
+      color: var(--accent, #4f46e5);
+      transition: filter 0.15s;
+    }
+    .reviewBtn:hover { filter: brightness(0.95); }
+    .reviewBtn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .reviewPanel {
+      margin-top: 16px;
+      border-top: 1px solid var(--border, #e2e8f0);
+      padding-top: 16px;
+      display: none;
+    }
+
+    .reviewPanel.open { display: block; }
+
+    .reviewPanel .summary {
+      font-size: 13px;
+      color: var(--muted, #64748b);
+      margin-bottom: 10px;
+    }
+
+    .reviewPanel select,
+    .reviewPanel textarea {
+      width: 100%;
+      border-radius: 12px;
+      border: 1px solid var(--border, #dbe3ef);
+      background: var(--surface2, #f8fafc);
+      color: var(--ink, #0f172a);
+      padding: 10px 12px;
+      font-size: 14px;
+      margin-bottom: 10px;
+    }
+
+    .reviewPanel textarea {
+      min-height: 90px;
+      resize: vertical;
+    }
+
+    .reviewPanel .rowActions {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .reviewSubmitBtn {
+      border: none;
+      cursor: pointer;
+      border-radius: 12px;
+      padding: 10px 14px;
+      font-weight: 700;
+      font-size: 14px;
+      background: var(--accent, #4f46e5);
+      color: white;
+    }
+
+    .reviewStatus {
+      font-size: 12px;
+      color: var(--muted, #64748b);
+    }
+
     .stateBox {
       background: var(--surface, white);
       border-radius: 20px;
@@ -342,6 +411,121 @@
       return "";
     }
 
+    function escapeHtml(value) {
+      return String(value ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+    }
+
+    async function fetchVehicleReviews(vehicleId) {
+      const res = await fetch(`${API_BASE}/cars/${encodeURIComponent(vehicleId)}/reviews`);
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || "Could not load reviews");
+      return {
+        reviewCount: Number(data.reviewCount || 0),
+        averageRating: Number(data.averageRating || 0),
+        rows: Array.isArray(data.rows) ? data.rows : [],
+      };
+    }
+
+    function fillReviewPanel(panel, vehicleId, data) {
+      const existing = (data.rows || []).find((row) => {
+        const fullName = `${row.firstName || ""} ${row.lastName || ""}`.trim();
+        const userData = JSON.parse(localStorage.getItem("userData") || "{}");
+        const currentName = `${userData.firstName || ""} ${userData.lastName || ""}`.trim();
+        return currentName && fullName && currentName === fullName;
+      });
+
+      panel.innerHTML = `
+        <div class="summary">
+          ${data.reviewCount ? `⭐ ${data.averageRating.toFixed(1)} average from ${data.reviewCount} review(s)` : "No reviews yet for this vehicle."}
+        </div>
+        <select class="reviewRating">
+          <option value="5" ${existing?.rating === 5 ? "selected" : ""}>5 stars</option>
+          <option value="4" ${existing?.rating === 4 ? "selected" : ""}>4 stars</option>
+          <option value="3" ${existing?.rating === 3 ? "selected" : ""}>3 stars</option>
+          <option value="2" ${existing?.rating === 2 ? "selected" : ""}>2 stars</option>
+          <option value="1" ${existing?.rating === 1 ? "selected" : ""}>1 star</option>
+        </select>
+        <textarea class="reviewCommentInput" placeholder="Share your experience with this car...">${escapeHtml(existing?.comment || "")}</textarea>
+        <div class="rowActions">
+          <button class="reviewSubmitBtn" type="button" data-vehicle-id="${escapeHtml(vehicleId)}">${existing ? "Update Review" : "Post Review"}</button>
+          <div class="reviewStatus"></div>
+        </div>
+      `;
+
+      const submitBtn = panel.querySelector(".reviewSubmitBtn");
+      submitBtn?.addEventListener("click", () => submitReview(panel, vehicleId, submitBtn));
+    }
+
+    async function toggleReviewPanel(buttonEl) {
+      const card = buttonEl.closest(".bookingCard");
+      const panel = card?.querySelector(".reviewPanel");
+      const vehicleId = card?.getAttribute("data-vehicleid") || "";
+      if (!panel || !vehicleId) return;
+
+      if (panel.classList.contains("open")) {
+        panel.classList.remove("open");
+        panel.innerHTML = "";
+        buttonEl.textContent = "Leave Review";
+        return;
+      }
+
+      panel.classList.add("open");
+      panel.innerHTML = `<div class="reviewStatus">Loading review form...</div>`;
+      buttonEl.textContent = "Hide Review";
+
+      try {
+        const data = await fetchVehicleReviews(vehicleId);
+        fillReviewPanel(panel, vehicleId, data);
+      } catch (err) {
+        panel.innerHTML = `<div class="reviewStatus">${escapeHtml(err.message)}</div>`;
+      }
+    }
+
+    async function submitReview(panel, vehicleId, buttonEl) {
+      const rating = Number(panel.querySelector(".reviewRating")?.value || 0);
+      const comment = String(panel.querySelector(".reviewCommentInput")?.value || "").trim();
+      const statusEl = panel.querySelector(".reviewStatus");
+
+      if (!Number.isFinite(rating) || rating < 1 || rating > 5) {
+        if (statusEl) statusEl.textContent = "Choose a rating from 1 to 5.";
+        return;
+      }
+      if (comment.length < 3) {
+        if (statusEl) statusEl.textContent = "Comment must be at least 3 characters.";
+        return;
+      }
+
+      buttonEl.disabled = true;
+      if (statusEl) statusEl.textContent = "Saving review...";
+
+      try {
+        const res = await fetch(`${API_BASE}/cars/${encodeURIComponent(vehicleId)}/reviews`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-User-Email": userEmail,
+          },
+          body: JSON.stringify({ rating, comment }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.error || "Could not save review");
+
+        const refreshed = await fetchVehicleReviews(vehicleId);
+        fillReviewPanel(panel, vehicleId, refreshed);
+        const nextStatus = panel.querySelector(".reviewStatus");
+        if (nextStatus) nextStatus.textContent = "Review saved.";
+      } catch (err) {
+        if (statusEl) statusEl.textContent = err.message;
+      } finally {
+        buttonEl.disabled = false;
+      }
+    }
+
     // ✅ Print booking receipt
     function printBooking({ name, saleId, refNum, price, pickupDate, dropoffDate, pickupLocation, dropoffLocation, vehicleType, drivetrain, imgSrc }) {
       const userData = JSON.parse(localStorage.getItem("userData") || "{}");
@@ -503,6 +687,7 @@
           return `
             <div class="bookingCard"
               data-saleid="${booking.saleId}"
+              data-vehicleid="${vehicleId}"
               data-carname="${name}"
               data-fromdate="${booking.fromDate || ""}"
               data-todate="${booking.toDate || ""}"
@@ -544,9 +729,11 @@
                   </div>
                   <div class="actionBtns">
                     <button class="printBtn" data-saleid="${booking.saleId}">🖨️ Print</button>
+                    <button class="reviewBtn" data-saleid="${booking.saleId}" data-vehicleid="${vehicleId}">Leave Review</button>
                     <button class="cancelBtn" data-saleid="${booking.saleId}">Cancel Booking</button>
                   </div>
                 </div>
+                <div class="reviewPanel"></div>
               </div>
             </div>`;
         }).join("");
@@ -583,6 +770,10 @@
               imgSrc:           card.getAttribute("data-imgsrc"),
             });
           });
+        });
+
+        container.querySelectorAll(".reviewBtn").forEach(btn => {
+          btn.addEventListener("click", () => toggleReviewPanel(btn));
         });
 
       } catch (err) {
