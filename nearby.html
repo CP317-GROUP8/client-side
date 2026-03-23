@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Cars In Your Area</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; font-family: Inter, system-ui; }
+
+body {
+  margin: 0;
+  background: var(--bg, #f4f6f9);
+  color: var(--ink, #0f172a);
+  transition: background 0.2s, color 0.2s;
+}
+
+.container { max-width: 1200px; margin: auto; padding: 34px 20px 40px; }
+
+header { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+
+h1 { margin: 0; font-size: 40px; line-height: 1.1; color: var(--ink, #0f172a); }
+
+.sub { color: var(--muted, #475569); margin-top: 8px; }
+
+.toolbar {
+  margin-top: 18px;
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.btn {
+  padding: 11px 16px;
+  border-radius: 12px;
+  border: 1px solid var(--border, #cbd5e1);
+  background: var(--surface, white);
+  color: var(--ink, #0f172a);
+  cursor: pointer;
+  font-weight: 600;
+  transition: filter 0.15s;
+}
+
+.btn:hover { filter: brightness(0.95); }
+
+.btn-primary {
+  background: var(--accent, #4f46e5);
+  color: white;
+  border-color: transparent;
+}
+
+.summary {
+  margin-top: 14px;
+  font-size: 14px;
+  color: var(--ink2, #334155);
+}
+
+.grid {
+  margin-top: 18px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.card {
+  background: var(--surface, white);
+  border-radius: 18px;
+  overflow: hidden;
+  border: 1px solid var(--border, #e2e8f0);
+  box-shadow: 0 12px 30px rgba(15,23,42,.08);
+}
+
+.card img {
+  width: 100%;
+  height: 190px;
+  object-fit: cover;
+  background: var(--surface2, #e2e8f0);
+}
+
+.cardBody { padding: 14px; }
+
+.top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.title { margin: 0; font-size: 18px; color: var(--ink, #0f172a); }
+
+.areaTag {
+  background: var(--accent-light, #dbeafe);
+  color: var(--accent, #1e40af);
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 6px 10px;
+  white-space: nowrap;
+}
+
+.meta { margin-top: 8px; color: var(--muted, #475569); font-size: 13px; }
+
+.price { margin-top: 8px; font-weight: 700; color: var(--ink, #0f172a); }
+
+.actions { margin-top: 14px; display: flex; gap: 8px; }
+
+.linkBtn {
+  flex: 1;
+  text-align: center;
+  text-decoration: none;
+  padding: 10px;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.view { background: var(--accent, #4f46e5); color: white; }
+
+.book {
+  border: 1px solid var(--border, #cbd5e1);
+  color: var(--ink, #0f172a);
+  background: var(--surface, white);
+}
+
+.empty {
+  margin-top: 20px;
+  color: var(--muted, #475569);
+  background: var(--surface, white);
+  border: 1px solid var(--border, #e2e8f0);
+  border-radius: 14px;
+  padding: 16px;
+}
+
+@media (max-width: 980px) { .grid { grid-template-columns: 1fr; } h1 { font-size: 32px; } }
+</style>
+</head>
+<body>
+<div class="container">
+  <header style="margin-top: 20px;">
+    <div>
+      <h1>Cars In Your Area</h1>
+      <div class="sub">Cars are selected from the location saved on your account.</div>
+      <div class="toolbar">
+        <button id="accountBtn" class="btn btn-primary" type="button">Update My Location</button>
+        <button id="browseAllBtn" class="btn" type="button">Browse All Cars</button>
+      </div>
+      <div class="summary" id="summary">Loading nearby cars...</div>
+    </div>
+  </header>
+
+  <div class="grid" id="nearbyGrid"></div>
+  <div class="empty" id="emptyState" style="display:none;">No nearby cars found for your saved location. Update your account location or browse all cars.</div>
+</div>
+
+<script src="nearby.js"></script>
+<script src="navbar.js"></script>
+<script src="darkm.js"></script>
+</body>
+</html>

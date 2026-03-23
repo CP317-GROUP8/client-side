@@ -119,6 +119,7 @@
       <div class="nav-links">
         <a href="home.html${linkSuffix}" class="nav-link ${currentPath==='home.html'?'active':''}">Home</a>
         <a href="cars.html${linkSuffix}" class="nav-link ${currentPath==='cars.html'?'active':''}">Browse Cars</a>
+        <a href="nearby.html${linkSuffix}" class="nav-link ${currentPath==='nearby.html'?'active':''}">Nearby</a>
         <a href="popular.html${linkSuffix}" class="nav-link ${currentPath==='popular.html'?'active':''}">Popular</a>
         <a href="Favourites.html${linkSuffix}" class="nav-link ${currentPath==='Favourites.html'?'active':''}">Favourites</a>
         ${isLoggedIn ? `<a href="my-bookings.html${linkSuffix}" class="nav-link ${currentPath==='my-bookings.html'?'active':''}">My Bookings</a>` : ''}
