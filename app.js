@@ -5,6 +5,124 @@ const API_BASE = window.location.hostname === "localhost"
 // Session duration for "must have logged in recently"
 const SESSION_MS = 12 * 60 * 60 * 1000; // 12 hours
 
+function getStatusEl() {
+  return document.getElementById("status");
+}
+
+function getNavArea() {
+  return document.getElementById("navArea");
+}
+
+function getAdminBtn() {
+  return document.getElementById("adminBtn");
+}
+
+function getLocationSetup() {
+  return document.getElementById("locationSetup");
+}
+
+function getLocationInput() {
+  return document.getElementById("locationInput");
+}
+
+function getSaveLocationBtn() {
+  return document.getElementById("saveLocationBtn");
+}
+
+function normalizeLocation(value) {
+  return String(value || "").trim().replace(/\s+/g, " ");
+}
+
+function hasSavedLocation(userData) {
+  return Boolean(normalizeLocation(userData?.location || userData?.Location));
+}
+
+function setLocationSetupOpen(isOpen) {
+  const locationSetup = getLocationSetup();
+  const navArea = getNavArea();
+  if (!locationSetup || !navArea) return;
+
+  locationSetup.classList.toggle("open", isOpen);
+  navArea.style.display = isOpen ? "none" : "block";
+}
+
+function updateNavVisibility(userData) {
+  const navArea = getNavArea();
+  const adminBtn = getAdminBtn();
+  if (!navArea || !adminBtn) return;
+
+  const adminVal = Number(userData?.administrator || userData?.Administrator || localStorage.getItem("isAdmin") || 0);
+  navArea.style.display = hasSavedLocation(userData) ? "block" : "none";
+  adminBtn.style.display = adminVal === 1 ? "inline-block" : "none";
+}
+
+async function fetchProfile(email) {
+  const res = await fetch(`${API_BASE}/me/profile`, {
+    headers: { "X-User-Email": email },
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || "Could not load profile");
+  return data.user || null;
+}
+
+async function saveSignupLocation(location) {
+  const email = localStorage.getItem("userEmail");
+  if (!email) throw new Error("Missing user session");
+
+  const res = await fetch(`${API_BASE}/me/profile`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      "X-User-Email": email,
+    },
+    body: JSON.stringify({ location }),
+  });
+
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || "Could not save location");
+  return data.user || null;
+}
+
+function showLocationOnboarding(userData) {
+  const statusEl = getStatusEl();
+  const locationInput = getLocationInput();
+  setLocationSetupOpen(true);
+  if (locationInput) locationInput.value = normalizeLocation(userData?.location || userData?.Location);
+  if (statusEl) statusEl.textContent = "Finish signup by adding your location.";
+}
+
+function finalizeSignedInState(userData) {
+  const statusEl = getStatusEl();
+  const firstName = userData?.firstName || userData?.["First Name"] || "";
+  const lastName = userData?.lastName || userData?.["Last Name"] || "";
+  const email = userData?.email || localStorage.getItem("userEmail") || "";
+
+  if (statusEl) {
+    statusEl.textContent = firstName || lastName
+      ? `Welcome, ${firstName} ${lastName} (${email})`
+      : `Session active (${email})`;
+  }
+
+  if (userData) {
+    localStorage.setItem("userData", JSON.stringify(userData));
+    if (userData.email) localStorage.setItem("userEmail", userData.email);
+    if (userData.administrator !== undefined) {
+      localStorage.setItem("isAdmin", String(Number(userData.administrator) === 1 ? 1 : 0));
+    }
+  }
+
+  setLocationSetupOpen(false);
+  updateNavVisibility(userData);
+}
+
+async function resolvePostLoginState(userData) {
+  if (!hasSavedLocation(userData)) {
+    showLocationOnboarding(userData);
+    return;
+  }
+  finalizeSignedInState(userData);
+}
+
 function setSession({ email, administrator, userData }) {
   localStorage.setItem("userEmail", email);
   localStorage.setItem("isAdmin", String(Number(administrator) === 1 ? 1 : 0));
@@ -29,7 +147,7 @@ function hasValidSession() {
 
 // Called by Google Identity Services
 async function handleCredentialResponse(response) {
-  const statusEl = document.getElementById("status");
+  const statusEl = getStatusEl();
   statusEl.textContent = "Signing you in...";
 
   try {
@@ -50,37 +168,75 @@ async function handleCredentialResponse(response) {
 
     setSession({ email, administrator: adminVal, userData: data }); // ← passes full user
 
-    statusEl.textContent = `Welcome, ${firstName} ${lastName} (${email})`;
-
-    // Show nav buttons now that you're signed in
-    document.getElementById("navArea").style.display = "block";
-
-    // Admin button only if admin
-    document.getElementById("adminBtn").style.display = adminVal === 1 ? "inline-block" : "none";
+    await resolvePostLoginState({
+      ...data,
+      firstName,
+      lastName,
+      email,
+      administrator: adminVal,
+    });
   } catch (err) {
     statusEl.textContent = `Error: ${err.message}`;
     clearSession();
+    setLocationSetupOpen(false);
   }
 }
 
 window.handleCredentialResponse = handleCredentialResponse;
 
 // On page load: if already logged in, show nav immediately
-(function boot() {
-  const statusEl = document.getElementById("status");
-  const navArea = document.getElementById("navArea");
-  const adminBtn = document.getElementById("adminBtn");
-
+(async function boot() {
+  const statusEl = getStatusEl();
+  const navArea = getNavArea();
   if (hasValidSession()) {
     const email = localStorage.getItem("userEmail");
-    const isAdmin = Number(localStorage.getItem("isAdmin") || "0") === 1;
+    const cachedUser = JSON.parse(localStorage.getItem("userData") || "null");
 
-    statusEl.textContent = `Session active (${email})`;
-    navArea.style.display = "block";
-    adminBtn.style.display = isAdmin ? "inline-block" : "none";
+    statusEl.textContent = `Checking profile for ${email}...`;
+    try {
+      const profile = await fetchProfile(email);
+      const mergedUser = { ...cachedUser, ...profile };
+      localStorage.setItem("userData", JSON.stringify(mergedUser));
+      await resolvePostLoginState(mergedUser);
+    } catch (err) {
+      statusEl.textContent = `Error: ${err.message}`;
+      clearSession();
+      setLocationSetupOpen(false);
+      navArea.style.display = "none";
+    }
   } else {
     // If session expired, clear it
     clearSession();
     navArea.style.display = "none";
+    setLocationSetupOpen(false);
   }
 })();
+
+const locationForm = document.getElementById("locationForm");
+if (locationForm) {
+  locationForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+
+    const statusEl = getStatusEl();
+    const saveBtn = getSaveLocationBtn();
+    const locationInput = getLocationInput();
+    const location = normalizeLocation(locationInput?.value);
+
+    if (!location) {
+      statusEl.textContent = "Enter your location to complete signup.";
+      locationInput?.focus();
+      return;
+    }
+
+    try {
+      if (saveBtn) saveBtn.disabled = true;
+      statusEl.textContent = "Saving your location...";
+      const user = await saveSignupLocation(location);
+      finalizeSignedInState(user);
+    } catch (err) {
+      statusEl.textContent = `Error: ${err.message}`;
+    } finally {
+      if (saveBtn) saveBtn.disabled = false;
+    }
+  });
+}

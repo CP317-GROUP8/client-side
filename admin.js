@@ -66,6 +66,26 @@ function ensureSalesColumns(columns) {
   return next;
 }
 
+function ensureUserColumns(columns) {
+  if (currentTableKey !== "users") return columns;
+
+  const next = [...(columns || [])];
+  const required = [
+    {
+      aliases: ["Location", "location", "Home Location", "homeLocation", "home_location"],
+      fallback: "Location",
+    },
+  ];
+
+  required.forEach(({ aliases, fallback }) => {
+    if (!findMatchingColumnName(next, aliases)) {
+      next.push(fallback);
+    }
+  });
+
+  return next;
+}
+
 function readRowValue(row, col) {
   if (!row) return "";
   if (Object.prototype.hasOwnProperty.call(row, col)) return row[col];
@@ -341,6 +361,7 @@ async function loadTable(key, label) {
   const data = await api(`/admin/${key}`, { method: "GET" });
   currentRows = Array.isArray(data.rows) ? data.rows : [];
   currentColumns = currentRows[0] ? Object.keys(currentRows[0]) : [];
+  currentColumns = ensureUserColumns(currentColumns);
   currentColumns = ensureSalesColumns(currentColumns);
 
   updateButtons();

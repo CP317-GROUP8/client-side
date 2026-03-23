@@ -131,6 +131,70 @@
       margin-top: 20px;
     }
 
+    .location-setup {
+      display: none;
+      margin-top: 20px;
+      padding: 18px;
+      border: 1px solid #e2e8f0;
+      border-radius: 16px;
+      background: #f8fafc;
+      text-align: left;
+    }
+
+    .location-setup.open {
+      display: block;
+    }
+
+    .location-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: #0f172a;
+      margin-bottom: 6px;
+    }
+
+    .location-sub {
+      font-size: 13px;
+      color: #64748b;
+      margin-bottom: 14px;
+      line-height: 1.5;
+    }
+
+    .location-field {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .location-field label {
+      font-size: 12px;
+      font-weight: 700;
+      color: #475569;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .location-field input {
+      width: 100%;
+      border: 1px solid #cbd5e1;
+      border-radius: 12px;
+      padding: 12px 14px;
+      font-size: 14px;
+      color: #0f172a;
+      outline: none;
+      background: #fff;
+    }
+
+    .location-field input:focus {
+      border-color: #4f46e5;
+      box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.12);
+    }
+
+    .location-actions {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 14px;
+    }
+
     .btn {
       border: none;
       border-radius: 12px;
@@ -188,6 +252,20 @@
         </div>
 
         <div id="status"></div>
+
+        <div id="locationSetup" class="location-setup" aria-live="polite">
+          <div class="location-title">Complete your profile</div>
+          <div class="location-sub">Add your home city so we can personalize your account and location-based browsing.</div>
+          <form id="locationForm">
+            <div class="location-field">
+              <label for="locationInput">Location</label>
+              <input id="locationInput" name="location" type="text" placeholder="Enter your city" maxlength="80" autocomplete="address-level2" required />
+            </div>
+            <div class="location-actions">
+              <button class="btn" id="saveLocationBtn" type="submit">Save Location</button>
+            </div>
+          </form>
+        </div>
 
         <div class="nav" id="navArea">
           <button class="btn secondary" onclick="window.location.href='home.html'">Home</button>
