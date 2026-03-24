@@ -1,11 +1,36 @@
+const LOCAL_API_BASE = "http://localhost:10000";
+const REMOTE_API_BASE = "https://server-side-zqaz.onrender.com";
 const API_BASE = window.location.hostname === "localhost"
-  ? "http://localhost:10000"
-  : "https://server-side-zqaz.onrender.com";
+  ? LOCAL_API_BASE
+  : REMOTE_API_BASE;
 const PAGE_SIZE = 9;
 const IMAGE_ASSIGNMENTS_KEY = "carImageAssignments";
 
 function safeStr(v) {
   return (v ?? "").toString().trim();
+}
+
+function getWeekKey(date = new Date()) {
+  const d = new Date(date);
+  d.setHours(0, 0, 0, 0);
+  const day = d.getDay();
+  const diff = day === 0 ? -6 : 1 - day;
+  d.setDate(d.getDate() + diff);
+  return d.toISOString().slice(0, 10);
+}
+
+function popularityStorageKey() {
+  return `popularity:${getWeekKey()}`;
+}
+
+function loadPopularityMap() {
+  try {
+    const raw = localStorage.getItem(popularityStorageKey());
+    const obj = raw ? JSON.parse(raw) : {};
+    return obj && typeof obj === "object" ? obj : {};
+  } catch {
+    return {};
+  }
 }
 
 function getAssignedImage(vehicleId, manufacturer, model) {
@@ -120,6 +145,37 @@ async function boot() {
   let total = 0;
   let weekStart = "";
 
+  async function loadLocalRankedPage(offset, { append = false } = {}) {
+    const res = await fetch(`${API_BASE}/cars`);
+    const data = await res.json().catch(() => []);
+    if (!res.ok) throw new Error(`Could not load cars (${res.status})`);
+
+    const popularityMap = loadPopularityMap();
+    const allCars = (Array.isArray(data) ? data : []).map((car) => {
+      const normalized = normalizeCar(car);
+      const localScore = Number(popularityMap[String(normalized.id)] || 0);
+      return {
+        ...normalized,
+        score: localScore,
+        views: localScore,
+        favourites: 0,
+        bookClicks: 0,
+        completedBookings: 0,
+      };
+    });
+
+    const ranked = allCars
+      .filter((car) => car.score > 0)
+      .sort((a, b) => b.score - a.score || Number(b.id || 0) - Number(a.id || 0));
+
+    const pageRows = ranked.slice(offset, offset + PAGE_SIZE);
+    currentCars = append ? [...currentCars, ...pageRows] : pageRows;
+    currentOffset = offset;
+    total = ranked.length;
+    weekStart = getWeekKey();
+    render(currentCars, weekStart, total);
+  }
+
   async function loadRankedPage(offset, { append = false } = {}) {
     const loadMoreBtn = document.getElementById("loadMoreBtn");
 
@@ -129,9 +185,24 @@ async function boot() {
     }
 
     try {
-      const res = await fetch(`${API_BASE}/metrics/popular-cars?limit=${PAGE_SIZE}&offset=${offset}`);
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error || "Could not load popular cars");
+      let res;
+      let data;
+
+      try {
+        res = await fetch(`${API_BASE}/metrics/popular-cars?limit=${PAGE_SIZE}&offset=${offset}`);
+        data = await res.json().catch(() => ({}));
+      } catch (err) {
+        if (API_BASE === LOCAL_API_BASE) {
+          res = await fetch(`${REMOTE_API_BASE}/metrics/popular-cars?limit=${PAGE_SIZE}&offset=${offset}`);
+          data = await res.json().catch(() => ({}));
+        } else {
+          throw err;
+        }
+      }
+
+      if (!res.ok) {
+        throw new Error(data.error || data.reason || `Could not load popular cars (${res.status})`);
+      }
 
       const cars = (Array.isArray(data.rows) ? data.rows : []).map(normalizeCar);
       currentCars = append ? [...currentCars, ...cars] : cars;
@@ -139,6 +210,12 @@ async function boot() {
       total = Number(data.total || cars.length);
       weekStart = data.weekStart || "";
       render(currentCars, weekStart, total);
+    } catch (err) {
+      if (String(err.message || "").includes("Could not load popular cars")) {
+        await loadLocalRankedPage(offset, { append });
+        return;
+      }
+      throw err;
     } finally {
       if (loadMoreBtn) {
         loadMoreBtn.disabled = false;
