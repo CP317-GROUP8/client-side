@@ -63,12 +63,13 @@ function isSessionFresh() {
 }
 
 async function api(path, options = {}) {
+  const { headers: extraHeaders, ...restOptions } = options;
   const res = await fetch(`${API_BASE}${path}`, {
+    ...restOptions,
     headers: {
       "Content-Type": "application/json",
-      ...(options.headers || {})
+      ...(extraHeaders || {})
     },
-    ...options
   });
 
   const data = await res.json().catch(() => ({}));
