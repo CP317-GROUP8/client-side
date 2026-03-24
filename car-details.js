@@ -98,7 +98,7 @@ const IMAGE_MANIFEST = {
   'toyota/highlander hybrid':    [{ num: 1, ext: 'png'  }, { num: 2, ext: 'png'  }, { num: 3, ext: 'jpeg' }],
   'toyota/hilux':                [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
   'toyota/rav4':                 [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
-  'toyota/rav4 plug-in hybrid':  [{ num: 1, ext: 'png'  }, { num: 2, ext: 'png'  }, { num: 3, ext: 'jpeg' }],
+  'toyota/rav4 plug-in hybrid':  [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
   'toyota/sienna':               [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
   'toyota/supra':                [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
   'toyota/tacoma':               [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
@@ -174,6 +174,15 @@ function saveImageAssignments(assignments) {
   localStorage.setItem(IMAGE_ASSIGNMENTS_KEY, JSON.stringify(assignments));
 }
 
+function resolveAssetModelKey(modelKey) {
+  const aliases = {
+    'saic-gm-wuling/bingo ev': 'saic-gm-wuling\t/bingo ev',
+    'toyota/rav4 plug-in hybrid': 'toyota/rav4 plug-in hybrid\t',
+  };
+
+  return aliases[modelKey] || modelKey;
+}
+
 // Get or create an image assignment for a specific vehicle
 function getOrCreateImageAssignment(vehicleId, manufacturer, model) {
   if (!vehicleId || !manufacturer || !model) {
@@ -182,7 +191,7 @@ function getOrCreateImageAssignment(vehicleId, manufacturer, model) {
   
   const manufacturerLower = manufacturer.toLowerCase().trim();
   const modelLower = model.toLowerCase().trim();
-  const modelKey = `${manufacturerLower}/${modelLower}`;
+  const modelKey = resolveAssetModelKey(`${manufacturerLower}/${modelLower}`);
   
   // Get existing assignments
   const assignments = loadImageAssignments();
