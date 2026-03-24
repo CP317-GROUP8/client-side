@@ -158,41 +158,59 @@ button:hover { filter: brightness(0.95); }
 </div>
 
 <script>
-// Session check — redirect to login if not authenticated
-(function() {
+// ── Session check ────────────────────────────────────────────────────────────
+(function () {
   function getProfile() {
     try {
       return JSON.parse(localStorage.getItem("userProfile") || "null")
-        || JSON.parse(localStorage.getItem("userData") || "null");
+          || JSON.parse(localStorage.getItem("userData")    || "null");
     } catch { return null; }
   }
+
   function isSessionValid() {
     const last = Number(localStorage.getItem("lastLoginAt") || localStorage.getItem("loggedInAt") || 0);
     return last && Date.now() - last < 12 * 60 * 60 * 1000;
   }
+
   const profile = getProfile();
+
   if (!profile || !isSessionValid()) {
     window.location.replace("index.html");
+    return;
+  }
+
+  // ✅ Sync keys that navbar.js needs
+  if (profile.email && !localStorage.getItem("userEmail")) {
+    localStorage.setItem("userEmail", profile.email);
+  }
+  if (!localStorage.getItem("loggedInAt")) {
+    const ts = localStorage.getItem("lastLoginAt") || String(Date.now());
+    localStorage.setItem("loggedInAt", ts);
+  }
+  if (profile.administrator != null) {
+    localStorage.setItem("isAdmin", Number(profile.administrator) === 1 ? "1" : "0");
   }
 })();
 
+// ── Promo banner ─────────────────────────────────────────────────────────────
 document.addEventListener("DOMContentLoaded", () => {
   const promoText = localStorage.getItem("promoBanner");
-  if (promoText && promoText.trim() !== "") {
+  if (promoText && promoText.trim()) {
     const banner = document.getElementById("promoBanner");
     banner.textContent = promoText;
     banner.style.display = "block";
   }
 });
 
+// ── Search ───────────────────────────────────────────────────────────────────
 function searchCars() {
-  const params = new URLSearchParams();
-  const city    = (document.getElementById("cityInput")?.value || "").trim();
+  const params  = new URLSearchParams();
+  const city    = (document.getElementById("cityInput")?.value    || "").trim();
   const pickup  = document.getElementById("pickupDateInput")?.value  || "";
   const dropoff = document.getElementById("dropoffDateInput")?.value || "";
   params.set("preview", "1");
-  if (city)    params.set("where", city);
-  if (pickup)  params.set("pickup", pickup);
+  if (city)    params.set("where",   city);
+  if (pickup)  params.set("pickup",  pickup);
   if (dropoff) params.set("dropoff", dropoff);
   location.href = `cars.html?${params.toString()}`;
 }
