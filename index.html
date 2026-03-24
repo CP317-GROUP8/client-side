@@ -22,27 +22,6 @@
       overflow: hidden;
     }
 
-    body::before {
-      content: '';
-      position: absolute;
-      width: 600px;
-      height: 600px;
-      border-radius: 999px;
-      background: rgba(255,255,255,0.05);
-      top: -200px;
-      right: -150px;
-    }
-    body::after {
-      content: '';
-      position: absolute;
-      width: 400px;
-      height: 400px;
-      border-radius: 999px;
-      background: rgba(255,255,255,0.05);
-      bottom: -150px;
-      left: -100px;
-    }
-
     .card {
       width: 420px;
       background: white;
@@ -54,7 +33,6 @@
       z-index: 1;
     }
 
-    /* Slideshow */
     .slideshow {
       position: relative;
       width: 100%;
@@ -76,7 +54,6 @@
       opacity: 1;
     }
 
-    /* dots */
     .dots {
       position: absolute;
       bottom: 8px;
@@ -84,7 +61,6 @@
       transform: translateX(-50%);
       display: flex;
       gap: 6px;
-      z-index: 2;
     }
 
     .dot {
@@ -92,7 +68,6 @@
       height: 6px;
       border-radius: 999px;
       background: rgba(255,255,255,0.5);
-      transition: background 0.3s;
     }
 
     .dot.active {
@@ -120,79 +95,14 @@
       margin-top: 16px;
       font-size: 13px;
       color: #475569;
-      word-break: break-word;
     }
 
+    /* 🔥 FIXED NAV */
     .nav {
       display: none;
       gap: 10px;
       justify-content: center;
-      flex-wrap: wrap;
       margin-top: 20px;
-    }
-
-    .location-setup {
-      display: none;
-      margin-top: 20px;
-      padding: 18px;
-      border: 1px solid #e2e8f0;
-      border-radius: 16px;
-      background: #f8fafc;
-      text-align: left;
-    }
-
-    .location-setup.open {
-      display: block;
-    }
-
-    .location-title {
-      font-size: 15px;
-      font-weight: 700;
-      color: #0f172a;
-      margin-bottom: 6px;
-    }
-
-    .location-sub {
-      font-size: 13px;
-      color: #64748b;
-      margin-bottom: 14px;
-      line-height: 1.5;
-    }
-
-    .location-field {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-
-    .location-field label {
-      font-size: 12px;
-      font-weight: 700;
-      color: #475569;
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-    }
-
-    .location-field input {
-      width: 100%;
-      border: 1px solid #cbd5e1;
-      border-radius: 12px;
-      padding: 12px 14px;
-      font-size: 14px;
-      color: #0f172a;
-      outline: none;
-      background: #fff;
-    }
-
-    .location-field input:focus {
-      border-color: #4f46e5;
-      box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.12);
-    }
-
-    .location-actions {
-      display: flex;
-      justify-content: flex-end;
-      margin-top: 14px;
     }
 
     .btn {
@@ -203,16 +113,22 @@
       font-weight: 600;
       cursor: pointer;
     }
-    .btn.secondary { background: #f1f5f9; color: #0f172a; border: 1px solid #e2e8f0; }
-    .btn.admin     { background: #fef3c7; color: #92400e; }
-    .btn:hover     { filter: brightness(0.95); }
+
+    .btn.secondary {
+      background: #f1f5f9;
+      color: #0f172a;
+      border: 1px solid #e2e8f0;
+    }
+
+    .btn.admin {
+      background: #fef3c7;
+      color: #92400e;
+    }
 
     .footer {
       margin-top: 20px;
       font-size: 12px;
       color: rgba(255,255,255,0.4);
-      position: relative;
-      z-index: 1;
       text-align: center;
     }
   </style>
@@ -224,12 +140,12 @@
 
       <!-- Slideshow -->
       <div class="slideshow" id="slideshow">
-        <img src="./assets/cars/porsche/911/1.jpeg" alt="Porsche 911" class="active" onerror="this.src='./assets/cars/dummy.png'">
-        <img src="./assets/cars/dodge/challenger/1.png" alt="Dodge Challenger" onerror="this.src='./assets/cars/dummy.png'">
-        <img src="./assets/cars/honda/civic/1.jpeg" alt="Honda Civic" onerror="this.src='./assets/cars/dummy.png'">
-        <img src="./assets/cars/kia/k4/1.jpeg" alt="KIA K4" onerror="this.src='./assets/cars/dummy.png'">
-        <img src="./assets/cars/toyota/highlander/1.png" alt="Toyota Highlander" onerror="this.src='./assets/cars/dummy.png'">
-        <img src="./assets/cars/toyota/corolla/1.png" alt="Toyota Corolla" onerror="this.src='./assets/cars/dummy.png'">
+        <img src="./assets/cars/porsche/911/1.jpeg" class="active">
+        <img src="./assets/cars/dodge/challenger/1.png">
+        <img src="./assets/cars/honda/civic/1.jpeg">
+        <img src="./assets/cars/kia/k4/1.jpeg">
+        <img src="./assets/cars/toyota/highlander/1.png">
+        <img src="./assets/cars/toyota/corolla/1.png">
         <div class="dots" id="dots"></div>
       </div>
 
@@ -237,41 +153,23 @@
         <h1>Welcome</h1>
         <p class="sub">Car rentals, made simple.</p>
 
+        <!-- Google Sign In -->
         <div id="g_id_onload"
-             data-client_id="338952355189-kifevvua8bpk9bn6sp8dqbrthb79h8f5.apps.googleusercontent.com"
-             data-callback="handleCredentialResponse"
-             data-auto_prompt="false">
+          data-client_id="338952355189-kifevvua8bpk9bn6sp8dqbrthb79h8f5.apps.googleusercontent.com"
+          data-callback="handleCredentialResponse">
         </div>
 
-        <div class="g_id_signin"
-             data-type="standard"
-             data-size="large"
-             data-theme="outline"
-             data-text="signin_with"
-             data-shape="rectangular">
-        </div>
+        <div class="g_id_signin" data-type="standard"></div>
 
         <div id="status"></div>
 
-        <div id="locationSetup" class="location-setup" aria-live="polite">
-          <div class="location-title">Complete your profile</div>
-          <div class="location-sub">Add your home city so we can personalize your account and location-based browsing.</div>
-          <form id="locationForm">
-            <div class="location-field">
-              <label for="locationInput">Location</label>
-              <input id="locationInput" name="location" type="text" placeholder="Enter your city" maxlength="80" autocomplete="address-level2" required />
-            </div>
-            <div class="location-actions">
-              <button class="btn" id="saveLocationBtn" type="submit">Save Location</button>
-            </div>
-          </form>
-        </div>
-
+        <!-- ✅ NAVIGATION -->
         <div class="nav" id="navArea">
           <button class="btn secondary" onclick="window.location.href='home.html'">Home</button>
           <button class="btn secondary" onclick="window.location.href='cars.html'">Cars</button>
           <button class="btn admin" id="adminBtn" style="display:none;" onclick="window.location.href='admin.html'">Admin</button>
         </div>
+
       </div>
     </div>
 
@@ -279,12 +177,13 @@
   </div>
 
   <script src="app.js"></script>
+
+  <!-- Slideshow -->
   <script>
     const slides = document.querySelectorAll("#slideshow img");
     const dotsEl = document.getElementById("dots");
     let current = 0;
 
-    // build dots
     slides.forEach((_, i) => {
       const d = document.createElement("div");
       d.className = "dot" + (i === 0 ? " active" : "");
@@ -303,5 +202,6 @@
 
     setInterval(() => goTo(current + 1), 3000);
   </script>
+
 </body>
 </html>
