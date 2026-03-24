@@ -40,13 +40,10 @@ function hideLocationSetup() {
 function saveSession(profile) {
   localStorage.setItem("userProfile", JSON.stringify(profile));
   localStorage.setItem("lastLoginAt", String(Date.now()));
+  localStorage.setItem("userData", JSON.stringify(profile));
+  localStorage.setItem("loggedInAt", String(Date.now()));
   if (profile?.email) localStorage.setItem("userEmail", profile.email);
-  // Also save in the format expected by the rest of the site
-  if (profile) {
-    localStorage.setItem("userData", JSON.stringify(profile));
-    localStorage.setItem("loggedInAt", String(Date.now()));
-    localStorage.setItem("isAdmin", String(Number(profile.administrator) === 1 ? 1 : 0));
-  }
+  localStorage.setItem("isAdmin", String(Number(profile?.administrator) === 1 ? 1 : 0));
 }
 
 function getStoredProfile() {
@@ -68,45 +65,25 @@ async function api(path, options = {}) {
     ...restOptions,
     headers: {
       "Content-Type": "application/json",
-      ...(extraHeaders || {})
+      ...(extraHeaders || {}),
     },
   });
-
   const data = await res.json().catch(() => ({}));
-
-  if (!res.ok) {
-    throw new Error(data.error || "Request failed");
-  }
-
+  if (!res.ok) throw new Error(data.error || "Request failed");
   return data;
 }
 
+// Called by Google Identity Services on sign in
 async function handleCredentialResponse(response) {
   try {
     setStatus("Signing you in...");
-
-    // ✅ Fixed: use idToken not credential
     const data = await api("/auth/google", {
       method: "POST",
-      body: JSON.stringify({
-        idToken: response.credential
-      })
+      body: JSON.stringify({ idToken: response.credential }),
     });
-
     const profile = data.user || data.profile || data;
     saveSession(profile);
-
-    const needsLocation = !profile.location || !String(profile.location).trim();
-    const isAdmin = Number(profile.administrator) === 1;
-
-    if (needsLocation) {
-      hideNav();
-      showLocationSetup();
-      setStatus("Finish signup by adding your location.");
-    } else {
-      // ✅ Redirect to home after successful login
-      window.location.href = "home.html";
-    }
+    window.location.href = "home.html";
   } catch (err) {
     setStatus(err.message || "Sign-in failed.", true);
   }
@@ -116,22 +93,13 @@ window.handleCredentialResponse = handleCredentialResponse;
 
 async function saveLocation(location) {
   const profile = getStoredProfile();
-  if (!profile?.email) {
-    throw new Error("No signed-in user found.");
-  }
-
+  if (!profile?.email) throw new Error("No signed-in user found.");
   const data = await api("/me/profile", {
     method: "PUT",
     headers: { "X-User-Email": profile.email },
-    body: JSON.stringify({ location })
+    body: JSON.stringify({ location }),
   });
-
-  const updated = {
-    ...profile,
-    ...(data.user || {}),
-    location
-  };
-
+  const updated = { ...profile, ...(data.user || {}), location };
   saveSession(updated);
   return updated;
 }
@@ -144,14 +112,10 @@ document.addEventListener("DOMContentLoaded", () => {
     form.addEventListener("submit", async (e) => {
       e.preventDefault();
       const location = input?.value?.trim();
-      if (!location) {
-        setStatus("Please enter your location.", true);
-        return;
-      }
+      if (!location) { setStatus("Please enter your location.", true); return; }
       try {
         setStatus("Saving your location...");
         await saveLocation(location);
-        // ✅ Redirect to home after location saved
         window.location.href = "home.html";
       } catch (err) {
         setStatus(err.message || "Could not save location.", true);
@@ -159,16 +123,9 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  // If already logged in, go straight to home
   const profile = getStoredProfile();
   if (profile && isSessionFresh()) {
-    const needsLocation = !profile.location || !String(profile.location).trim();
-    if (needsLocation) {
-      showLocationSetup();
-      hideNav();
-      setStatus("Finish signup by adding your location.");
-    } else {
-      // Already logged in with location — go straight to home
-      window.location.href = "home.html";
-    }
+    window.location.href = "home.html";
   }
 });
