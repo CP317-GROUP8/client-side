@@ -202,3 +202,4 @@ async function loadFeaturedCars() {
 }
 
 document.addEventListener("DOMContentLoaded", loadFeaturedCars);
+
