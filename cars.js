@@ -175,13 +175,11 @@ function saveImageAssignments(assignments) {
   localStorage.setItem(IMAGE_ASSIGNMENTS_KEY, JSON.stringify(assignments));
 }
 
-function resolveAssetModelKey(modelKey) {
-  const aliases = {
-    'saic-gm-wuling/bingo ev': 'saic-gm-wuling\t/bingo ev',
-    'toyota/rav4 plug-in hybrid': 'toyota/rav4 plug-in hybrid\t',
-  };
-
-  return aliases[modelKey] || modelKey;
+function normalizeModelKeyPart(value) {
+  return String(value || "")
+    .toLowerCase()
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 function buildValidImageUrls(modelKey) {
@@ -195,9 +193,9 @@ function getOrCreateImageAssignment(vehicleId, manufacturer, model) {
     return './assets/cars/dummy.png';
   }
   
-  const manufacturerLower = manufacturer.toLowerCase().trim();
-  const modelLower = model.toLowerCase().trim();
-  const modelKey = resolveAssetModelKey(`${manufacturerLower}/${modelLower}`);
+  const manufacturerLower = normalizeModelKeyPart(manufacturer);
+  const modelLower = normalizeModelKeyPart(model);
+  const modelKey = `${manufacturerLower}/${modelLower}`;
   
   // Get existing assignments
   const assignments = loadImageAssignments();
