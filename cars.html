@@ -1,603 +1,1185 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Cars</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet" />
-    <style>
-      * { box-sizing: border-box; font-family: Inter, system-ui; }
-      body { margin: 0; background: var(--bg, #f4f6f9); color: var(--ink, #0d1117); transition: background 0.2s, color 0.2s; }
-      .container { max-width: 1400px; margin: auto; padding: 40px; }
-      header { display: flex; justify-content: space-between; align-items: center; }
-      h1 { font-size: 44px; margin: 0; color: var(--ink, #0d1117); }
-      .sub { color: var(--muted, #555); font-size: 14px; }
-      .topRow { display: flex; justify-content: space-between; margin: 30px 0 12px; gap: 16px; }
-      button { padding: 12px 18px; border-radius: 14px; border: none; cursor: pointer; transition: filter 0.15s; }
-      button:hover { filter: brightness(0.95); }
-      .primary { background: var(--accent, #4f46e5); color: white; }
-      .secondary { background: var(--surface, white); border: 1px solid var(--border, #ccc); color: var(--ink, #0d1117); }
-      .searchBox { height: 46px; border-radius: 14px; border: 1px solid var(--border, #ddd); padding: 0 14px; width: 300px; background: var(--surface, white); color: var(--ink, #0d1117); }
-      .searchBox::placeholder { color: var(--muted, #8891a0); }
-      .criteriaBar { display: flex; flex-wrap: wrap; gap: 10px; margin: 0 0 22px; }
-      .criteriaPill { padding: 8px 12px; border-radius: 999px; border: 1px solid var(--border, #ddd); background: var(--surface, white); color: var(--ink2, #475569); font-size: 13px; font-weight: 600; }
-      .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
-      .card { background: var(--surface, white); border-radius: 20px; overflow: hidden; box-shadow: 0 12px 30px rgba(0,0,0,0.06); position: relative; border: 1px solid var(--border, transparent); }
-      .card img { width: 100%; height: 220px; object-fit: cover; background: var(--surface2, #ddd); }
-      .cardBody { padding: 18px; }
-      .headerRow { display: flex; justify-content: space-between; align-items: center; gap: 16px; }
-      .headerLeft h3 { margin: 0; line-height: 1.2; color: var(--ink, #0d1117); }
-      .headerLeft .meta { margin-top: 4px; }
-      .titleRow { display: flex; justify-content: space-between; }
-      .price { font-weight: 600; color: var(--ink, #0d1117); }
-      .tag { display: inline-block; padding: 6px 12px; border-radius: 999px; font-size: 12px; margin: 8px 0; }
-      .available   { background: #dcfce7; color: #166534; }
-      .unavailable { background: var(--danger-light, #fee2e2); color: var(--danger, #991b1b); }
-      .meta { color: var(--muted, #555); font-size: 14px; }
-      .cardActions { display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap; }
-      .linkBtn { flex: 1; text-align: center; padding: 10px; border-radius: 12px; text-decoration: none; font-weight: 600; font-size: 13px; }
-      .viewBtn { background: var(--accent, #4f46e5); color: white; }
-      .bookBtn, a.bookBtn, a.linkBtn.bookBtn { background: #22c55e !important; color: white !important; border: none !important; }
-      .compareBtn { flex: 1; text-align: center; padding: 10px; border-radius: 12px; font-weight: 600; font-size: 13px; border: 1px solid #c7d2fe; background: #eef2ff; color: #4f46e5; cursor: pointer; transition: all 0.15s; }
-      .compareBtn.selected { background: #4f46e5; color: white; border-color: #4f46e5; }
-      .compareBtn:disabled { opacity: 0.4; cursor: not-allowed; }
-      .reviewsBtn { flex: 1; text-align: center; padding: 10px; border-radius: 12px; font-weight: 600; font-size: 13px; border: 1px solid var(--border, #cbd5e1); background: var(--surface2, #f8fafc); color: var(--ink, #0d1117); cursor: pointer; }
-      .reviewsSection { margin-top: 14px; border-top: 1px solid var(--border, #e2e8f0); padding-top: 14px; display: none; }
-      .reviewsSummary { font-size: 13px; color: var(--muted, #475569); margin-bottom: 10px; }
-      .reviewList { display: flex; flex-direction: column; gap: 10px; margin-bottom: 12px; }
-      .reviewItem { background: var(--surface2, #f8fafc); border: 1px solid var(--border, #e2e8f0); border-radius: 12px; padding: 10px 12px; }
-      .reviewHead { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 6px; font-size: 12px; }
-      .reviewAuthor { font-weight: 700; color: var(--ink, #0d1117); }
-      .reviewMeta { color: var(--muted, #64748b); }
-      .reviewComment { font-size: 13px; color: var(--ink2, #334155); line-height: 1.5; white-space: pre-wrap; }
-      .reviewForm { display: flex; flex-direction: column; gap: 10px; }
-      .reviewForm select, .reviewForm textarea { width: 100%; border-radius: 12px; border: 1px solid var(--border, #cbd5e1); background: var(--surface, white); color: var(--ink, #0d1117); padding: 10px 12px; font-size: 13px; }
-      .reviewForm textarea { min-height: 88px; resize: vertical; }
-      .reviewForm button { align-self: flex-start; padding: 10px 14px; border-radius: 10px; background: var(--accent, #4f46e5); color: white; border: none; font-weight: 700; }
-      .reviewStatus { font-size: 12px; color: var(--muted, #64748b); }
-      #filterPanel { display: none; margin: 10px 0 22px; padding: 18px; border-radius: 18px; background: var(--surface, rgba(255,255,255,0.7)); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border: 1px solid var(--border, rgba(148,163,184,0.35)); box-shadow: 0 16px 45px rgba(15,23,42,0.1); }
-      #filterPanel select { height: 44px; border-radius: 14px; border: 1px solid var(--border, rgba(148,163,184,0.45)); background: var(--surface, rgba(255,255,255,0.95)); color: var(--ink, #0d1117); padding: 0 12px; min-width: 190px; outline: none; transition: box-shadow 0.15s ease, border-color 0.15s ease; }
-      #filterPanel select:focus { border-color: rgba(79,70,229,0.55); box-shadow: 0 0 0 4px rgba(79,70,229,0.15); }
-      #filterPanel input[type="range"] { width: 260px; height: 6px; border-radius: 999px; background: var(--border, rgba(148,163,184,0.35)); outline: none; }
-      #filterPanel input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 18px; height: 18px; border-radius: 999px; background: var(--accent, #4f46e5); border: 2px solid white; box-shadow: 0 10px 18px rgba(79,70,229,0.25); cursor: pointer; }
-      #filterPanel input[type="range"]::-moz-range-thumb { width: 18px; height: 18px; border-radius: 999px; background: var(--accent, #4f46e5); border: 2px solid white; cursor: pointer; }
-      #clearFilters { border: 1px solid var(--border, rgba(148,163,184,0.55)); background: var(--surface, rgba(255,255,255,0.85)); color: var(--ink, #0d1117); }
-      .card.clickable:hover { transform: translateY(-4px); box-shadow: 0 20px 40px rgba(79,70,229,0.15); transition: all 0.2s ease; }
-      #vehicleModal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; }
-      .modalInner { background: var(--surface, white); border-radius: 20px; padding: 32px; max-width: 560px; width: 90%; max-height: 85vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.25); position: relative; border: 1px solid var(--border, transparent); }
-      .modalClose { position: absolute; top: 16px; right: 16px; background: none; border: none; font-size: 22px; cursor: pointer; color: var(--muted, #64748b); padding: 4px 8px; }
-      #modalTitle { margin: 0 0 4px; color: var(--ink, #0d1117); }
-      .modalTableRow { border-bottom: 1px solid var(--border, #f1f5f9); }
-      .modalTableLabel { padding: 10px 8px; color: var(--muted, #64748b); font-weight: 600; width: 40%; }
-      .modalTableValue { padding: 10px 8px; color: var(--ink, #0d1117); }
-      #compareBar { display: none; position: fixed; bottom: 0; left: 0; right: 0; background: var(--surface); border-top: 2px solid var(--accent); padding: 14px 32px; z-index: 500; box-shadow: 0 -8px 30px rgba(0,0,0,0.12); align-items: center; gap: 20px; }
-      .compareBar-slots { display: flex; gap: 12px; flex: 1; }
-      .compareBar-slot { display: flex; align-items: center; gap: 10px; background: var(--surface2); border: 2px dashed var(--border); border-radius: 14px; padding: 10px 16px; min-width: 200px; font-size: 14px; color: var(--muted); font-weight: 500; }
-      .compareBar-slot.filled { background: var(--accent-light); border-style: solid; border-color: var(--accent); color: var(--accent); font-weight: 600; }
-      .compareBar-slot img { width: 48px; height: 36px; object-fit: cover; border-radius: 8px; }
-      .compareBar-slot .slot-remove { margin-left: auto; cursor: pointer; font-size: 16px; opacity: 0.6; }
-      .compareBar-slot .slot-remove:hover { opacity: 1; }
-      .compareBar-actions { display: flex; gap: 10px; }
-      .compareNowBtn { background: #4f46e5; color: white; border: none; border-radius: 12px; padding: 12px 24px; font-weight: 700; font-size: 14px; cursor: pointer; transition: opacity 0.15s; }
-      .compareNowBtn:hover { opacity: 0.9; }
-      .compareNowBtn:disabled { opacity: 0.4; cursor: not-allowed; }
-      .compareClearBtn { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); border-radius: 12px; padding: 12px 18px; font-weight: 600; font-size: 14px; cursor: pointer; }
-      #compareModal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 2000; align-items: center; justify-content: center; padding: 20px; }
-      .compareModalInner { background: var(--surface); border-radius: 24px; width: 100%; max-width: 820px; max-height: 90vh; overflow-y: auto; box-shadow: 0 24px 80px rgba(0,0,0,0.3); position: relative; }
-      .compareModalHeader { padding: 24px 28px 16px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; background: var(--surface); z-index: 10; border-radius: 24px 24px 0 0; }
-      .compareModalTitle { font-size: 20px; font-weight: 700; color: var(--ink); }
-      .compareModalClose { background: none; border: none; font-size: 22px; cursor: pointer; color: #64748b; padding: 4px 8px; }
-      .compareGrid { display: grid; grid-template-columns: 180px 1fr 1fr; gap: 0; }
-      .compareGrid .col-label { padding: 12px 16px; font-size: 12px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; border-bottom: 1px solid var(--border); background: var(--surface2); display: flex; align-items: center; }
-      .compareGrid .col-a, .compareGrid .col-b { padding: 12px 16px; border-bottom: 1px solid var(--border); font-size: 14px; color: var(--ink); font-weight: 500; display: flex; align-items: center; }
-      .compareGrid .col-a { border-left: 1px solid #f1f5f9; }
-      .compareGrid .col-header-label { background: var(--surface2); border-bottom: 2px solid var(--border); }
-      .compareGrid .col-header-a, .compareGrid .col-header-b { padding: 16px; border-bottom: 2px solid var(--border); border-left: 1px solid var(--border); text-align: center; }
-      .compareGrid .col-header-a img, .compareGrid .col-header-b img { width: 100%; height: 120px; object-fit: cover; border-radius: 12px; margin-bottom: 8px; }
-      .compareGrid .car-title { font-size: 16px; font-weight: 700; color: var(--ink); }
-      .compareGrid .car-price { font-size: 14px; color: #4f46e5; font-weight: 600; margin-top: 2px; }
-      .compareGrid .highlight-better { background: #dcfce7; color: #166534; border-radius: 8px; padding: 2px 8px; font-weight: 700; }
-      .compareGrid .row-even .col-label, .compareGrid .row-even .col-a, .compareGrid .row-even .col-b { background: var(--surface2); }
-      .compareModalFooter { padding: 20px 28px; display: flex; gap: 12px; border-top: 1px solid var(--border); }
-      .compareBookBtn { flex: 1; padding: 12px; border-radius: 12px; background: #4f46e5; color: white; border: none; font-weight: 700; font-size: 14px; cursor: pointer; text-decoration: none; text-align: center; display: block; transition: opacity 0.15s; }
-      .compareBookBtn:hover { opacity: 0.9; }
-      .compareBookBtn.secondary-book { background: var(--surface); color: var(--accent); border: 1px solid var(--border); }
-      @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } .topRow { flex-direction: column; align-items: stretch; } .searchBox { width: 100%; } .compareGrid { grid-template-columns: 120px 1fr 1fr; } #compareBar { padding: 12px 16px; flex-wrap: wrap; } }
-    </style>
-  </head>
-  <body>
-    <div class="container">
-      <header style="margin-top: 20px;">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cars</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet" />
+  <style>
+    /* ── Reset & Base ── */
+    * { box-sizing: border-box; font-family: Inter, system-ui; }
+    body { margin: 0; background: var(--bg, #f4f6f9); color: var(--ink, #0d1117); transition: background 0.2s, color 0.2s; }
+    .container { max-width: 1400px; margin: auto; padding: 40px; }
+    header { display: flex; justify-content: space-between; align-items: center; }
+    h1 { font-size: 44px; margin: 0; color: var(--ink, #0d1117); }
+    .sub { color: var(--muted, #555); font-size: 14px; }
+
+    /* ── Buttons ── */
+    button { padding: 12px 18px; border-radius: 14px; border: none; cursor: pointer; transition: filter 0.15s; }
+    button:hover { filter: brightness(0.95); }
+    .primary { background: var(--accent, #4f46e5); color: white; }
+    .secondary { background: var(--surface, white); border: 1px solid var(--border, #ccc); color: var(--ink, #0d1117); }
+
+    /* ── Search & Filter Bar ── */
+    .topRow { display: flex; justify-content: space-between; margin: 30px 0 12px; gap: 16px; }
+    .searchBox {
+      height: 46px; border-radius: 14px; border: 1px solid var(--border, #ddd);
+      padding: 0 14px; width: 300px; background: var(--surface, white); color: var(--ink, #0d1117);
+    }
+    .searchBox::placeholder { color: var(--muted, #8891a0); }
+    .criteriaBar { display: flex; flex-wrap: wrap; gap: 10px; margin: 0 0 22px; }
+    .criteriaPill {
+      padding: 8px 12px; border-radius: 999px; border: 1px solid var(--border, #ddd);
+      background: var(--surface, white); color: var(--ink2, #475569); font-size: 13px; font-weight: 600;
+    }
+
+    /* ── Filter Panel ── */
+    #filterPanel {
+      display: none; margin: 10px 0 22px; padding: 18px; border-radius: 18px;
+      background: var(--surface, rgba(255,255,255,0.7));
+      backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+      border: 1px solid var(--border, rgba(148,163,184,0.35));
+      box-shadow: 0 16px 45px rgba(15,23,42,0.1);
+    }
+    #filterPanel select {
+      height: 44px; border-radius: 14px; border: 1px solid var(--border, rgba(148,163,184,0.45));
+      background: var(--surface, rgba(255,255,255,0.95)); color: var(--ink, #0d1117);
+      padding: 0 12px; min-width: 190px; outline: none;
+      transition: box-shadow 0.15s ease, border-color 0.15s ease;
+    }
+    #filterPanel select:focus { border-color: rgba(79,70,229,0.55); box-shadow: 0 0 0 4px rgba(79,70,229,0.15); }
+    #filterPanel input[type="range"] { width: 260px; height: 6px; border-radius: 999px; background: var(--border, rgba(148,163,184,0.35)); outline: none; }
+    #filterPanel input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none; width: 18px; height: 18px; border-radius: 999px;
+      background: var(--accent, #4f46e5); border: 2px solid white;
+      box-shadow: 0 10px 18px rgba(79,70,229,0.25); cursor: pointer;
+    }
+    #filterPanel input[type="range"]::-moz-range-thumb {
+      width: 18px; height: 18px; border-radius: 999px;
+      background: var(--accent, #4f46e5); border: 2px solid white; cursor: pointer;
+    }
+    #clearFilters { border: 1px solid var(--border, rgba(148,163,184,0.55)); background: var(--surface, rgba(255,255,255,0.85)); color: var(--ink, #0d1117); }
+
+    /* ── Car Grid & Cards ── */
+    .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+    .card {
+      background: var(--surface, white); border-radius: 20px; overflow: hidden;
+      box-shadow: 0 12px 30px rgba(0,0,0,0.06); position: relative;
+      border: 1px solid var(--border, transparent);
+    }
+    .card img { width: 100%; height: 220px; object-fit: cover; background: var(--surface2, #ddd); }
+    .card.clickable:hover { transform: translateY(-4px); box-shadow: 0 20px 40px rgba(79,70,229,0.15); transition: all 0.2s ease; }
+    .cardBody { padding: 18px; }
+    .headerRow { display: flex; justify-content: space-between; align-items: center; gap: 16px; }
+    .headerLeft h3 { margin: 0; line-height: 1.2; color: var(--ink, #0d1117); }
+    .headerLeft .meta { margin-top: 4px; }
+    .price { font-weight: 600; color: var(--ink, #0d1117); }
+    .meta { color: var(--muted, #555); font-size: 14px; }
+
+    /* ── Availability Tags ── */
+    .tag { display: inline-block; padding: 6px 12px; border-radius: 999px; font-size: 12px; margin: 8px 0; }
+    .available   { background: #dcfce7; color: #166534; }
+    .unavailable { background: var(--danger-light, #fee2e2); color: var(--danger, #991b1b); }
+
+    /* ── Card Action Buttons ── */
+    .cardActions { display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap; }
+    .linkBtn { flex: 1; text-align: center; padding: 10px; border-radius: 12px; text-decoration: none; font-weight: 600; font-size: 13px; }
+    .viewBtn { background: var(--accent, #4f46e5); color: white; }
+    .bookBtn,
+    a.bookBtn,
+    a.linkBtn.bookBtn { background: #22c55e !important; color: white !important; border: none !important; }
+    .compareBtn {
+      flex: 1; text-align: center; padding: 10px; border-radius: 12px; font-weight: 600; font-size: 13px;
+      border: 1px solid #c7d2fe; background: #eef2ff; color: #4f46e5; cursor: pointer; transition: all 0.15s;
+    }
+    .compareBtn.selected { background: #4f46e5; color: white; border-color: #4f46e5; }
+    .compareBtn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .reviewsBtn {
+      flex: 1; text-align: center; padding: 10px; border-radius: 12px; font-weight: 600; font-size: 13px;
+      border: 1px solid var(--border, #cbd5e1); background: var(--surface2, #f8fafc);
+      color: var(--ink, #0d1117); cursor: pointer;
+    }
+
+    /* ── Reviews ── */
+    .reviewsSection { margin-top: 14px; border-top: 1px solid var(--border, #e2e8f0); padding-top: 14px; display: none; }
+    .reviewsSummary { font-size: 13px; color: var(--muted, #475569); margin-bottom: 10px; }
+    .reviewList { display: flex; flex-direction: column; gap: 10px; margin-bottom: 12px; }
+    .reviewItem { background: var(--surface2, #f8fafc); border: 1px solid var(--border, #e2e8f0); border-radius: 12px; padding: 10px 12px; }
+    .reviewHead { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 6px; font-size: 12px; }
+    .reviewAuthor { font-weight: 700; color: var(--ink, #0d1117); }
+    .reviewMeta { color: var(--muted, #64748b); }
+    .reviewComment { font-size: 13px; color: var(--ink2, #334155); line-height: 1.5; white-space: pre-wrap; }
+    .reviewForm { display: flex; flex-direction: column; gap: 10px; }
+    .reviewForm select,
+    .reviewForm textarea {
+      width: 100%; border-radius: 12px; border: 1px solid var(--border, #cbd5e1);
+      background: var(--surface, white); color: var(--ink, #0d1117); padding: 10px 12px; font-size: 13px;
+    }
+    .reviewForm textarea { min-height: 88px; resize: vertical; }
+    .reviewForm button { align-self: flex-start; padding: 10px 14px; border-radius: 10px; background: var(--accent, #4f46e5); color: white; border: none; font-weight: 700; }
+    .reviewStatus { font-size: 12px; color: var(--muted, #64748b); }
+
+    /* ── Vehicle Modal ── */
+    #vehicleModal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; }
+    .modalInner {
+      background: var(--surface, white); border-radius: 20px; padding: 32px;
+      max-width: 560px; width: 90%; max-height: 85vh; overflow-y: auto;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.25); position: relative;
+      border: 1px solid var(--border, transparent);
+    }
+    .modalClose { position: absolute; top: 16px; right: 16px; background: none; border: none; font-size: 22px; cursor: pointer; color: var(--muted, #64748b); padding: 4px 8px; }
+    #modalTitle { margin: 0 0 4px; color: var(--ink, #0d1117); }
+    .modalTableRow { border-bottom: 1px solid var(--border, #f1f5f9); }
+    .modalTableLabel { padding: 10px 8px; color: var(--muted, #64748b); font-weight: 600; width: 40%; }
+    .modalTableValue { padding: 10px 8px; color: var(--ink, #0d1117); }
+
+    /* ── Compare Bar ── */
+    #compareBar {
+      display: none; position: fixed; bottom: 0; left: 0; right: 0;
+      background: var(--surface); border-top: 2px solid var(--accent);
+      padding: 14px 32px; z-index: 500;
+      box-shadow: 0 -8px 30px rgba(0,0,0,0.12); align-items: center; gap: 20px;
+    }
+    .compareBar-slots { display: flex; gap: 12px; flex: 1; }
+    .compareBar-slot {
+      display: flex; align-items: center; gap: 10px; background: var(--surface2);
+      border: 2px dashed var(--border); border-radius: 14px; padding: 10px 16px;
+      min-width: 200px; font-size: 14px; color: var(--muted); font-weight: 500;
+    }
+    .compareBar-slot.filled { background: var(--accent-light); border-style: solid; border-color: var(--accent); color: var(--accent); font-weight: 600; }
+    .compareBar-slot img { width: 48px; height: 36px; object-fit: cover; border-radius: 8px; }
+    .compareBar-slot .slot-remove { margin-left: auto; cursor: pointer; font-size: 16px; opacity: 0.6; }
+    .compareBar-slot .slot-remove:hover { opacity: 1; }
+    .compareBar-actions { display: flex; gap: 10px; }
+    .compareNowBtn { background: #4f46e5; color: white; border: none; border-radius: 12px; padding: 12px 24px; font-weight: 700; font-size: 14px; cursor: pointer; transition: opacity 0.15s; }
+    .compareNowBtn:hover { opacity: 0.9; }
+    .compareNowBtn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .compareClearBtn { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); border-radius: 12px; padding: 12px 18px; font-weight: 600; font-size: 14px; cursor: pointer; }
+
+    /* ── Compare Modal ── */
+    #compareModal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 2000; align-items: center; justify-content: center; padding: 20px; }
+    .compareModalInner { background: var(--surface); border-radius: 24px; width: 100%; max-width: 820px; max-height: 90vh; overflow-y: auto; box-shadow: 0 24px 80px rgba(0,0,0,0.3); position: relative; }
+    .compareModalHeader {
+      padding: 24px 28px 16px; border-bottom: 1px solid var(--border);
+      display: flex; justify-content: space-between; align-items: center;
+      position: sticky; top: 0; background: var(--surface); z-index: 10; border-radius: 24px 24px 0 0;
+    }
+    .compareModalTitle { font-size: 20px; font-weight: 700; color: var(--ink); }
+    .compareModalClose { background: none; border: none; font-size: 22px; cursor: pointer; color: #64748b; padding: 4px 8px; }
+    .compareGrid { display: grid; grid-template-columns: 180px 1fr 1fr; gap: 0; }
+    .compareGrid .col-label { padding: 12px 16px; font-size: 12px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; border-bottom: 1px solid var(--border); background: var(--surface2); display: flex; align-items: center; }
+    .compareGrid .col-a,
+    .compareGrid .col-b { padding: 12px 16px; border-bottom: 1px solid var(--border); font-size: 14px; color: var(--ink); font-weight: 500; display: flex; align-items: center; }
+    .compareGrid .col-a { border-left: 1px solid #f1f5f9; }
+    .compareGrid .col-header-label { background: var(--surface2); border-bottom: 2px solid var(--border); }
+    .compareGrid .col-header-a,
+    .compareGrid .col-header-b { padding: 16px; border-bottom: 2px solid var(--border); border-left: 1px solid var(--border); text-align: center; }
+    .compareGrid .col-header-a img,
+    .compareGrid .col-header-b img { width: 100%; height: 120px; object-fit: cover; border-radius: 12px; margin-bottom: 8px; }
+    .compareGrid .car-title { font-size: 16px; font-weight: 700; color: var(--ink); }
+    .compareGrid .car-price { font-size: 14px; color: #4f46e5; font-weight: 600; margin-top: 2px; }
+    .compareGrid .highlight-better { background: #dcfce7; color: #166534; border-radius: 8px; padding: 2px 8px; font-weight: 700; }
+    .compareGrid .row-even .col-label,
+    .compareGrid .row-even .col-a,
+    .compareGrid .row-even .col-b { background: var(--surface2); }
+    .compareModalFooter { padding: 20px 28px; display: flex; gap: 12px; border-top: 1px solid var(--border); }
+    .compareBookBtn { flex: 1; padding: 12px; border-radius: 12px; background: #4f46e5; color: white; border: none; font-weight: 700; font-size: 14px; cursor: pointer; text-decoration: none; text-align: center; display: block; transition: opacity 0.15s; }
+    .compareBookBtn:hover { opacity: 0.9; }
+    .compareBookBtn.secondary-book { background: var(--surface); color: var(--accent); border: 1px solid var(--border); }
+
+    /* ── Responsive ── */
+    @media (max-width: 900px) {
+      .grid { grid-template-columns: 1fr; }
+      .topRow { flex-direction: column; align-items: stretch; }
+      .searchBox { width: 100%; }
+      .compareGrid { grid-template-columns: 120px 1fr 1fr; }
+      #compareBar { padding: 12px 16px; flex-wrap: wrap; }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+
+    <!-- ── Page Header ── -->
+    <header style="margin-top: 20px;">
+      <div>
+        <h1>Cars</h1>
+        <div class="sub" id="carsSubtitle">
+          <span id="availableCount">—</span> available vehicles • Updated in real-time
+        </div>
+      </div>
+    </header>
+
+    <!-- ── Search & Filter Bar ── -->
+    <div class="topRow">
+      <input id="searchInput" class="searchBox" placeholder="Search by make/model" />
+      <button id="filterBtn" class="secondary" type="button">Filter</button>
+    </div>
+
+    <div class="criteriaBar" id="criteriaBar">
+      <span class="criteriaPill" id="criteriaWhere">Where: (any)</span>
+      <span class="criteriaPill" id="criteriaPickup">Pick Up: (any)</span>
+      <span class="criteriaPill" id="criteriaDropoff">Drop Off: (any)</span>
+    </div>
+
+    <!-- ── Filter Panel ── -->
+    <div id="filterPanel">
+      <div style="display:flex; gap:16px; flex-wrap:wrap; align-items:end;">
         <div>
-          <h1>Cars</h1>
-          <div class="sub" id="carsSubtitle">
-            <span id="availableCount">—</span> available vehicles • Updated in real-time
-          </div>
+          <div class="sub" style="margin-bottom:6px;">Vehicle Type</div>
+          <select id="filterType">
+            <option value="">Any</option>
+            <option value="Sedan">Sedan</option>
+            <option value="SUV">SUV</option>
+            <option value="Sport">Sport</option>
+            <option value="Truck">Truck</option>
+          </select>
         </div>
-      </header>
-      <div class="topRow">
-        <input id="searchInput" class="searchBox" placeholder="Search by make/model" />
-        <button id="filterBtn" class="secondary" type="button">Filter</button>
-      </div>
-      <div class="criteriaBar" id="criteriaBar">
-        <span class="criteriaPill" id="criteriaWhere">Where: (any)</span>
-        <span class="criteriaPill" id="criteriaPickup">Pick Up: (any)</span>
-        <span class="criteriaPill" id="criteriaDropoff">Drop Off: (any)</span>
-      </div>
-      <div id="filterPanel">
-        <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:end;">
-          <div>
-            <div class="sub" style="margin-bottom:6px;">Vehicle Type</div>
-            <select id="filterType">
-              <option value="">Any</option>
-              <option value="Sedan">Sedan</option>
-              <option value="SUV">SUV</option>
-              <option value="Sport">Sport</option>
-              <option value="Truck">Truck</option>
-            </select>
-          </div>
-          <div>
-            <div class="sub" style="margin-bottom:6px;">Drivetrain</div>
-            <select id="filterDrive">
-              <option value="">Any</option>
-              <option value="AWD">AWD</option>
-              <option value="FWD">FWD</option>
-              <option value="RWD">RWD</option>
-              <option value="4x4">4×4</option>
-            </select>
-          </div>
-          <div style="min-width:260px;">
-            <div class="sub" style="margin-bottom:6px;">Max price: <span id="priceLabel">Any</span></div>
-            <input id="filterPrice" type="range" min="0" max="2000" step="50" value="2000" />
-          </div>
-          <div>
-            <button id="clearFilters" class="secondary" type="button">Clear</button>
-          </div>
+        <div>
+          <div class="sub" style="margin-bottom:6px;">Drivetrain</div>
+          <select id="filterDrive">
+            <option value="">Any</option>
+            <option value="AWD">AWD</option>
+            <option value="FWD">FWD</option>
+            <option value="RWD">RWD</option>
+            <option value="4x4">4×4</option>
+          </select>
         </div>
-      </div>
-      <div class="grid" id="carsGrid"></div>
-      <div id="loadMoreWrap" style="display:none;justify-content:center;align-items:center;gap:14px;margin-top:24px;flex-wrap:wrap;">
-        <div id="resultsMeta" class="sub"></div>
-        <button id="loadMoreBtn" class="secondary" type="button">Load More</button>
-      </div>
-    </div>
-
-    <!-- VEHICLE MODAL -->
-    <div id="vehicleModal">
-      <div class="modalInner">
-        <button class="modalClose" onclick="closeModal()">✕</button>
-        <img id="modalImg" src="" alt="" style="width:100%;height:200px;object-fit:cover;border-radius:12px;margin-bottom:20px;" onerror="this.src='./assets/cars/dummy.png'" />
-        <h2 id="modalTitle"></h2>
-        <span id="modalTag" class="tag" style="margin-bottom:16px;display:inline-block;"></span>
-        <table id="modalTable" style="width:100%;border-collapse:collapse;font-size:15px;"></table>
-        <div style="display:flex;gap:12px;margin-top:24px;">
-          <a id="modalViewBtn" href="#" class="linkBtn viewBtn" style="flex:1;text-align:center;padding:12px;text-decoration:none;font-weight:600;border-radius:12px;">View Details</a>
-          <a id="modalBookBtn" href="#" class="linkBtn bookBtn" style="flex:1;text-align:center;padding:12px;text-decoration:none;font-weight:600;border-radius:12px;">Book</a>
+        <div style="min-width:260px;">
+          <div class="sub" style="margin-bottom:6px;">Max price: <span id="priceLabel">Any</span></div>
+          <input id="filterPrice" type="range" min="0" max="2000" step="50" value="2000" />
+        </div>
+        <div>
+          <button id="clearFilters" class="secondary" type="button">Clear</button>
         </div>
       </div>
     </div>
 
-    <!-- COMPARE BAR -->
-    <div id="compareBar">
-      <div class="compareBar-slots">
-        <div class="compareBar-slot" id="compareSlot0"><span>Select a car to compare</span></div>
-        <div style="display:flex;align-items:center;color:#94a3b8;font-weight:700;font-size:18px;">VS</div>
-        <div class="compareBar-slot" id="compareSlot1"><span>Select a car to compare</span></div>
-      </div>
-      <div class="compareBar-actions">
-        <button class="compareNowBtn" id="compareNowBtn" disabled onclick="openCompareModal()">Compare Now →</button>
-        <button class="compareClearBtn" onclick="clearCompare()">Clear</button>
-      </div>
+    <!-- ── Cars Grid ── -->
+    <div class="grid" id="carsGrid"></div>
+
+    <!-- ── Load More ── -->
+    <div id="loadMoreWrap" style="display:none; justify-content:center; align-items:center; gap:14px; margin-top:24px; flex-wrap:wrap;">
+      <div id="resultsMeta" class="sub"></div>
+      <button id="loadMoreBtn" class="secondary" type="button">Load More</button>
     </div>
 
-    <!-- COMPARE MODAL -->
-    <div id="compareModal">
-      <div class="compareModalInner">
-        <div class="compareModalHeader">
-          <div class="compareModalTitle">🚗 Side-by-Side Comparison</div>
-          <button class="compareModalClose" onclick="closeCompareModal()">✕</button>
-        </div>
-        <div id="compareContent"></div>
-        <div class="compareModalFooter" id="compareFooter"></div>
+  </div><!-- /.container -->
+
+
+  <!-- ── Vehicle Quick-View Modal ── -->
+  <div id="vehicleModal">
+    <div class="modalInner">
+      <button class="modalClose" onclick="closeModal()">✕</button>
+      <img id="modalImg" src="" alt=""
+        style="width:100%; height:200px; object-fit:cover; border-radius:12px; margin-bottom:20px;"
+        onerror="this.src='./assets/cars/dummy.png'" />
+      <h2 id="modalTitle"></h2>
+      <span id="modalTag" class="tag" style="margin-bottom:16px; display:inline-block;"></span>
+      <table id="modalTable" style="width:100%; border-collapse:collapse; font-size:15px;"></table>
+      <div style="display:flex; gap:12px; margin-top:24px;">
+        <a id="modalViewBtn" href="#" class="linkBtn viewBtn" style="flex:1; text-align:center; padding:12px; text-decoration:none; font-weight:600; border-radius:12px;">View Details</a>
+        <a id="modalBookBtn" href="#" class="linkBtn bookBtn" style="flex:1; text-align:center; padding:12px; text-decoration:none; font-weight:600; border-radius:12px;">Book</a>
       </div>
     </div>
+  </div>
 
-    <script>
-      const API = window.location.hostname === "localhost"
-        ? "http://localhost:10000"
-        : "https://server-side-zqaz.onrender.com";
+  <!-- ── Compare Bar (fixed bottom) ── -->
+  <div id="compareBar">
+    <div class="compareBar-slots">
+      <div class="compareBar-slot" id="compareSlot0"><span>Select a car to compare</span></div>
+      <div style="display:flex; align-items:center; color:#94a3b8; font-weight:700; font-size:18px;">VS</div>
+      <div class="compareBar-slot" id="compareSlot1"><span>Select a car to compare</span></div>
+    </div>
+    <div class="compareBar-actions">
+      <button class="compareNowBtn" id="compareNowBtn" disabled onclick="openCompareModal()">Compare Now →</button>
+      <button class="compareClearBtn" onclick="clearCompare()">Clear</button>
+    </div>
+  </div>
 
-      const params    = new URLSearchParams(window.location.search);
-      const isPreview = params.get("preview") === "1";
+  <!-- ── Compare Modal ── -->
+  <div id="compareModal">
+    <div class="compareModalInner">
+      <div class="compareModalHeader">
+        <div class="compareModalTitle">🚗 Side-by-Side Comparison</div>
+        <button class="compareModalClose" onclick="closeCompareModal()">✕</button>
+      </div>
+      <div id="compareContent"></div>
+      <div class="compareModalFooter" id="compareFooter"></div>
+    </div>
+  </div>
 
-      function normalizeCity(v) { return String(v || "").trim().toLowerCase().replace(/,.*$/, ""); }
-      function normalizeText(v) { return String(v || "").trim(); }
 
-      const searchState = {
-        where:    normalizeText(params.get("where")),
-        pickup:   normalizeText(params.get("pickup")),
-        dropoff:  normalizeText(params.get("dropoff")),
-        q:        normalizeText(params.get("q")),
-        type:     normalizeText(params.get("type")),
-        drive:    normalizeText(params.get("drive")),
-        maxPrice: normalizeText(params.get("maxPrice")),
+  <!-- ── Scripts ── -->
+  <!-- IMAGE_MANIFEST is defined in image_manifest.js -->
+  <script>
+    const IMAGE_MANIFEST = {
+      'bmw/i4':                     [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'bmw/x5':                     [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'buick/envista':               [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'byd/dolphin surf':            [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'byd/seal':                    [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'byd/seagull':                 [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'byd/sealion 7':               [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'png'  }, { num: 3, ext: 'jpeg' }],
+      'chery/tiggo 4':               [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'chevrolet/colorado':          [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'chevrolet/equinox':           [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'chevrolet/silverado 1500':    [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'chevrolet/trailblazer':       [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'chevrolet/trax':              [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'dodge/challenger':            [{ num: 1, ext: 'png'  }, { num: 2, ext: 'png'  }, { num: 3, ext: 'jpeg' }],
+      'ford/bronco sport':           [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'ford/everest':                [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'ford/f-150':                  [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'ford/f-150 lightning':        [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'ford/maverick':               [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'ford/mustang':                [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'ford/mustang mach-e':         [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'ford/puma':                   [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'ford/ranger':                 [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'genesis/gv70':                [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'gmc/sierra 1500':             [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'gwm/haval jolion':            [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'honda/civic':                 [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'honda/civic hybrid':          [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'honda/cr-v':                  [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'honda/fit e:hev':             [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'honda/passport':              [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'honda/prelude':               [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'honda/ridgeline':             [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'hyundai/elantra':             [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'hyundai/kona':                [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'hyundai/kona electric':       [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'hyundai/palisade':            [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'hyundai/santa cruz':          [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'hyundai/tucson':              [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'hyundai/venue':               [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'isuzu/d-max':                 [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'jaecoo/7':                    [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'jeep/compass':                [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'kia/k4':                      [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'kia/niro hybrid':             [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'kia/seltos':                  [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'kia/soul':                    [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'kia/sportage':                [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'leapmotor/c10':               [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'lexus/es':                    [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'lexus/rx 350 hybrid':         [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'mazda/3':                     [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'mazda/cx-5':                  [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'mazda/cx-50':                 [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'mazda/mx-5 miata':            [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'mini/cooper':                 [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'mitsubishi/outlander':        [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'mitsubishi/outlander sport':  [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'mitsubishi/triton':           [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'nissan/frontier':             [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'nissan/kicks':                [{ num: 1, ext: 'png'  }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'nissan/qashqai':              [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'nissan/rogue':                [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'nissan/sentra':               [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'nissan/z':                    [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'porsche/911':                 [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'renault/twingo e-tech':       [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'rivian/r1s':                  [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'rivian/r1t':                  [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'saic-gm-wuling/bingo ev':     [{ num: 1, ext: 'png'  }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'subaru/brz':                  [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'subaru/crosstrek':            [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'subaru/forester':             [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'subaru/impreza':              [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'suzuki/swift hybrid':         [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'tesla/model y':               [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'toyota/camry':                [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'toyota/corolla':              [{ num: 1, ext: 'png'  }, { num: 2, ext: 'png'  }, { num: 3, ext: 'jpeg' }],
+      'toyota/corolla cross':        [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'toyota/corolla hybrid':       [{ num: 1, ext: 'png'  }, { num: 2, ext: 'png'  }, { num: 3, ext: 'jpeg' }],
+      'toyota/gr86':                 [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'toyota/highlander':           [{ num: 1, ext: 'png'  }, { num: 2, ext: 'png'  }, { num: 3, ext: 'jpeg' }],
+      'toyota/highlander hybrid':    [{ num: 1, ext: 'png'  }, { num: 2, ext: 'png'  }, { num: 3, ext: 'jpeg' }],
+      'toyota/hilux':                [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'toyota/rav4':                 [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'toyota/rav4 plug-in hybrid':  [{ num: 1, ext: 'png'  }, { num: 2, ext: 'png'  }, { num: 3, ext: 'jpeg' }],
+      'toyota/sienna':               [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'toyota/supra':                [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'toyota/tacoma':               [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'vauxhall/frontera electric':  [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'volkswagen/id.2all':          [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'volkswagen/jetta':            [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'volkswagen/tiguan':           [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+    };
+  </script>
+
+  <script>
+    // ─────────────────────────────────────────────────────────────
+    // CONFIG
+    // ─────────────────────────────────────────────────────────────
+    const API = window.location.hostname === "localhost"
+      ? "http://localhost:10000"
+      : "https://server-side-zqaz.onrender.com";
+
+    const params    = new URLSearchParams(window.location.search);
+    const isPreview = params.get("preview") === "1";
+
+    const searchState = {
+      where:    (params.get("where")    || "").trim(),
+      pickup:   (params.get("pickup")   || "").trim(),
+      dropoff:  (params.get("dropoff")  || "").trim(),
+      q:        (params.get("q")        || "").trim(),
+      type:     (params.get("type")     || "").trim(),
+      drive:    (params.get("drive")    || "").trim(),
+      maxPrice: (params.get("maxPrice") || "").trim(),
+    };
+
+    const searchWhere = searchState.where.toLowerCase().replace(/,.*$/, "");
+
+    const SESSION_MS = 12 * 60 * 60 * 1000;
+    const PAGE_SIZE  = 24;
+
+    // ─────────────────────────────────────────────────────────────
+    // SESSION
+    // ─────────────────────────────────────────────────────────────
+    function requireSession() {
+      const email      = localStorage.getItem("userEmail");
+      const loggedInAt = Number(localStorage.getItem("loggedInAt") || localStorage.getItem("lastLoginAt") || "0");
+      if (!email || !loggedInAt) { window.location.replace("index.html"); throw new Error("No session"); }
+      if (Date.now() - loggedInAt > SESSION_MS) {
+        ["userEmail", "loggedInAt", "lastLoginAt", "isAdmin"].forEach(k => localStorage.removeItem(k));
+        window.location.replace("index.html");
+        throw new Error("Session expired");
+      }
+      return email;
+    }
+
+    const userEmail = isPreview
+      ? (localStorage.getItem("userEmail") || "preview@example.com")
+      : requireSession();
+
+    // ─────────────────────────────────────────────────────────────
+    // IMAGE ASSIGNMENTS (localStorage cache)
+    // ─────────────────────────────────────────────────────────────
+    const IMAGE_ASSIGNMENTS_KEY = "carImageAssignments";
+
+    function loadImageAssignments() {
+      const raw = localStorage.getItem(IMAGE_ASSIGNMENTS_KEY);
+      return raw ? JSON.parse(raw) : {};
+    }
+
+    function saveImageAssignments(a) {
+      localStorage.setItem(IMAGE_ASSIGNMENTS_KEY, JSON.stringify(a));
+    }
+
+    function getOrCreateImageAssignment(vehicleId, manufacturer, model) {
+      if (!vehicleId || !manufacturer || !model) return "./assets/cars/dummy.png";
+      const modelKey    = `${manufacturer.toLowerCase().trim()}/${model.toLowerCase().trim()}`;
+      const assignments = loadImageAssignments();
+      if (assignments[vehicleId]) return assignments[vehicleId];
+
+      const available = IMAGE_MANIFEST[modelKey] || [];
+      if (!available.length) {
+        return `https://source.unsplash.com/seed/${encodeURIComponent(vehicleId)}/600x400/?${encodeURIComponent(manufacturer + " " + model + " car")}`;
+      }
+
+      const usedUrls = new Set(
+        Object.entries(assignments)
+          .filter(([vid]) => vid !== vehicleId)
+          .map(([, url]) => url)
+          .filter(url => url.includes(`/assets/cars/${modelKey}/`))
+      );
+      const pool   = available.filter(i => !usedUrls.has(`./assets/cars/${modelKey}/${i.num}.${i.ext}`));
+      const chosen = (pool.length ? pool : available)[Math.floor(Math.random() * (pool.length || available.length))];
+      const url    = `./assets/cars/${modelKey}/${chosen.num}.${chosen.ext}`;
+      assignments[vehicleId] = url;
+      saveImageAssignments(assignments);
+      return url;
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // FAVOURITES
+    // ─────────────────────────────────────────────────────────────
+    function favStorageKey()   { return `favs:${userEmail}`; }
+    function loadFavsSet()     { const raw = localStorage.getItem(favStorageKey()); const arr = raw ? JSON.parse(raw) : []; return new Set(Array.isArray(arr) ? arr : []); }
+    function saveFavsSet(set)  { localStorage.setItem(favStorageKey(), JSON.stringify([...set])); }
+    function carKeyFromParts(manufacturer, model, drivetrain, priceNum) {
+      const p = Number.isFinite(priceNum) ? priceNum.toFixed(2) : "NA";
+      return `${manufacturer}|${model}|${drivetrain}|${p}`;
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // POPULARITY / METRICS
+    // ─────────────────────────────────────────────────────────────
+    function getWeekKey() {
+      const d = new Date(); d.setHours(0, 0, 0, 0);
+      const day  = d.getDay();
+      const diff = day === 0 ? -6 : 1 - day;
+      d.setDate(d.getDate() + diff);
+      return d.toISOString().slice(0, 10);
+    }
+    function popularityStorageKey() { return `popularity:${getWeekKey()}`; }
+    function loadPopularityMap()    { const raw = localStorage.getItem(popularityStorageKey()); const obj = raw ? JSON.parse(raw) : {}; return obj && typeof obj === "object" ? obj : {}; }
+    function savePopularityMap(map) { localStorage.setItem(popularityStorageKey(), JSON.stringify(map)); }
+    function bumpPopularity(vehicleId, amount) {
+      if (!vehicleId) return;
+      const map = loadPopularityMap();
+      map[String(vehicleId)] = Number(map[String(vehicleId)] || 0) + Number(amount || 0);
+      savePopularityMap(map);
+    }
+
+    async function postMetricInteraction(vehicleId, eventType) {
+      if (!vehicleId) return;
+      try {
+        await fetch(`${API}/metrics/interaction`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ vehicleId: Number(vehicleId), eventType }),
+        });
+      } catch (err) { console.warn("Metric interaction failed:", err); }
+    }
+
+    async function postFavouriteMetric(vehicleId, isFavourite) {
+      if (!vehicleId) return;
+      try {
+        await fetch(`${API}/metrics/favourites`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "X-User-Email": userEmail },
+          body: JSON.stringify({ vehicleId: Number(vehicleId), isFavourite }),
+        });
+      } catch (err) { console.warn("Favourite metric failed:", err); }
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // REVIEWS
+    // ─────────────────────────────────────────────────────────────
+    const reviewCache        = new Map();
+    const openReviewSections = new Set();
+
+    function escapeHtml(value) {
+      return String(value ?? "")
+        .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+    }
+
+    function formatReviewDate(value) {
+      if (!value) return "";
+      const dt = new Date(value);
+      return Number.isNaN(dt.getTime()) ? "" : dt.toLocaleDateString("en-CA", { year: "numeric", month: "short", day: "numeric" });
+    }
+
+    async function fetchVehicleReviews(vehicleId, { force = false } = {}) {
+      const key = String(vehicleId || "");
+      if (!key) return { reviewCount: 0, averageRating: 0, rows: [] };
+      if (!force && reviewCache.has(key)) return reviewCache.get(key);
+      const res  = await fetch(`${API}/cars/${encodeURIComponent(vehicleId)}/reviews`);
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || "Could not load reviews");
+      const normalized = {
+        reviewCount:   Number(data.reviewCount   || 0),
+        averageRating: Number(data.averageRating || 0),
+        rows:          Array.isArray(data.rows) ? data.rows : [],
       };
+      reviewCache.set(key, normalized);
+      return normalized;
+    }
 
-      const searchWhere = normalizeCity(searchState.where);
+    function buildReviewSectionHtml(vehicleId, data) {
+      const rows    = Array.isArray(data?.rows) ? data.rows : [];
+      const summary = data?.reviewCount
+        ? `⭐ ${Number(data.averageRating || 0).toFixed(1)} average from ${data.reviewCount} review(s)`
+        : "No reviews yet for this vehicle.";
+      const items = rows.length
+        ? rows.map(row => `
+            <div class="reviewItem">
+              <div class="reviewHead">
+                <div class="reviewAuthor">${escapeHtml(row.authorName || `User #${row.userId || "—"}`)}</div>
+                <div class="reviewMeta">
+                  ${"★".repeat(Number(row.rating || 0))}${"☆".repeat(Math.max(0, 5 - Number(row.rating || 0)))}
+                  • ${escapeHtml(formatReviewDate(row.updatedAt || row.createdAt))}
+                </div>
+              </div>
+              <div class="reviewComment">${escapeHtml(row.comment || "")}</div>
+            </div>`).join("")
+        : `<div class="reviewItem"><div class="reviewComment">Be the first to leave feedback.</div></div>`;
 
-      const IMAGE_ASSIGNMENTS_KEY = 'carImageAssignments';
-      const IMAGE_MANIFEST = {
-        'bmw/i4':[{num:1,ext:'jpeg'},{num:2,ext:'jpeg'},{num:3,ext:'jpeg'}],'bmw/x5':[{num:1,ext:'jpeg'},{num:2,ext:'jpeg'},{num:3,ext:'jpeg'}],'buick/envista':[{num:1,ext:'jpeg'},{num:2,ext:'jpeg'},{num:3,ext:'jpeg'}],'byd/dolphin surf':[{num:1,ext:'jpeg'},{num:2,ext:'jpeg'},{num:3,ext:'jpeg'}],'byd/seal':[{num:1,ext:'jpeg'},{num:2,ext:'jpeg'},{num:3,ext:'jpeg'}],'byd/seagull':[{num:1,ext:'jpeg'},{num:2,ext:'jpeg'},{num:3,ext:'jpeg'}],'byd/sealion 7':[{num:1,ext:'jpeg'},{num:2,ext:'png'},{num:3,ext:'jpeg'}],'chery/tiggo 4':[{num:1,ext:'jpeg'},{num:2,ext:'jpeg'},{num:3,ext:'jpeg'}],'chevrolet/colorado':[{num:1,ext:'jpeg'},{num:2,ext:'jpeg'},{num:3,ext:'jpeg'}],'chevrolet/equinox':[{num:1,ext:'jpeg'},{num:2,ext:'jpeg'},{num:3,ext:'jpeg'}],'chevrolet/silverado 1500':[{num:1,ext:'jpeg'},{num:2,ext:'jpeg'},{num:3,ext:'jpeg'}],'chevrolet/trailblazer':[{num:1,ext:'jpeg'},{num:2,ext:'jpeg'},{num:3,ext:'jpeg'}],'chevrolet/trax':[{num:1,ext:'jpeg'},{num:2,ext:'jpeg'},{num:3,ext:'jpeg'}],'dodge/challenger':[{num:1,ext:'png'},{num:2,ext:'png'},{num:3,ext:'jpeg'}],'ford/bronco sport':[{num:1,ext:'jpeg'},{num:2,ext:'jpeg'},{num:3,ext:'jpeg'}],'ford/everest':[{num:1,ext:'jpeg'},{num:2,ext:'jpeg'},{num:3,ext:'jpeg'}],'ford/f-150':[{num:1,ext:'jpeg'},{num:2,ext:'jpeg'},{num:3,ext:'jpeg'}],'ford/f-150 lightning':[{num:1,ext:'jpeg'},{num:2,ext:'jpeg'},{num:3,ext:'jpeg'}],'ford/maverick':[{num:1,ext:'jpeg'},{num:2,ext:'jpeg'},{num:3,ext:'jpeg'}],'ford/mustang':[{num:1,ext:'jpeg'},{num:2,ext:'jpeg'},{num:3,ext:'jpeg'}],'ford/mustang mach-e':[{num:1,ext:'jpeg'},{num:2,ext:'jpeg'},{num:3,ext:'jpeg'}],'ford/puma':[{num:1,ext:'jpeg'},{num:2,ext:'jpeg'},{num:3,ext:'jpeg'}],'ford/ranger':[{num:1,ext:'jpeg'},{num:2,ext:'jpeg'},{num:3,ext:'jpeg'}],'genesis/gv70':[{num:1,ext:'jpeg'},{num:2,ext:'jpeg'},{num:3,ext:'jpeg'}],'gmc/sierra 1500':[{num:1,ext:'jpeg'},{num:2,ext:'jpeg'},{num:3,ext:'jpeg'}],'gwm/haval jolion':[{num:1,ext:'jpeg'},{num:2,ext:'jpeg'},{num:3,ext:'jpeg'}],'honda/civic':[{num:1,ext:'jpeg'},{num:2,ext:'jpeg'},{num:3,ext:'jpeg'}],'honda/civic hybrid':[{num:1,ext:'jpeg'},{num:2,ext:'jpeg'},{num:3,ext:'jpeg'}],'honda/cr-v':[{num:1,ext:'jpeg'},{num:2,ext:'jpeg'},{num:3,ext:'jpeg'}],'honda/fit e:hev':[{num:1,ext:'jpeg'},{num:2,ext:'jpeg'},{num:3,ext:'jpeg'}],'honda/passport':[{num:1,ext:'jpeg'},{num:2,ext:'jpeg'},{num:3,ext:'jpeg'}],'honda/prelude':[{num:1,ext:'jpeg'},{num:2,ext:'jpeg'},{num:3,ext:'jpeg'}],'honda/ridgeline':[{num:1,ext:'jpeg'},{num:2,ext:'jpeg'},{num:3,ext:'jpeg'}],'hyundai/elantra':[{num:1,ext:'jpeg'},{num:2,ext:'jpeg'},{num:3,ext:'jpeg'}],'hyundai/kona':[{num:1,ext:'jpeg'},{num:2,ext:'jpeg'},{num:3,ext:'jpeg'}],'hyundai/kona electric':[{num:1,ext:'jpeg'},{num:2,ext:'jpeg'},{num:3,ext:'jpeg'}],'hyundai/palisade':[{num:1,ext:'jpeg'},{num:2,ext:'jpeg'},{num:3,ext:'jpeg'}],'hyundai/santa cruz':[{num:1,ext:'jpeg'},{num:2,ext:'jpeg'},{num:3,ext:'jpeg'}],'hyundai/tucson':[{num:1,ext:'jpeg'},{num:2,ext:'jpeg'},{num:3,ext:'jpeg'}],'hyundai/venue':[{num:1,ext:'jpeg'},{num:2,ext:'jpeg'},{num:3,ext:'jpeg'}],'isuzu/d-max':[{num:1,ext:'jpeg'},{num:2,ext:'jpeg'},{num:3,ext:'jpeg'}],'jaecoo/7':[{num:1,ext:'jpeg'},{num:2,ext:'jpeg'},{num:3,ext:'jpeg'}],'jeep/compass':[{num:1,ext:'jpeg'},{num:2,ext:'jpeg'},{num:3,ext:'jpeg'}],'kia/k4':[{num:1,ext:'jpeg'},{num:2,ext:'jpeg'},{num:3,ext:'jpeg'}],'kia/niro hybrid':[{num:1,ext:'jpeg'},{num:2,ext:'jpeg'},{num:3,ext:'jpeg'}],'kia/seltos':[{num:1,ext:'jpeg'},{num:2,ext:'jpeg'},{num:3,ext:'jpeg'}],'kia/soul':[{num:1,ext:'jpeg'},{num:2,ext:'jpeg'},{num:3,ext:'jpeg'}],'kia/sportage':[{num:1,ext:'jpeg'},{num:2,ext:'jpeg'},{num:3,ext:'jpeg'}],'leapmotor/c10':[{num:1,ext:'jpeg'},{num:2,ext:'jpeg'},{num:3,ext:'jpeg'}],'lexus/es':[{num:1,ext:'jpeg'},{num:2,ext:'jpeg'},{num:3,ext:'jpeg'}],'lexus/rx 350 hybrid':[{num:1,ext:'jpeg'},{num:2,ext:'jpeg'},{num:3,ext:'jpeg'}],'mazda/3':[{num:1,ext:'jpeg'},{num:2,ext:'jpeg'},{num:3,ext:'jpeg'}],'mazda/cx-5':[{num:1,ext:'jpeg'},{num:2,ext:'jpeg'},{num:3,ext:'jpeg'}],'mazda/cx-50':[{num:1,ext:'jpeg'},{num:2,ext:'jpeg'},{num:3,ext:'jpeg'}],'mazda/mx-5 miata':[{num:1,ext:'jpeg'},{num:2,ext:'jpeg'},{num:3,ext:'jpeg'}],'mini/cooper':[{num:1,ext:'jpeg'},{num:2,ext:'jpeg'},{num:3,ext:'jpeg'}],'mitsubishi/outlander':[{num:1,ext:'jpeg'},{num:2,ext:'jpeg'},{num:3,ext:'jpeg'}],'mitsubishi/outlander sport':[{num:1,ext:'jpeg'},{num:2,ext:'jpeg'},{num:3,ext:'jpeg'}],'mitsubishi/triton':[{num:1,ext:'jpeg'},{num:2,ext:'jpeg'},{num:3,ext:'jpeg'}],'nissan/frontier':[{num:1,ext:'jpeg'},{num:2,ext:'jpeg'},{num:3,ext:'jpeg'}],'nissan/kicks':[{num:1,ext:'png'},{num:2,ext:'jpeg'},{num:3,ext:'jpeg'}],'nissan/qashqai':[{num:1,ext:'jpeg'},{num:2,ext:'jpeg'},{num:3,ext:'jpeg'}],'nissan/rogue':[{num:1,ext:'jpeg'},{num:2,ext:'jpeg'},{num:3,ext:'jpeg'}],'nissan/sentra':[{num:1,ext:'jpeg'},{num:2,ext:'jpeg'},{num:3,ext:'jpeg'}],'nissan/z':[{num:1,ext:'jpeg'},{num:2,ext:'jpeg'},{num:3,ext:'jpeg'}],'porsche/911':[{num:1,ext:'jpeg'},{num:2,ext:'jpeg'},{num:3,ext:'jpeg'}],'renault/twingo e-tech':[{num:1,ext:'jpeg'},{num:2,ext:'jpeg'},{num:3,ext:'jpeg'}],'rivian/r1s':[{num:1,ext:'jpeg'},{num:2,ext:'jpeg'},{num:3,ext:'jpeg'}],'rivian/r1t':[{num:1,ext:'jpeg'},{num:2,ext:'jpeg'},{num:3,ext:'jpeg'}],'saic-gm-wuling/bingo ev':[{num:1,ext:'png'},{num:2,ext:'jpeg'},{num:3,ext:'jpeg'}],'subaru/brz':[{num:1,ext:'jpeg'},{num:2,ext:'jpeg'},{num:3,ext:'jpeg'}],'subaru/crosstrek':[{num:1,ext:'jpeg'},{num:2,ext:'jpeg'},{num:3,ext:'jpeg'}],'subaru/forester':[{num:1,ext:'jpeg'},{num:2,ext:'jpeg'},{num:3,ext:'jpeg'}],'subaru/impreza':[{num:1,ext:'jpeg'},{num:2,ext:'jpeg'},{num:3,ext:'jpeg'}],'suzuki/swift hybrid':[{num:1,ext:'jpeg'},{num:2,ext:'jpeg'},{num:3,ext:'jpeg'}],'tesla/model y':[{num:1,ext:'jpeg'},{num:2,ext:'jpeg'},{num:3,ext:'jpeg'}],'toyota/camry':[{num:1,ext:'jpeg'},{num:2,ext:'jpeg'},{num:3,ext:'jpeg'}],'toyota/corolla':[{num:1,ext:'png'},{num:2,ext:'png'},{num:3,ext:'jpeg'}],'toyota/corolla cross':[{num:1,ext:'jpeg'},{num:2,ext:'jpeg'},{num:3,ext:'jpeg'}],'toyota/corolla hybrid':[{num:1,ext:'png'},{num:2,ext:'png'},{num:3,ext:'jpeg'}],'toyota/gr86':[{num:1,ext:'jpeg'},{num:2,ext:'jpeg'},{num:3,ext:'jpeg'}],'toyota/highlander':[{num:1,ext:'png'},{num:2,ext:'png'},{num:3,ext:'jpeg'}],'toyota/highlander hybrid':[{num:1,ext:'png'},{num:2,ext:'png'},{num:3,ext:'jpeg'}],'toyota/hilux':[{num:1,ext:'jpeg'},{num:2,ext:'jpeg'},{num:3,ext:'jpeg'}],'toyota/rav4':[{num:1,ext:'jpeg'},{num:2,ext:'jpeg'},{num:3,ext:'jpeg'}],'toyota/rav4 plug-in hybrid':[{num:1,ext:'png'},{num:2,ext:'png'},{num:3,ext:'jpeg'}],'toyota/sienna':[{num:1,ext:'jpeg'},{num:2,ext:'jpeg'},{num:3,ext:'jpeg'}],'toyota/supra':[{num:1,ext:'jpeg'},{num:2,ext:'jpeg'},{num:3,ext:'jpeg'}],'toyota/tacoma':[{num:1,ext:'jpeg'},{num:2,ext:'jpeg'},{num:3,ext:'jpeg'}],'vauxhall/frontera electric':[{num:1,ext:'jpeg'},{num:2,ext:'jpeg'},{num:3,ext:'jpeg'}],'volkswagen/id.2all':[{num:1,ext:'jpeg'},{num:2,ext:'jpeg'},{num:3,ext:'jpeg'}],'volkswagen/jetta':[{num:1,ext:'jpeg'},{num:2,ext:'jpeg'},{num:3,ext:'jpeg'}],'volkswagen/tiguan':[{num:1,ext:'jpeg'},{num:2,ext:'jpeg'},{num:3,ext:'jpeg'}],
-      };
+      const canReview = Boolean(localStorage.getItem("userEmail"));
+      const form = canReview
+        ? `<div class="reviewForm">
+            <select class="reviewRating" aria-label="Rating">
+              <option value="5">5 stars</option><option value="4">4 stars</option>
+              <option value="3">3 stars</option><option value="2">2 stars</option><option value="1">1 star</option>
+            </select>
+            <textarea class="reviewCommentInput" placeholder="Share your experience with this vehicle..."></textarea>
+            <button type="button" class="reviewSubmitBtn" data-vehicle-id="${escapeHtml(vehicleId)}">Post Review</button>
+            <div class="reviewStatus"></div>
+          </div>`
+        : `<div class="reviewStatus">Sign in to leave a review.</div>`;
 
-      function loadImageAssignments() { const raw = localStorage.getItem(IMAGE_ASSIGNMENTS_KEY); return raw ? JSON.parse(raw) : {}; }
-      function saveImageAssignments(a) { localStorage.setItem(IMAGE_ASSIGNMENTS_KEY, JSON.stringify(a)); }
-      function getOrCreateImageAssignment(vehicleId, manufacturer, model) {
-        if (!vehicleId || !manufacturer || !model) return './assets/cars/dummy.png';
-        const modelKey = `${manufacturer.toLowerCase().trim()}/${model.toLowerCase().trim()}`;
-        const assignments = loadImageAssignments();
-        if (assignments[vehicleId]) return assignments[vehicleId];
-        const available = IMAGE_MANIFEST[modelKey] || [];
-        if (available.length === 0) return `https://source.unsplash.com/seed/${encodeURIComponent(vehicleId)}/600x400/?${encodeURIComponent(manufacturer+' '+model+' car')}`;
-        const usedUrls = new Set(Object.entries(assignments).filter(([vid]) => vid !== vehicleId).map(([,url]) => url).filter(url => url.includes(`/assets/cars/${modelKey}/`)));
-        const pool = available.filter(i => !usedUrls.has(`./assets/cars/${modelKey}/${i.num}.${i.ext}`));
-        const chosen = (pool.length ? pool : available)[Math.floor(Math.random() * (pool.length || available.length))];
-        const url = `./assets/cars/${modelKey}/${chosen.num}.${chosen.ext}`;
-        assignments[vehicleId] = url;
-        saveImageAssignments(assignments);
-        return url;
-      }
+      return `<div class="reviewsSummary">${summary}</div><div class="reviewList">${items}</div>${form}`;
+    }
 
-      function getWeekKey(date=new Date()){const d=new Date(date);d.setHours(0,0,0,0);const day=d.getDay();const diff=day===0?-6:1-day;d.setDate(d.getDate()+diff);return d.toISOString().slice(0,10);}
-      function popularityStorageKey(){return `popularity:${getWeekKey()}`;}
-      function loadPopularityMap(){const raw=localStorage.getItem(popularityStorageKey());const obj=raw?JSON.parse(raw):{};return obj&&typeof obj==="object"?obj:{};}
-      function savePopularityMap(map){localStorage.setItem(popularityStorageKey(),JSON.stringify(map));}
-      function bumpPopularity(vehicleId,amount){if(!vehicleId)return;const map=loadPopularityMap();map[String(vehicleId)]=Number(map[String(vehicleId)]||0)+Number(amount||0);savePopularityMap(map);}
-      async function postMetricInteraction(vehicleId,eventType){if(!vehicleId)return;try{await fetch(`${API}/metrics/interaction`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({vehicleId:Number(vehicleId),eventType})});}catch(err){console.warn(`Metric interaction failed:`,err);}}
-      async function postFavouriteMetric(vehicleId,isFavourite){if(!vehicleId)return;try{await fetch(`${API}/metrics/favourites`,{method:"POST",headers:{"Content-Type":"application/json","X-User-Email":userEmail},body:JSON.stringify({vehicleId:Number(vehicleId),isFavourite})});}catch(err){console.warn("Favourite metric failed:",err);}}
-
-      const SESSION_MS = 12 * 60 * 60 * 1000;
-      function requireSession() {
-        const email = localStorage.getItem("userEmail");
-        const loggedInAt = Number(localStorage.getItem("loggedInAt") || localStorage.getItem("lastLoginAt") || "0");
-        if (!email || !loggedInAt) { window.location.replace("index.html"); throw new Error("No session"); }
-        if (Date.now() - loggedInAt > SESSION_MS) { ["userEmail","loggedInAt","lastLoginAt","isAdmin"].forEach(k=>localStorage.removeItem(k)); window.location.replace("index.html"); throw new Error("Session expired"); }
-        return email;
-      }
-      const userEmail = isPreview ? (localStorage.getItem("userEmail") || "preview@example.com") : requireSession();
-
-      function favStorageKey(){return `favs:${userEmail}`;}
-      function loadFavsSet(){const raw=localStorage.getItem(favStorageKey());const arr=raw?JSON.parse(raw):[];return new Set(Array.isArray(arr)?arr:[]);}
-      function saveFavsSet(set){localStorage.setItem(favStorageKey(),JSON.stringify([...set]));}
-      function carKeyFromParts(manufacturer,model,drivetrain,priceNum){const p=Number.isFinite(priceNum)?priceNum.toFixed(2):"NA";return `${manufacturer}|${model}|${drivetrain}|${p}`;}
-
-      let allCars = [];
-      let totalCars = 0;
-      const PAGE_SIZE = 24;
-      let currentPage = 1;
-      const reviewCache = new Map();
-      const openReviewSections = new Set();
-
-      function escapeHtml(value){return String(value??"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");}
-      function formatReviewDate(value){if(!value)return"";const dt=new Date(value);if(Number.isNaN(dt.getTime()))return"";return dt.toLocaleDateString("en-CA",{year:"numeric",month:"short",day:"numeric"});}
-
-      async function fetchVehicleReviews(vehicleId,{force=false}={}){
-        const key=String(vehicleId||"");
-        if(!key)return{reviewCount:0,averageRating:0,rows:[]};
-        if(!force&&reviewCache.has(key))return reviewCache.get(key);
-        const res=await fetch(`${API}/cars/${encodeURIComponent(vehicleId)}/reviews`);
-        const data=await res.json().catch(()=>({}));
-        if(!res.ok)throw new Error(data.error||"Could not load reviews");
-        const normalized={reviewCount:Number(data.reviewCount||0),averageRating:Number(data.averageRating||0),rows:Array.isArray(data.rows)?data.rows:[]};
-        reviewCache.set(key,normalized);
-        return normalized;
-      }
-
-      function buildReviewSectionHtml(vehicleId,data){
-        const rows=Array.isArray(data?.rows)?data.rows:[];
-        const summary=data?.reviewCount?`⭐ ${Number(data.averageRating||0).toFixed(1)} average from ${data.reviewCount} review(s)`:"No reviews yet for this vehicle.";
-        const items=rows.length?rows.map(row=>`<div class="reviewItem"><div class="reviewHead"><div class="reviewAuthor">${escapeHtml(row.authorName||`User #${row.userId||"—"}`)}</div><div class="reviewMeta">${"★".repeat(Number(row.rating||0))}${"☆".repeat(Math.max(0,5-Number(row.rating||0)))} • ${escapeHtml(formatReviewDate(row.updatedAt||row.createdAt))}</div></div><div class="reviewComment">${escapeHtml(row.comment||"")}</div></div>`).join(""):`<div class="reviewItem"><div class="reviewComment">Be the first to leave feedback.</div></div>`;
-        const canReview=Boolean(localStorage.getItem("userEmail"));
-        const form=canReview?`<div class="reviewForm"><select class="reviewRating" aria-label="Rating"><option value="5">5 stars</option><option value="4">4 stars</option><option value="3">3 stars</option><option value="2">2 stars</option><option value="1">1 star</option></select><textarea class="reviewCommentInput" placeholder="Share your experience with this vehicle..."></textarea><button type="button" class="reviewSubmitBtn" data-vehicle-id="${escapeHtml(vehicleId)}">Post Review</button><div class="reviewStatus"></div></div>`:`<div class="reviewStatus">Sign in to leave a review.</div>`;
-        return `<div class="reviewsSummary">${summary}</div><div class="reviewList">${items}</div>${form}`;
-      }
-
-      function renderReviewSection(sectionEl,vehicleId,data){
-        if(!sectionEl)return;
-        sectionEl.innerHTML=buildReviewSectionHtml(vehicleId,data);
-        sectionEl.style.display="block";
-        const submitBtn=sectionEl.querySelector(".reviewSubmitBtn");
-        if(submitBtn){submitBtn.addEventListener("click",(e)=>{e.preventDefault();e.stopPropagation();submitVehicleReview(vehicleId,sectionEl,submitBtn);});}
-      }
-
-      async function toggleReviews(vehicleId,sectionEl){
-        const key=String(vehicleId||"");
-        if(!key||!sectionEl)return;
-        if(openReviewSections.has(key)){openReviewSections.delete(key);sectionEl.style.display="none";return;}
-        openReviewSections.add(key);
-        sectionEl.style.display="block";
-        sectionEl.innerHTML=`<div class="reviewStatus">Loading reviews...</div>`;
-        try{const data=await fetchVehicleReviews(vehicleId);renderReviewSection(sectionEl,vehicleId,data);}
-        catch(err){sectionEl.innerHTML=`<div class="reviewStatus">Error: ${escapeHtml(err.message)}</div>`;}
-      }
-
-      async function submitVehicleReview(vehicleId,sectionEl,buttonEl){
-        if(!vehicleId||!sectionEl||!buttonEl)return;
-        const ratingEl=sectionEl.querySelector(".reviewRating");
-        const commentEl=sectionEl.querySelector(".reviewCommentInput");
-        const statusEl=sectionEl.querySelector(".reviewStatus");
-        const rating=Number(ratingEl?.value||0);
-        const comment=String(commentEl?.value||"").trim();
-        if(!localStorage.getItem("userEmail")){if(statusEl)statusEl.textContent="Sign in to leave a review.";return;}
-        if(!Number.isFinite(rating)||rating<1||rating>5){if(statusEl)statusEl.textContent="Choose a rating between 1 and 5.";return;}
-        if(comment.length<3){if(statusEl)statusEl.textContent="Comment must be at least 3 characters.";return;}
-        buttonEl.disabled=true;
-        if(statusEl)statusEl.textContent="Posting review...";
-        try{
-          const res=await fetch(`${API}/cars/${encodeURIComponent(vehicleId)}/reviews`,{method:"POST",headers:{"Content-Type":"application/json","X-User-Email":localStorage.getItem("userEmail")},body:JSON.stringify({rating,comment})});
-          const data=await res.json().catch(()=>({}));
-          if(!res.ok)throw new Error(data.error||"Could not post review");
-          const refreshed=await fetchVehicleReviews(vehicleId,{force:true});
-          renderReviewSection(sectionEl,vehicleId,refreshed);
-          const nextStatus=sectionEl.querySelector(".reviewStatus");
-          if(nextStatus)nextStatus.textContent="Review saved.";
-        }catch(err){if(statusEl)statusEl.textContent=err.message;}
-        finally{buttonEl.disabled=false;}
-      }
-
-      let compareList=[];
-      function updateCompareBar(){
-        const bar=document.getElementById("compareBar");
-        const btn=document.getElementById("compareNowBtn");
-        bar.style.display="flex";
-        [0,1].forEach(i=>{
-          const slot=document.getElementById(`compareSlot${i}`);
-          const car=compareList[i];
-          if(car){slot.className="compareBar-slot filled";slot.innerHTML=`<img src="${car.imgUrl}" alt="${car.manufacturer}" onerror="this.src='./assets/cars/dummy.png'"><span>${car.manufacturer} ${car.model}</span><span class="slot-remove" onclick="removeFromCompare('${car.id}')">✕</span>`;}
-          else{slot.className="compareBar-slot";slot.innerHTML=`<span>Select a car to compare</span>`;}
-        });
-        btn.disabled=compareList.length<2;
-        document.querySelectorAll(".compareBtn").forEach(b=>{
-          const id=b.getAttribute("data-compare-id");
-          const inList=compareList.some(c=>c.id===id);
-          b.classList.toggle("selected",inList);
-          b.textContent=inList?"✓ Comparing":"Compare";
-          b.disabled=compareList.length>=2&&!inList;
+    function renderReviewSection(sectionEl, vehicleId, data) {
+      if (!sectionEl) return;
+      sectionEl.innerHTML = buildReviewSectionHtml(vehicleId, data);
+      sectionEl.style.display = "block";
+      const submitBtn = sectionEl.querySelector(".reviewSubmitBtn");
+      if (submitBtn) {
+        submitBtn.addEventListener("click", e => {
+          e.preventDefault(); e.stopPropagation();
+          submitVehicleReview(vehicleId, sectionEl, submitBtn);
         });
       }
-      function toggleCompare(car){const idx=compareList.findIndex(c=>c.id===car.id);if(idx>-1){compareList.splice(idx,1);}else{if(compareList.length>=2)return;compareList.push(car);}updateCompareBar();}
-      function removeFromCompare(id){compareList=compareList.filter(c=>c.id!==id);updateCompareBar();}
-      function clearCompare(){compareList=[];updateCompareBar();}
-      function openCompareModal(){
-        if(compareList.length<2)return;
-        const[a,b]=compareList;
-        const nameA=`${a.manufacturer} ${a.model}`.trim();
-        const nameB=`${b.manufacturer} ${b.model}`.trim();
-        const specs=[
-          {label:"Price/Day",keyA:a.priceText,keyB:b.priceText,compare:true,rawA:a.priceNum,rawB:b.priceNum,lowerIsBetter:true},
-          {label:"Type",keyA:a.type,keyB:b.type},
-          {label:"Drivetrain",keyA:a.drivetrain,keyB:b.drivetrain},
-          {label:"City",keyA:a.city||"—",keyB:b.city||"—"},
-          {label:"Availability",keyA:a.isAvailable?"✅ Available":"❌ Unavailable",keyB:b.isAvailable?"✅ Available":"❌ Unavailable"},
-          {label:"Vehicle ID",keyA:a.id||"—",keyB:b.id||"—"},
-        ];
-        let rows=specs.map((spec,i)=>{
-          let valA=spec.keyA||"—",valB=spec.keyB||"—",highlightA="",highlightB="";
-          if(spec.compare&&spec.rawA!=null&&spec.rawB!=null){if(spec.lowerIsBetter){if(spec.rawA<spec.rawB)highlightA="highlight-better";else if(spec.rawB<spec.rawA)highlightB="highlight-better";}else{if(spec.rawA>spec.rawB)highlightA="highlight-better";else if(spec.rawB>spec.rawA)highlightB="highlight-better";}}
-          const rowClass=i%2===0?"row-even":"";
-          return `<div class="col-label ${rowClass}">${spec.label}</div><div class="col-a ${rowClass}"><span class="${highlightA}">${valA}</span></div><div class="col-b ${rowClass}"><span class="${highlightB}">${valB}</span></div>`;
-        }).join("");
-        document.getElementById("compareContent").innerHTML=`<div class="compareGrid"><div class="col-header-label"></div><div class="col-header-a"><img src="${a.imgUrl}" alt="${nameA}" onerror="this.src='./assets/cars/dummy.png'"><div class="car-title">${nameA}</div><div class="car-price">${a.priceText}</div></div><div class="col-header-b"><img src="${b.imgUrl}" alt="${nameB}" onerror="this.src='./assets/cars/dummy.png'"><div class="car-title">${nameB}</div><div class="car-price">${b.priceText}</div></div>${rows}</div>`;
-        document.getElementById("compareFooter").innerHTML=`<a href="${carBookHref(a.id)}" class="compareBookBtn">Book ${nameA}</a><a href="${carBookHref(b.id)}" class="compareBookBtn secondary-book">Book ${nameB}</a>`;
-        document.getElementById("compareModal").style.display="flex";
+    }
+
+    async function toggleReviews(vehicleId, sectionEl) {
+      const key = String(vehicleId || "");
+      if (!key || !sectionEl) return;
+      if (openReviewSections.has(key)) {
+        openReviewSections.delete(key);
+        sectionEl.style.display = "none";
+        return;
       }
-      function closeCompareModal(){document.getElementById("compareModal").style.display="none";}
-      document.getElementById("compareModal").addEventListener("click",function(e){if(e.target===this)closeCompareModal();});
-
-      function safeStr(v){return(v??"").toString().trim();}
-      function normalizeCar(car){
-        const id=safeStr(car["Vehicle ID"]??car.vehicleId??car.id);
-        const manufacturer=safeStr(car["Manufacturer"]);
-        const model=safeStr(car["Model"]);
-        const type=safeStr(car["Vehicle Type"]);
-        const drivetrain=safeStr(car["Drivetrain"]);
-        const city=safeStr(car["City"]??car.city??car["Available City"]??car.availableCity);
-        const priceRaw=car["Price"];
-        const priceNum=Number(priceRaw);
-        const isAvailable=Number(car["Availability"])===1;
-        const cleanPriceNum=Number.isFinite(priceNum)?priceNum:null;
-        const priceText=Number.isFinite(priceNum)?`$${priceNum.toFixed(2)}/day`:`$${priceRaw}/day`;
-        const imgUrl=getOrCreateImageAssignment(id,manufacturer,model);
-        const favKey=carKeyFromParts(manufacturer,model,drivetrain,cleanPriceNum??NaN);
-        return{id,manufacturer,model,type,drivetrain,city,isAvailable,priceText,imgUrl,priceNum:cleanPriceNum,favKey};
+      openReviewSections.add(key);
+      sectionEl.style.display = "block";
+      sectionEl.innerHTML = `<div class="reviewStatus">Loading reviews...</div>`;
+      try {
+        const data = await fetchVehicleReviews(vehicleId);
+        renderReviewSection(sectionEl, vehicleId, data);
+      } catch (err) {
+        sectionEl.innerHTML = `<div class="reviewStatus">Error: ${escapeHtml(err.message)}</div>`;
       }
+    }
 
-      function carDetailsHref(vehicleId){if(!vehicleId)return"#";return `car-details.html?id=${encodeURIComponent(vehicleId)}${isPreview?"&preview=1":""}`;}
-      function carBookHref(vehicleId){return carDetailsHref(vehicleId);}
+    async function submitVehicleReview(vehicleId, sectionEl, buttonEl) {
+      if (!vehicleId || !sectionEl || !buttonEl) return;
+      const ratingEl  = sectionEl.querySelector(".reviewRating");
+      const commentEl = sectionEl.querySelector(".reviewCommentInput");
+      const statusEl  = sectionEl.querySelector(".reviewStatus");
+      const rating    = Number(ratingEl?.value || 0);
+      const comment   = String(commentEl?.value || "").trim();
 
-      function openModal(car){
-        const name=`${car.manufacturer} ${car.model}`.trim();
-        document.getElementById("modalImg").src=car.imgUrl;
-        document.getElementById("modalImg").alt=name;
-        document.getElementById("modalTitle").textContent=name;
-        const tag=document.getElementById("modalTag");
-        tag.textContent=car.isAvailable?"Available":"Unavailable";
-        tag.className=`tag ${car.isAvailable?"available":"unavailable"}`;
-        const rows=[["Manufacturer",car.manufacturer],["Model",car.model],["City",car.city||"—"],["Type",car.type],["Drivetrain",car.drivetrain],["Price",car.priceText],["Vehicle ID",car.id||"—"]];
-        document.getElementById("modalTable").innerHTML=rows.map(([label,val])=>`<tr class="modalTableRow"><td class="modalTableLabel">${label}</td><td class="modalTableValue">${val||"—"}</td></tr>`).join("");
-        document.getElementById("modalViewBtn").href=carDetailsHref(car.id);
-        document.getElementById("modalBookBtn").href=carBookHref(car.id);
-        document.getElementById("modalViewBtn").setAttribute("data-vehicle-id",car.id||"");
-        document.getElementById("modalBookBtn").setAttribute("data-vehicle-id",car.id||"");
-        document.getElementById("vehicleModal").style.display="flex";
-      }
-      function closeModal(){document.getElementById("vehicleModal").style.display="none";}
-      document.getElementById("vehicleModal").addEventListener("click",function(e){if(e.target===this)closeModal();});
-      document.addEventListener("keydown",e=>{if(e.key==="Escape"){closeModal();closeCompareModal();}});
-      document.getElementById("modalViewBtn").addEventListener("click",function(e){const vehicleId=this.getAttribute("data-vehicle-id")||"";if(!vehicleId)return;e.preventDefault();bumpPopularity(vehicleId,2);postMetricInteraction(vehicleId,"view");window.location.assign(carDetailsHref(vehicleId));});
-      document.getElementById("modalBookBtn").addEventListener("click",function(e){const vehicleId=this.getAttribute("data-vehicle-id")||"";if(!vehicleId)return;e.preventDefault();bumpPopularity(vehicleId,4);postMetricInteraction(vehicleId,"book_click");window.location.assign(carBookHref(vehicleId));});
+      if (!localStorage.getItem("userEmail"))          { if (statusEl) statusEl.textContent = "Sign in to leave a review."; return; }
+      if (!Number.isFinite(rating) || rating < 1 || rating > 5) { if (statusEl) statusEl.textContent = "Choose a rating between 1 and 5."; return; }
+      if (comment.length < 3)                          { if (statusEl) statusEl.textContent = "Comment must be at least 3 characters."; return; }
 
-      function renderCars(cars){
-        const grid=document.getElementById("carsGrid");
-        const loadMoreWrap=document.getElementById("loadMoreWrap");
-        const loadMoreBtn=document.getElementById("loadMoreBtn");
-        const resultsMeta=document.getElementById("resultsMeta");
-        grid.innerHTML="";
-        if(!cars.length){if(loadMoreWrap)loadMoreWrap.style.display="none";grid.innerHTML=`<div style="color:var(--muted,#555);">No cars match your search/filters.</div>`;return;}
-        cars.forEach(car=>{
-          const tagClass=car.isAvailable?"available":"unavailable";
-          const tagText=car.isAvailable?"Available":"Unavailable";
-          const name=`${car.manufacturer} ${car.model}`.trim();
-          const metaBits=[car.city,car.type,car.drivetrain].filter(Boolean);
-          const favsSet=loadFavsSet();
-          const isFav=favsSet.has(car.favKey);
-          const inCompare=compareList.some(c=>c.id===car.id);
-          const compareDisabled=compareList.length>=2&&!inCompare;
-          const card=document.createElement("div");
-          card.className="card";
-          if(car.isAvailable){card.classList.add("clickable");card.style.cursor="pointer";card.addEventListener("click",e=>{if(e.target.closest("a, button"))return;openModal(car);});}
-          card.innerHTML=`<div class="favBtn" data-fav-key="${car.favKey}" data-vehicle-id="${car.id||""}" style="position:absolute;top:12px;right:12px;background:rgba(255,255,255,0.9);border-radius:50%;width:36px;height:36px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:20px;box-shadow:0 4px 10px rgba(0,0,0,0.1);z-index:10;transition:transform 0.2s;user-select:none;">${isFav?"❤️":"🤍"}</div><img src="${car.imgUrl}" alt="${name}" onerror="this.src='./assets/cars/dummy.png'"><div class="cardBody"><div class="headerRow"><div class="headerLeft"><h3>${name}</h3><div class="meta">${metaBits.join(" • ")||"—"}</div></div></div><div class="price" style="margin-top:8px;">${car.priceText}</div><span class="tag ${tagClass}" style="margin-top:10px;display:inline-block;">${tagText}</span><div class="cardActions"><a class="linkBtn viewBtn" href="${carDetailsHref(car.id)}" data-vehicle-id="${car.id||""}">View</a><a class="linkBtn bookBtn" href="${carBookHref(car.id)}" data-vehicle-id="${car.id||""}">Book</a><button class="reviewsBtn" type="button" data-vehicle-id="${car.id||""}">Reviews</button><button class="compareBtn ${inCompare?"selected":""}" data-compare-id="${car.id}" ${compareDisabled?"disabled":""}>${inCompare?"✓ Comparing":"Compare"}</button></div><div class="reviewsSection" data-review-section="${car.id||""}"></div></div>`;
-          grid.appendChild(card);
+      buttonEl.disabled = true;
+      if (statusEl) statusEl.textContent = "Posting review...";
+      try {
+        const res  = await fetch(`${API}/cars/${encodeURIComponent(vehicleId)}/reviews`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "X-User-Email": localStorage.getItem("userEmail") },
+          body: JSON.stringify({ rating, comment }),
         });
-        grid.querySelectorAll(".favBtn").forEach(btn=>{btn.addEventListener("click",e=>{e.preventDefault();e.stopPropagation();const key=btn.getAttribute("data-fav-key");if(!key)return;const vehicleId=btn.getAttribute("data-vehicle-id")||"";const favs=loadFavsSet();if(favs.has(key)){favs.delete(key);btn.innerHTML="🤍";postFavouriteMetric(vehicleId,false);}else{favs.add(key);btn.innerHTML="❤️";btn.style.transform="scale(1.2)";setTimeout(()=>btn.style.transform="scale(1)",200);postFavouriteMetric(vehicleId,true);}saveFavsSet(favs);});});
-        grid.querySelectorAll(".viewBtn").forEach(link=>{link.addEventListener("click",e=>{const vid=link.getAttribute("data-vehicle-id")||"";if(!vid)return;e.preventDefault();e.stopPropagation();bumpPopularity(vid,2);postMetricInteraction(vid,"view");window.location.assign(carDetailsHref(vid));});});
-        grid.querySelectorAll(".bookBtn").forEach(link=>{link.addEventListener("click",e=>{const vid=link.getAttribute("data-vehicle-id")||"";if(!vid)return;e.preventDefault();e.stopPropagation();bumpPopularity(vid,4);postMetricInteraction(vid,"book_click");window.location.assign(carBookHref(vid));});});
-        grid.querySelectorAll(".reviewsBtn").forEach(btn=>{btn.addEventListener("click",e=>{e.preventDefault();e.stopPropagation();const vid=btn.getAttribute("data-vehicle-id")||"";const section=btn.closest(".cardBody")?.querySelector(`.reviewsSection[data-review-section="${CSS.escape(vid)}"]`);toggleReviews(vid,section);});});
-        if(loadMoreWrap&&loadMoreBtn&&resultsMeta){const shown=cars.length;const total=totalCars||cars.length;resultsMeta.textContent=`Showing ${shown} of ${total} cars`;loadMoreWrap.style.display="flex";loadMoreBtn.style.display=shown<total?"inline-block":"none";}
-        grid.querySelectorAll(".compareBtn").forEach(btn=>{btn.addEventListener("click",e=>{e.preventDefault();e.stopPropagation();const id=btn.getAttribute("data-compare-id");const car=cars.find(c=>c.id===id)||allCars.find(c=>c.id===id);if(car)toggleCompare(car);});});
-        openReviewSections.forEach(vehicleId=>{const section=grid.querySelector(`.reviewsSection[data-review-section="${CSS.escape(vehicleId)}"]`);if(section){const cached=reviewCache.get(vehicleId);if(cached)renderReviewSection(section,vehicleId,cached);else toggleReviews(vehicleId,section);}});
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.error || "Could not post review");
+        const refreshed = await fetchVehicleReviews(vehicleId, { force: true });
+        renderReviewSection(sectionEl, vehicleId, refreshed);
+        const nextStatus = sectionEl.querySelector(".reviewStatus");
+        if (nextStatus) nextStatus.textContent = "Review saved.";
+      } catch (err) {
+        if (statusEl) statusEl.textContent = err.message;
+      } finally {
+        buttonEl.disabled = false;
       }
+    }
 
-      function getSearchQuery(){return(document.getElementById("searchInput")?.value||"").trim().toLowerCase();}
-      function getSelectedType(){return(document.getElementById("filterType")?.value||"").trim();}
-      function getSelectedDrive(){return(document.getElementById("filterDrive")?.value||"").trim();}
-      function getMaxPrice(){const v=Number(document.getElementById("filterPrice")?.value);return Number.isFinite(v)?v:Infinity;}
+    // ─────────────────────────────────────────────────────────────
+    // COMPARE
+    // ─────────────────────────────────────────────────────────────
+    let compareList = [];
 
-      function updateCriteriaBar(){
-        const whereEl=document.getElementById("criteriaWhere");
-        const pickupEl=document.getElementById("criteriaPickup");
-        const dropoffEl=document.getElementById("criteriaDropoff");
-        if(whereEl)whereEl.textContent=`Where: ${searchState.where||"(any)"}`;
-        if(pickupEl)pickupEl.textContent=`Pick Up: ${searchState.pickup||"(any)"}`;
-        if(dropoffEl)dropoffEl.textContent=`Drop Off: ${searchState.dropoff||"(any)"}`;
-      }
+    function updateCompareBar() {
+      const bar = document.getElementById("compareBar");
+      const btn = document.getElementById("compareNowBtn");
+      bar.style.display = "flex";
 
-      function syncUrlState(){
-        const next=new URLSearchParams();
-        if(isPreview)next.set("preview","1");
-        if(searchState.where)next.set("where",searchState.where);
-        if(searchState.pickup)next.set("pickup",searchState.pickup);
-        if(searchState.dropoff)next.set("dropoff",searchState.dropoff);
-        const q=getSearchQuery(),type=getSelectedType(),drive=getSelectedDrive(),maxPrice=getMaxPrice();
-        if(q)next.set("q",q);if(type)next.set("type",type);if(drive)next.set("drive",drive);
-        if(Number.isFinite(maxPrice))next.set("maxPrice",String(maxPrice));
-        window.history.replaceState({},"",`${window.location.pathname}?${next.toString()}`);
-      }
-
-      function hydrateUiFromQuery(){
-        const searchInput=document.getElementById("searchInput");
-        const typeSelect=document.getElementById("filterType");
-        const driveSelect=document.getElementById("filterDrive");
-        const priceSlider=document.getElementById("filterPrice");
-        if(searchInput)searchInput.value=searchState.q;
-        if(typeSelect)typeSelect.value=searchState.type;
-        if(driveSelect)driveSelect.value=searchState.drive;
-        if(priceSlider&&searchState.maxPrice)priceSlider.value=searchState.maxPrice;
-        updateCriteriaBar();
-      }
-
-      function buildSubtitle(total){
-        const parts=[];
-        if(searchState.where)parts.push(`in ${searchState.where}`);
-        if(searchState.pickup||searchState.dropoff)parts.push(`${searchState.pickup||"any pickup"} → ${searchState.dropoff||"any drop off"}`);
-        const detail=parts.length?` • ${parts.join(" • ")}`:" • Updated in real-time";
-        return `<span id="availableCount">${total}</span> available vehicles${detail}`;
-      }
-
-      function updatePriceLabel(){
-        const slider=document.getElementById("filterPrice");
-        const label=document.getElementById("priceLabel");
-        if(!slider||!label)return;
-        const max=Number(slider.max),val=Number(slider.value);
-        label.textContent=(!Number.isFinite(val)||!Number.isFinite(max)||val>=max)?"Any":`$${val}`;
-      }
-
-      function buildCarsEndpoint(page){
-        const endpointParams=new URLSearchParams();
-        const q=getSearchQuery(),type=getSelectedType(),drive=getSelectedDrive(),maxPrice=getMaxPrice();
-        if(searchWhere)endpointParams.set("where",searchState.where);
-        if(searchState.pickup)endpointParams.set("pickup",searchState.pickup);
-        if(searchState.dropoff)endpointParams.set("dropoff",searchState.dropoff);
-        if(q)endpointParams.set("q",q);if(type)endpointParams.set("type",type);if(drive)endpointParams.set("drive",drive);
-        if(Number.isFinite(maxPrice))endpointParams.set("maxPrice",String(maxPrice));
-        endpointParams.set("page",String(page));
-        endpointParams.set("pageSize",String(PAGE_SIZE));
-        return `${API}/cars?${endpointParams.toString()}`;
-      }
-
-      async function fetchCarsPage(page,{append=false}={}){
-        const grid=document.getElementById("carsGrid");
-        const subtitle=document.getElementById("carsSubtitle");
-        const loadMoreBtn=document.getElementById("loadMoreBtn");
-        if(!append){grid.innerHTML=`<div style="color:var(--muted,#555);">Loading cars…</div>`;}
-        else if(loadMoreBtn){loadMoreBtn.disabled=true;loadMoreBtn.textContent="Loading...";}
-        try{
-          const res=await fetch(buildCarsEndpoint(page));
-          const data=await res.json();
-          if(!res.ok)throw new Error(data.error||"Could not load cars");
-
-          // ✅ FIX: handle both plain array and {rows} object responses
-          const rawCars = Array.isArray(data?.rows) ? data.rows
-                        : Array.isArray(data)        ? data
-                        : [];
-
-          const nextCars=rawCars.map(normalizeCar);
-          totalCars=Number(data?.total||nextCars.length);
-          currentPage=Number(data?.page||page);
-          allCars=append?[...allCars,...nextCars]:nextCars;
-          if(subtitle)subtitle.innerHTML=buildSubtitle(totalCars);
-          const slider=document.getElementById("filterPrice");
-          const responseMaxPrice=Number(data?.maxPrice||0);
-          if(slider&&!append){const safeMax=responseMaxPrice>0?responseMaxPrice:2000;slider.max=String(Math.ceil(safeMax/50)*50);if(Number(slider.value||0)>Number(slider.max||0))slider.value=slider.max;}
-          updatePriceLabel();
-          renderCars(allCars);
-        }catch(e){
-          console.error(e);
-          grid.innerHTML=`<div style="color:var(--danger,#b91c1c);">Failed to load cars.</div>`;
-        }finally{
-          if(loadMoreBtn){loadMoreBtn.disabled=false;loadMoreBtn.textContent="Load More";}
+      [0, 1].forEach(i => {
+        const slot = document.getElementById(`compareSlot${i}`);
+        const car  = compareList[i];
+        if (car) {
+          slot.className = "compareBar-slot filled";
+          slot.innerHTML = `
+            <img src="${car.imgUrl}" alt="${car.manufacturer}" onerror="this.src='./assets/cars/dummy.png'">
+            <span>${car.manufacturer} ${car.model}</span>
+            <span class="slot-remove" onclick="removeFromCompare('${car.id}')">✕</span>`;
+        } else {
+          slot.className = "compareBar-slot";
+          slot.innerHTML = `<span>Select a car to compare</span>`;
         }
+      });
+
+      btn.disabled = compareList.length < 2;
+      document.querySelectorAll(".compareBtn").forEach(b => {
+        const id     = b.getAttribute("data-compare-id");
+        const inList = compareList.some(c => c.id === id);
+        b.classList.toggle("selected", inList);
+        b.textContent = inList ? "✓ Comparing" : "Compare";
+        b.disabled    = compareList.length >= 2 && !inList;
+      });
+    }
+
+    function toggleCompare(car) {
+      const idx = compareList.findIndex(c => c.id === car.id);
+      if (idx > -1) { compareList.splice(idx, 1); }
+      else { if (compareList.length >= 2) return; compareList.push(car); }
+      updateCompareBar();
+    }
+
+    function removeFromCompare(id) { compareList = compareList.filter(c => c.id !== id); updateCompareBar(); }
+    function clearCompare()        { compareList = []; updateCompareBar(); }
+
+    function openCompareModal() {
+      if (compareList.length < 2) return;
+      const [a, b]  = compareList;
+      const nameA   = `${a.manufacturer} ${a.model}`.trim();
+      const nameB   = `${b.manufacturer} ${b.model}`.trim();
+
+      const specs = [
+        { label: "Price/Day",    keyA: a.priceText,  keyB: b.priceText,  compare: true, rawA: a.priceNum, rawB: b.priceNum, lowerIsBetter: true },
+        { label: "Type",         keyA: a.type,        keyB: b.type },
+        { label: "Drivetrain",   keyA: a.drivetrain,  keyB: b.drivetrain },
+        { label: "City",         keyA: a.city || "—", keyB: b.city || "—" },
+        { label: "Availability", keyA: a.isAvailable ? "✅ Available" : "❌ Unavailable", keyB: b.isAvailable ? "✅ Available" : "❌ Unavailable" },
+        { label: "Vehicle ID",   keyA: a.id   || "—", keyB: b.id   || "—" },
+      ];
+
+      const rows = specs.map((spec, i) => {
+        let valA = spec.keyA || "—", valB = spec.keyB || "—";
+        let highlightA = "", highlightB = "";
+        if (spec.compare && spec.rawA != null && spec.rawB != null) {
+          if (spec.lowerIsBetter) {
+            if (spec.rawA < spec.rawB) highlightA = "highlight-better";
+            else if (spec.rawB < spec.rawA) highlightB = "highlight-better";
+          } else {
+            if (spec.rawA > spec.rawB) highlightA = "highlight-better";
+            else if (spec.rawB > spec.rawA) highlightB = "highlight-better";
+          }
+        }
+        const rowClass = i % 2 === 0 ? "row-even" : "";
+        return `
+          <div class="col-label ${rowClass}">${spec.label}</div>
+          <div class="col-a ${rowClass}"><span class="${highlightA}">${valA}</span></div>
+          <div class="col-b ${rowClass}"><span class="${highlightB}">${valB}</span></div>`;
+      }).join("");
+
+      document.getElementById("compareContent").innerHTML = `
+        <div class="compareGrid">
+          <div class="col-header-label"></div>
+          <div class="col-header-a">
+            <img src="${a.imgUrl}" alt="${nameA}" onerror="this.src='./assets/cars/dummy.png'">
+            <div class="car-title">${nameA}</div>
+            <div class="car-price">${a.priceText}</div>
+          </div>
+          <div class="col-header-b">
+            <img src="${b.imgUrl}" alt="${nameB}" onerror="this.src='./assets/cars/dummy.png'">
+            <div class="car-title">${nameB}</div>
+            <div class="car-price">${b.priceText}</div>
+          </div>
+          ${rows}
+        </div>`;
+
+      document.getElementById("compareFooter").innerHTML = `
+        <a href="${carBookHref(a.id)}" class="compareBookBtn">Book ${nameA}</a>
+        <a href="${carBookHref(b.id)}" class="compareBookBtn secondary-book">Book ${nameB}</a>`;
+
+      document.getElementById("compareModal").style.display = "flex";
+    }
+
+    function closeCompareModal() { document.getElementById("compareModal").style.display = "none"; }
+    document.getElementById("compareModal").addEventListener("click", function(e) { if (e.target === this) closeCompareModal(); });
+
+    // ─────────────────────────────────────────────────────────────
+    // CAR NORMALIZATION & URLS
+    // ─────────────────────────────────────────────────────────────
+    function safeStr(v) { return (v ?? "").toString().trim(); }
+
+    function normalizeCar(car) {
+      const id            = safeStr(car["Vehicle ID"] ?? car.vehicleId ?? car.id);
+      const manufacturer  = safeStr(car["Manufacturer"]);
+      const model         = safeStr(car["Model"]);
+      const type          = safeStr(car["Vehicle Type"]);
+      const drivetrain    = safeStr(car["Drivetrain"]);
+      const city          = safeStr(car["City"] ?? car.city ?? car["Available City"] ?? car.availableCity);
+      const priceRaw      = car["Price"];
+      const priceNum      = Number(priceRaw);
+      const isAvailable   = Number(car["Availability"]) === 1;
+      const cleanPriceNum = Number.isFinite(priceNum) ? priceNum : null;
+      const priceText     = Number.isFinite(priceNum) ? `$${priceNum.toFixed(2)}/day` : `$${priceRaw}/day`;
+      const imgUrl        = getOrCreateImageAssignment(id, manufacturer, model);
+      const favKey        = carKeyFromParts(manufacturer, model, drivetrain, cleanPriceNum ?? NaN);
+      return { id, manufacturer, model, type, drivetrain, city, isAvailable, priceText, imgUrl, priceNum: cleanPriceNum, favKey };
+    }
+
+    function carDetailsHref(vehicleId) {
+      if (!vehicleId) return "#";
+      return `car-details.html?id=${encodeURIComponent(vehicleId)}${isPreview ? "&preview=1" : ""}`;
+    }
+    function carBookHref(vehicleId) { return carDetailsHref(vehicleId); }
+
+    // ─────────────────────────────────────────────────────────────
+    // VEHICLE MODAL
+    // ─────────────────────────────────────────────────────────────
+    function openModal(car) {
+      const name = `${car.manufacturer} ${car.model}`.trim();
+      document.getElementById("modalImg").src = car.imgUrl;
+      document.getElementById("modalImg").alt = name;
+      document.getElementById("modalTitle").textContent = name;
+      const tag = document.getElementById("modalTag");
+      tag.textContent = car.isAvailable ? "Available" : "Unavailable";
+      tag.className   = `tag ${car.isAvailable ? "available" : "unavailable"}`;
+      const rows = [
+        ["Manufacturer", car.manufacturer], ["Model", car.model],
+        ["City",         car.city || "—"],  ["Type", car.type],
+        ["Drivetrain",   car.drivetrain],   ["Price", car.priceText],
+        ["Vehicle ID",   car.id || "—"],
+      ];
+      document.getElementById("modalTable").innerHTML = rows
+        .map(([label, val]) => `<tr class="modalTableRow"><td class="modalTableLabel">${label}</td><td class="modalTableValue">${val || "—"}</td></tr>`)
+        .join("");
+      document.getElementById("modalViewBtn").href = carDetailsHref(car.id);
+      document.getElementById("modalBookBtn").href = carBookHref(car.id);
+      document.getElementById("modalViewBtn").setAttribute("data-vehicle-id", car.id || "");
+      document.getElementById("modalBookBtn").setAttribute("data-vehicle-id", car.id || "");
+      document.getElementById("vehicleModal").style.display = "flex";
+    }
+
+    function closeModal() { document.getElementById("vehicleModal").style.display = "none"; }
+    document.getElementById("vehicleModal").addEventListener("click", function(e) { if (e.target === this) closeModal(); });
+    document.addEventListener("keydown", e => { if (e.key === "Escape") { closeModal(); closeCompareModal(); } });
+
+    document.getElementById("modalViewBtn").addEventListener("click", function(e) {
+      const vid = this.getAttribute("data-vehicle-id") || "";
+      if (!vid) return;
+      e.preventDefault();
+      bumpPopularity(vid, 2);
+      postMetricInteraction(vid, "view");
+      window.location.assign(carDetailsHref(vid));
+    });
+    document.getElementById("modalBookBtn").addEventListener("click", function(e) {
+      const vid = this.getAttribute("data-vehicle-id") || "";
+      if (!vid) return;
+      e.preventDefault();
+      bumpPopularity(vid, 4);
+      postMetricInteraction(vid, "book_click");
+      window.location.assign(carBookHref(vid));
+    });
+
+    // ─────────────────────────────────────────────────────────────
+    // RENDER CARS
+    // ─────────────────────────────────────────────────────────────
+    let allCars    = [];
+    let totalCars  = 0;
+    let currentPage = 1;
+
+    function renderCars(cars) {
+      const grid         = document.getElementById("carsGrid");
+      const loadMoreWrap = document.getElementById("loadMoreWrap");
+      const loadMoreBtn  = document.getElementById("loadMoreBtn");
+      const resultsMeta  = document.getElementById("resultsMeta");
+
+      grid.innerHTML = "";
+
+      if (!cars.length) {
+        if (loadMoreWrap) loadMoreWrap.style.display = "none";
+        grid.innerHTML = `<div style="color:var(--muted,#555);">No cars match your search/filters.</div>`;
+        return;
       }
 
-      function applyAllFilters(){syncUrlState();fetchCarsPage(1);}
+      cars.forEach(car => {
+        const tagClass       = car.isAvailable ? "available" : "unavailable";
+        const tagText        = car.isAvailable ? "Available" : "Unavailable";
+        const name           = `${car.manufacturer} ${car.model}`.trim();
+        const metaBits       = [car.city, car.type, car.drivetrain].filter(Boolean);
+        const isFav          = loadFavsSet().has(car.favKey);
+        const inCompare      = compareList.some(c => c.id === car.id);
+        const compareDisabled = compareList.length >= 2 && !inCompare;
 
-      async function loadCars(){
-        const slider=document.getElementById("filterPrice");
-        if(slider){slider.value=slider.max;updatePriceLabel();}
-        await fetchCarsPage(1);
-      }
+        const card = document.createElement("div");
+        card.className = "card";
 
-      function wireUI(){
-        document.getElementById("searchInput")?.addEventListener("input",applyAllFilters);
-        const btn=document.getElementById("filterBtn"),panel=document.getElementById("filterPanel");
-        btn?.addEventListener("click",()=>{if(!panel)return;panel.style.display=panel.style.display==="none"||!panel.style.display?"block":"none";});
-        document.getElementById("filterType")?.addEventListener("change",applyAllFilters);
-        document.getElementById("filterDrive")?.addEventListener("change",applyAllFilters);
-        document.getElementById("filterPrice")?.addEventListener("input",()=>{updatePriceLabel();applyAllFilters();});
-        document.getElementById("loadMoreBtn")?.addEventListener("click",()=>{fetchCarsPage(currentPage+1,{append:true});});
-        document.getElementById("clearFilters")?.addEventListener("click",()=>{
-          const s=document.getElementById("searchInput"),t=document.getElementById("filterType"),d=document.getElementById("filterDrive"),p=document.getElementById("filterPrice");
-          if(s)s.value="";if(t)t.value="";if(d)d.value="";if(p)p.value=p.max;
-          updatePriceLabel();applyAllFilters();
+        if (car.isAvailable) {
+          card.classList.add("clickable");
+          card.style.cursor = "pointer";
+          card.addEventListener("click", e => { if (e.target.closest("a, button")) return; openModal(car); });
+        }
+
+        card.innerHTML = `
+          <div class="favBtn" data-fav-key="${car.favKey}" data-vehicle-id="${car.id || ""}"
+            style="position:absolute; top:12px; right:12px; background:rgba(255,255,255,0.9);
+                   border-radius:50%; width:36px; height:36px; display:flex; align-items:center;
+                   justify-content:center; cursor:pointer; font-size:20px;
+                   box-shadow:0 4px 10px rgba(0,0,0,0.1); z-index:10; transition:transform 0.2s; user-select:none;">
+            ${isFav ? "❤️" : "🤍"}
+          </div>
+          <img src="${car.imgUrl}" alt="${name}" onerror="this.src='./assets/cars/dummy.png'">
+          <div class="cardBody">
+            <div class="headerRow">
+              <div class="headerLeft">
+                <h3>${name}</h3>
+                <div class="meta">${metaBits.join(" • ") || "—"}</div>
+              </div>
+            </div>
+            <div class="price" style="margin-top:8px;">${car.priceText}</div>
+            <span class="tag ${tagClass}" style="margin-top:10px; display:inline-block;">${tagText}</span>
+            <div class="cardActions">
+              <a class="linkBtn viewBtn" href="${carDetailsHref(car.id)}" data-vehicle-id="${car.id || ""}">View</a>
+              <a class="linkBtn bookBtn" href="${carBookHref(car.id)}"    data-vehicle-id="${car.id || ""}">Book</a>
+              <button class="reviewsBtn" type="button" data-vehicle-id="${car.id || ""}">Reviews</button>
+              <button class="compareBtn ${inCompare ? "selected" : ""}" data-compare-id="${car.id}" ${compareDisabled ? "disabled" : ""}>
+                ${inCompare ? "✓ Comparing" : "Compare"}
+              </button>
+            </div>
+            <div class="reviewsSection" data-review-section="${car.id || ""}"></div>
+          </div>`;
+
+        grid.appendChild(card);
+      });
+
+      // Fav buttons
+      grid.querySelectorAll(".favBtn").forEach(btn => {
+        btn.addEventListener("click", e => {
+          e.preventDefault(); e.stopPropagation();
+          const key       = btn.getAttribute("data-fav-key"); if (!key) return;
+          const vehicleId = btn.getAttribute("data-vehicle-id") || "";
+          const favs      = loadFavsSet();
+          if (favs.has(key)) { favs.delete(key); btn.innerHTML = "🤍"; postFavouriteMetric(vehicleId, false); }
+          else { favs.add(key); btn.innerHTML = "❤️"; btn.style.transform = "scale(1.2)"; setTimeout(() => btn.style.transform = "scale(1)", 200); postFavouriteMetric(vehicleId, true); }
+          saveFavsSet(favs);
         });
-        updatePriceLabel();
-        hydrateUiFromQuery();
+      });
+
+      // View/Book links
+      grid.querySelectorAll(".viewBtn").forEach(link => {
+        link.addEventListener("click", e => {
+          const vid = link.getAttribute("data-vehicle-id") || ""; if (!vid) return;
+          e.preventDefault(); e.stopPropagation();
+          bumpPopularity(vid, 2); postMetricInteraction(vid, "view");
+          window.location.assign(carDetailsHref(vid));
+        });
+      });
+      grid.querySelectorAll(".bookBtn").forEach(link => {
+        link.addEventListener("click", e => {
+          const vid = link.getAttribute("data-vehicle-id") || ""; if (!vid) return;
+          e.preventDefault(); e.stopPropagation();
+          bumpPopularity(vid, 4); postMetricInteraction(vid, "book_click");
+          window.location.assign(carBookHref(vid));
+        });
+      });
+
+      // Reviews buttons
+      grid.querySelectorAll(".reviewsBtn").forEach(btn => {
+        btn.addEventListener("click", e => {
+          e.preventDefault(); e.stopPropagation();
+          const vid     = btn.getAttribute("data-vehicle-id") || "";
+          const section = btn.closest(".cardBody")?.querySelector(`.reviewsSection[data-review-section="${CSS.escape(vid)}"]`);
+          toggleReviews(vid, section);
+        });
+      });
+
+      // Compare buttons
+      grid.querySelectorAll(".compareBtn").forEach(btn => {
+        btn.addEventListener("click", e => {
+          e.preventDefault(); e.stopPropagation();
+          const id  = btn.getAttribute("data-compare-id");
+          const car = cars.find(c => c.id === id) || allCars.find(c => c.id === id);
+          if (car) toggleCompare(car);
+        });
+      });
+
+      // Re-render any open review sections
+      openReviewSections.forEach(vehicleId => {
+        const section = grid.querySelector(`.reviewsSection[data-review-section="${CSS.escape(vehicleId)}"]`);
+        if (section) {
+          const cached = reviewCache.get(vehicleId);
+          if (cached) renderReviewSection(section, vehicleId, cached);
+          else toggleReviews(vehicleId, section);
+        }
+      });
+
+      // Load more controls
+      if (loadMoreWrap && loadMoreBtn && resultsMeta) {
+        const shown = cars.length;
+        const total = totalCars || cars.length;
+        resultsMeta.textContent = `Showing ${shown} of ${total} cars`;
+        loadMoreWrap.style.display = "flex";
+        loadMoreBtn.style.display  = shown < total ? "inline-block" : "none";
+      }
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // FILTER HELPERS
+    // ─────────────────────────────────────────────────────────────
+    function getSearchQuery()   { return (document.getElementById("searchInput")?.value  || "").trim().toLowerCase(); }
+    function getSelectedType()  { return (document.getElementById("filterType")?.value   || "").trim(); }
+    function getSelectedDrive() { return (document.getElementById("filterDrive")?.value  || "").trim(); }
+    function getMaxPrice()      { const v = Number(document.getElementById("filterPrice")?.value); return Number.isFinite(v) ? v : Infinity; }
+
+    function updateCriteriaBar() {
+      const whereEl   = document.getElementById("criteriaWhere");
+      const pickupEl  = document.getElementById("criteriaPickup");
+      const dropoffEl = document.getElementById("criteriaDropoff");
+      if (whereEl)   whereEl.textContent   = `Where: ${searchState.where   || "(any)"}`;
+      if (pickupEl)  pickupEl.textContent  = `Pick Up: ${searchState.pickup  || "(any)"}`;
+      if (dropoffEl) dropoffEl.textContent = `Drop Off: ${searchState.dropoff || "(any)"}`;
+    }
+
+    function syncUrlState() {
+      const next = new URLSearchParams();
+      if (isPreview) next.set("preview", "1");
+      if (searchState.where)   next.set("where",   searchState.where);
+      if (searchState.pickup)  next.set("pickup",  searchState.pickup);
+      if (searchState.dropoff) next.set("dropoff", searchState.dropoff);
+      const q = getSearchQuery(), type = getSelectedType(), drive = getSelectedDrive(), maxPrice = getMaxPrice();
+      if (q)     next.set("q",        q);
+      if (type)  next.set("type",     type);
+      if (drive) next.set("drive",    drive);
+      if (Number.isFinite(maxPrice)) next.set("maxPrice", String(maxPrice));
+      window.history.replaceState({}, "", `${window.location.pathname}?${next.toString()}`);
+    }
+
+    function hydrateUiFromQuery() {
+      const searchInput = document.getElementById("searchInput");
+      const typeSelect  = document.getElementById("filterType");
+      const driveSelect = document.getElementById("filterDrive");
+      const priceSlider = document.getElementById("filterPrice");
+      if (searchInput) searchInput.value = searchState.q;
+      if (typeSelect)  typeSelect.value  = searchState.type;
+      if (driveSelect) driveSelect.value = searchState.drive;
+      if (priceSlider && searchState.maxPrice) priceSlider.value = searchState.maxPrice;
+      updateCriteriaBar();
+    }
+
+    function buildSubtitle(total) {
+      const parts = [];
+      if (searchState.where) parts.push(`in ${searchState.where}`);
+      if (searchState.pickup || searchState.dropoff) parts.push(`${searchState.pickup || "any pickup"} → ${searchState.dropoff || "any drop off"}`);
+      const detail = parts.length ? ` • ${parts.join(" • ")}` : " • Updated in real-time";
+      return `<span id="availableCount">${total}</span> available vehicles${detail}`;
+    }
+
+    function updatePriceLabel() {
+      const slider = document.getElementById("filterPrice");
+      const label  = document.getElementById("priceLabel");
+      if (!slider || !label) return;
+      const max = Number(slider.max), val = Number(slider.value);
+      label.textContent = (!Number.isFinite(val) || !Number.isFinite(max) || val >= max) ? "Any" : `$${val}`;
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // FETCH CARS
+    // ─────────────────────────────────────────────────────────────
+    function buildCarsEndpoint(page) {
+      const p = new URLSearchParams();
+      const q = getSearchQuery(), type = getSelectedType(), drive = getSelectedDrive(), maxPrice = getMaxPrice();
+      if (searchWhere)          p.set("where",    searchState.where);
+      if (searchState.pickup)   p.set("pickup",   searchState.pickup);
+      if (searchState.dropoff)  p.set("dropoff",  searchState.dropoff);
+      if (q)                    p.set("q",        q);
+      if (type)                 p.set("type",     type);
+      if (drive)                p.set("drive",    drive);
+      if (Number.isFinite(maxPrice)) p.set("maxPrice", String(maxPrice));
+      p.set("page",     String(page));
+      p.set("pageSize", String(PAGE_SIZE));
+      return `${API}/cars?${p.toString()}`;
+    }
+
+    async function fetchCarsPage(page, { append = false } = {}) {
+      const grid       = document.getElementById("carsGrid");
+      const subtitle   = document.getElementById("carsSubtitle");
+      const loadMoreBtn = document.getElementById("loadMoreBtn");
+
+      if (!append) {
+        grid.innerHTML = `<div style="color:var(--muted,#555);">Loading cars…</div>`;
+      } else if (loadMoreBtn) {
+        loadMoreBtn.disabled    = true;
+        loadMoreBtn.textContent = "Loading...";
       }
 
-      wireUI();
-      loadCars();
-    </script>
-    <script src="navbar.js"></script>
-    <script src="darkm.js"></script>
-  </body>
+      try {
+        const res  = await fetch(buildCarsEndpoint(page));
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Could not load cars");
+
+        // Handle both plain array [] and paginated {rows, total, page} responses
+        const rawCars = Array.isArray(data?.rows) ? data.rows
+                      : Array.isArray(data)        ? data
+                      : [];
+
+        const nextCars = rawCars.map(normalizeCar);
+        totalCars   = Number(data?.total || nextCars.length);
+        currentPage = Number(data?.page  || page);
+        allCars     = append ? [...allCars, ...nextCars] : nextCars;
+
+        if (subtitle) subtitle.innerHTML = buildSubtitle(totalCars);
+
+        const slider          = document.getElementById("filterPrice");
+        const responseMaxPrice = Number(data?.maxPrice || 0);
+        if (slider && !append) {
+          const safeMax = responseMaxPrice > 0 ? responseMaxPrice : 2000;
+          slider.max = String(Math.ceil(safeMax / 50) * 50);
+          if (Number(slider.value || 0) > Number(slider.max || 0)) slider.value = slider.max;
+        }
+
+        updatePriceLabel();
+        renderCars(allCars);
+
+      } catch (e) {
+        console.error(e);
+        grid.innerHTML = `<div style="color:var(--danger,#b91c1c);">Failed to load cars.</div>`;
+      } finally {
+        if (loadMoreBtn) { loadMoreBtn.disabled = false; loadMoreBtn.textContent = "Load More"; }
+      }
+    }
+
+    function applyAllFilters() { syncUrlState(); fetchCarsPage(1); }
+
+    async function loadCars() {
+      const slider = document.getElementById("filterPrice");
+      if (slider) { slider.value = slider.max; updatePriceLabel(); }
+      await fetchCarsPage(1);
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // WIRE UP UI EVENTS
+    // ─────────────────────────────────────────────────────────────
+    function wireUI() {
+      document.getElementById("searchInput")?.addEventListener("input", applyAllFilters);
+      document.getElementById("filterType")?.addEventListener("change",  applyAllFilters);
+      document.getElementById("filterDrive")?.addEventListener("change", applyAllFilters);
+      document.getElementById("filterPrice")?.addEventListener("input",  () => { updatePriceLabel(); applyAllFilters(); });
+      document.getElementById("loadMoreBtn")?.addEventListener("click",  () => fetchCarsPage(currentPage + 1, { append: true }));
+
+      const filterBtn   = document.getElementById("filterBtn");
+      const filterPanel = document.getElementById("filterPanel");
+      filterBtn?.addEventListener("click", () => {
+        if (!filterPanel) return;
+        filterPanel.style.display = filterPanel.style.display === "none" || !filterPanel.style.display ? "block" : "none";
+      });
+
+      document.getElementById("clearFilters")?.addEventListener("click", () => {
+        const s = document.getElementById("searchInput");
+        const t = document.getElementById("filterType");
+        const d = document.getElementById("filterDrive");
+        const p = document.getElementById("filterPrice");
+        if (s) s.value = "";
+        if (t) t.value = "";
+        if (d) d.value = "";
+        if (p) p.value = p.max;
+        updatePriceLabel();
+        applyAllFilters();
+      });
+
+      updatePriceLabel();
+      hydrateUiFromQuery();
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // INIT
+    // ─────────────────────────────────────────────────────────────
+    wireUI();
+    loadCars();
+  </script>
+
+  <script src="navbar.js"></script>
+  <script src="darkm.js"></script>
+</body>
 </html>
