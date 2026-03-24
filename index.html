@@ -50,9 +50,7 @@
       transition: opacity 0.8s ease;
     }
 
-    .slideshow img.active {
-      opacity: 1;
-    }
+    .slideshow img.active { opacity: 1; }
 
     .dots {
       position: absolute;
@@ -64,40 +62,64 @@
     }
 
     .dot {
-      width: 6px;
-      height: 6px;
+      width: 6px; height: 6px;
       border-radius: 999px;
       background: rgba(255,255,255,0.5);
     }
+    .dot.active { background: white; }
 
-    .dot.active {
-      background: white;
+    .cardBody { padding: 32px 40px 40px; }
+
+    h1 { font-size: 26px; font-weight: 700; color: #0f172a; margin-bottom: 6px; }
+    .sub { font-size: 14px; color: #94a3b8; margin-bottom: 28px; }
+
+    #status { margin-top: 16px; font-size: 13px; color: #475569; min-height: 20px; }
+
+    /* Location setup form — hidden by default, shown when needed */
+    #locationSetup {
+      display: none;
+      margin-top: 20px;
+      text-align: left;
     }
+    #locationSetup.open { display: block; }
 
-    .cardBody {
-      padding: 32px 40px 40px;
-    }
-
-    h1 {
-      font-size: 26px;
-      font-weight: 700;
-      color: #0f172a;
-      margin-bottom: 6px;
-    }
-
-    .sub {
-      font-size: 14px;
-      color: #94a3b8;
-      margin-bottom: 28px;
-    }
-
-    #status {
-      margin-top: 16px;
+    #locationSetup label {
+      display: block;
       font-size: 13px;
+      font-weight: 600;
       color: #475569;
+      margin-bottom: 8px;
     }
 
-    /* 🔥 FIXED NAV */
+    #locationSetup input {
+      width: 100%;
+      padding: 12px 14px;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      font-size: 14px;
+      color: #0f172a;
+      background: #f8fafc;
+      outline: none;
+      margin-bottom: 12px;
+    }
+
+    #locationSetup input:focus { border-color: #a5b4fc; }
+
+    #locationSetup button {
+      width: 100%;
+      padding: 12px;
+      border-radius: 12px;
+      border: none;
+      background: #4f46e5;
+      color: white;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    #locationSetup button:hover { background: #4338ca; }
+
+    /* Nav buttons */
     .nav {
       display: none;
       gap: 10px;
@@ -120,10 +142,7 @@
       border: 1px solid #e2e8f0;
     }
 
-    .btn.admin {
-      background: #fef3c7;
-      color: #92400e;
-    }
+    .btn.admin { background: #fef3c7; color: #92400e; }
 
     .footer {
       margin-top: 20px;
@@ -158,12 +177,25 @@
           data-client_id="338952355189-kifevvua8bpk9bn6sp8dqbrthb79h8f5.apps.googleusercontent.com"
           data-callback="handleCredentialResponse">
         </div>
-
         <div class="g_id_signin" data-type="standard"></div>
 
         <div id="status"></div>
 
-        <!-- ✅ NAVIGATION -->
+        <!-- Location setup — shown after first login if no location saved -->
+        <div id="locationSetup">
+          <form id="locationForm">
+            <label for="locationInput">Your city (e.g. Toronto, Kitchener)</label>
+            <input
+              id="locationInput"
+              type="text"
+              placeholder="Enter your city"
+              autocomplete="off"
+            >
+            <button id="saveLocationBtn" type="submit">Save & Continue →</button>
+          </form>
+        </div>
+
+        <!-- Nav shown after full login -->
         <div class="nav" id="navArea">
           <button class="btn secondary" onclick="window.location.href='home.html'">Home</button>
           <button class="btn secondary" onclick="window.location.href='cars.html'">Cars</button>
@@ -202,8 +234,5 @@
 
     setInterval(() => goTo(current + 1), 3000);
   </script>
-
 </body>
 </html>
-
-
