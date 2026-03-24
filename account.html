@@ -383,7 +383,11 @@
   <div class="toast" id="toast"></div>
 
   <script>
-    const API_BASE = "https://server-side-zqaz.onrender.com";
+    const LOCAL_API_BASE = "http://localhost:10000";
+    const REMOTE_API_BASE = "https://server-side-zqaz.onrender.com";
+    const API_BASE = window.location.hostname === "localhost"
+      ? LOCAL_API_BASE
+      : REMOTE_API_BASE;
     const SESSION_MS = 12 * 60 * 60 * 1000;
     const IMAGE_ASSIGNMENTS_KEY = 'carImageAssignments';
 
@@ -466,6 +470,17 @@
       setTimeout(() => t.classList.remove("show"), 3000);
     }
 
+    async function apiFetch(path, options = {}) {
+      try {
+        return await fetch(`${API_BASE}${path}`, options);
+      } catch (err) {
+        if (API_BASE === LOCAL_API_BASE) {
+          return fetch(`${REMOTE_API_BASE}${path}`, options);
+        }
+        throw err;
+      }
+    }
+
     function setAvatarImage(base64) {
       const img = document.getElementById("avatarImg");
       const initials = document.getElementById("avatarEl");
@@ -482,7 +497,7 @@
 
     async function loadProfilePicture() {
       try {
-        const res = await fetch(`${API_BASE}/me/profile-picture`, { headers: { "X-User-Email": userEmail } });
+        const res = await apiFetch(`/me/profile-picture`, { headers: { "X-User-Email": userEmail } });
         const data = await res.json();
         if (data.profilePicture) setAvatarImage(data.profilePicture);
         else { clearAvatarImage(); localStorage.removeItem("profilePicture"); }
@@ -499,7 +514,7 @@
       reader.onload = async (e) => {
         const base64Image = e.target.result;
         try {
-          const res = await fetch(`${API_BASE}/me/profile-picture`, {
+          const res = await apiFetch(`/me/profile-picture`, {
             method: "PUT",
             headers: { "Content-Type": "application/json", "X-User-Email": userEmail },
             body: JSON.stringify({ base64Image })
@@ -631,12 +646,12 @@
       loadProfilePicture();
 
       try {
-        const pRes = await fetch(`${API_BASE}/me/profile`, { headers: { "X-User-Email": userEmail } });
+        const pRes = await apiFetch(`/me/profile`, { headers: { "X-User-Email": userEmail } });
         const pData = await pRes.json().catch(() => ({}));
         if (!pRes.ok) throw new Error(pData.error || "Failed to load profile");
         if (pData.user) populateProfile(pData.user);
 
-        const bRes = await fetch(`${API_BASE}/me/bookings`, { headers: { "X-User-Email": userEmail } });
+        const bRes = await apiFetch(`/me/bookings`, { headers: { "X-User-Email": userEmail } });
         const bData = await bRes.json().catch(() => ({}));
         if (!bRes.ok) throw new Error(bData.error || "Failed to load bookings");
         const bookingRows = Array.isArray(bData.rows) ? bData.rows : [];
@@ -694,7 +709,7 @@
       btn.disabled = true;
       btn.textContent = "Saving…";
       try {
-        const res = await fetch(`${API_BASE}/me/profile`, {
+        const res = await apiFetch(`/me/profile`, {
           method: "PUT",
           headers: { "Content-Type": "application/json", "X-User-Email": userEmail },
           body: JSON.stringify({ firstName, lastName, location })
