@@ -589,7 +589,14 @@
       if (!force && reviewCache.has(key)) return reviewCache.get(key);
       const res  = await fetch(`${API}/cars/${encodeURIComponent(vehicleId)}/reviews`);
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error || "Could not load reviews");
+      if (!res.ok) {
+        if (res.status === 404) {
+          const normalized = { reviewCount: 0, averageRating: 0, rows: [] };
+          reviewCache.set(key, normalized);
+          return normalized;
+        }
+        throw new Error(data.error || "Could not load reviews");
+      }
       const normalized = {
         reviewCount:   Number(data.reviewCount   || 0),
         averageRating: Number(data.averageRating || 0),

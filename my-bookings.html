@@ -423,7 +423,12 @@
     async function fetchVehicleReviews(vehicleId) {
       const res = await fetch(`${API_BASE}/cars/${encodeURIComponent(vehicleId)}/reviews`);
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error || "Could not load reviews");
+      if (!res.ok) {
+        if (res.status === 404) {
+          return { reviewCount: 0, averageRating: 0, rows: [] };
+        }
+        throw new Error(data.error || "Could not load reviews");
+      }
       return {
         reviewCount: Number(data.reviewCount || 0),
         averageRating: Number(data.averageRating || 0),
