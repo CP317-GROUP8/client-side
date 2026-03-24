@@ -170,9 +170,13 @@
     }
 
     input[type="date"]::-webkit-calendar-picker-indicator {
-      filter: brightness(0) invert(1);
+      filter: none;
       opacity: 1;
       cursor: pointer;
+    }
+
+    [data-theme="dark"] input[type="date"]::-webkit-calendar-picker-indicator {
+      filter: brightness(0) invert(1);
     }
 
     /* Action links */
