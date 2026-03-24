@@ -470,6 +470,12 @@
       setTimeout(() => t.classList.remove("show"), 3000);
     }
 
+    function normalizeProfileLocation(value) {
+      const raw = String(value || "").trim();
+      if (!raw) return "";
+      return raw.replace(/\s+/g, " ");
+    }
+
     async function apiFetch(path, options = {}) {
       try {
         return await fetch(`${API_BASE}${path}`, options);
@@ -703,7 +709,7 @@
     async function saveProfile() {
       const firstName = document.getElementById("editFirst").value.trim();
       const lastName  = document.getElementById("editLast").value.trim();
-      const location  = document.getElementById("editLocation").value.trim();
+      const location  = normalizeProfileLocation(document.getElementById("editLocation").value);
       if (!firstName && !lastName && !location) return showToast("Please enter at least one profile field.", "error");
       const btn = document.getElementById("saveBtn");
       btn.disabled = true;
@@ -716,7 +722,7 @@
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || "Failed to save");
-        populateProfile(data.user);
+        populateProfile({ ...(data.user || {}), location: data.user?.location || location });
         closeEditModal();
         showToast("✅ Profile updated successfully!");
       } catch (err) {

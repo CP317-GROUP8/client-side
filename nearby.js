@@ -25,12 +25,32 @@ const SUPPORTED_AREAS = [
   "Vaughan",
 ];
 
+const AREA_ALIASES = new Map([
+  ["toronto", "Toronto"],
+  ["northyork", "North York"],
+  ["scarborough", "Scarborough"],
+  ["mississauga", "Mississauga"],
+  ["brampton", "Brampton"],
+  ["markham", "Markham"],
+  ["etobicoke", "Etobicoke"],
+  ["vaughan", "Vaughan"],
+]);
+
 function safeStr(value) {
   return (value ?? "").toString().trim();
 }
 
 function normalizeArea(value) {
   return safeStr(value).toLowerCase().replace(/\s+/g, " ");
+}
+
+function canonicalizeAreaKey(value) {
+  return safeStr(value).toLowerCase().replace(/[^a-z0-9]+/g, "");
+}
+
+function resolveSupportedArea(value) {
+  const key = canonicalizeAreaKey(value);
+  return AREA_ALIASES.get(key) || "";
 }
 
 function normalizeModelKeyPart(value) {
@@ -57,6 +77,8 @@ function getInitialArea() {
   try {
     const userData = JSON.parse(localStorage.getItem("userData") || "{}");
     const saved = safeStr(userData.location || userData.Location);
+    const resolved = resolveSupportedArea(saved);
+    if (resolved) return resolved;
     if (saved) return saved;
   } catch {}
 
@@ -161,8 +183,9 @@ async function loadNearbyCars() {
     if (!res.ok) throw new Error("Could not load cars");
 
     const cars = (Array.isArray(data) ? data : []).map(normalizeCar);
-    const matches = cars.filter((car) => normalizeArea(car.area) === normalizeArea(selectedArea));
-    render(matches, selectedArea);
+    const resolvedArea = resolveSupportedArea(selectedArea) || selectedArea;
+    const matches = cars.filter((car) => resolveSupportedArea(car.area) === resolveSupportedArea(resolvedArea));
+    render(matches, resolvedArea);
   } catch (err) {
     summary.textContent = `Error: ${err.message}`;
     document.getElementById("nearbyGrid").innerHTML = "";
