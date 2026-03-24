@@ -117,6 +117,12 @@ function isLockedIdColumn(col) {
   return c === "user id" || c === "vehicle id" || c === "sale id";
 }
 
+function isCreateEditableIdColumn(col) {
+  if (currentTableKey !== "sales" || !creating) return false;
+  const c = normalizeCol(col);
+  return c === "sale id" || c === "user id" || c === "vehicle id";
+}
+
 function isOwnerId(col) {
   return normalizeCol(col) === "owner id";
 }
@@ -143,6 +149,7 @@ function isVehicleLockedBusinessColumn(col) {
 }
 
 function isLockedColumnForContext(col) {
+  if (isCreateEditableIdColumn(col)) return false;
   if (isLockedIdColumn(col)) return true;
   if (isVehicleLockedBusinessColumn(col)) return true;
   return false;
@@ -515,7 +522,7 @@ saveBtn?.addEventListener("click", async () => {
 
     inputs.forEach((inp) => {
       const col = inp.getAttribute("data-col");
-      if (isLockedIdColumn(col)) return;
+      if (isLockedIdColumn(col) && !isCreateEditableIdColumn(col)) return;
       if (currentTableKey === "vehicles" && (isOwnerId(col) || isAvailability(col))) return;
       payload[col] = inp.value;
     });
