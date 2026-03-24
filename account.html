@@ -419,9 +419,13 @@
       localStorage.setItem(IMAGE_ASSIGNMENTS_KEY, JSON.stringify(assignments));
     }
 
+    function normalizeModelKeyPart(value) {
+      return String(value || "").toLowerCase().replace(/\s+/g, " ").trim();
+    }
+
     function getOrCreateImageAssignment(vehicleId, manufacturer, model) {
       if (!vehicleId || !manufacturer || !model) return './assets/cars/dummy.png';
-      const modelKey = `${manufacturer.toLowerCase().trim()}/${model.toLowerCase().trim()}`;
+      const modelKey = `${normalizeModelKeyPart(manufacturer)}/${normalizeModelKeyPart(model)}`;
       const assignments = loadImageAssignments();
       if (assignments[vehicleId]) {
         const validPaths = new Set((IMAGE_MANIFEST[modelKey] || []).map(i => `./assets/cars/${modelKey}/${i.num}.${i.ext}`));
@@ -622,9 +626,6 @@
 
     // ── LOAD DATA ────────────────────────────────────────────────────────────
     async function loadAll() {
-      const cached = localStorage.getItem("userData");
-      if (cached) { try { populateProfile(JSON.parse(cached)); } catch {} }
-
       const cachedPic = localStorage.getItem("profilePicture");
       if (cachedPic) setAvatarImage(cachedPic);
       loadProfilePicture();
@@ -653,10 +654,13 @@
           localStorage.setItem("userData", JSON.stringify(userData));
         } catch {}
 
-        if (!cached) {
+      } catch (err) {
+        const cached = localStorage.getItem("userData");
+        if (cached) {
+          try { populateProfile(JSON.parse(cached)); } catch {}
+        } else {
           populateProfile({ email: userEmail, firstName: "", lastName: "", administrator: localStorage.getItem("isAdmin") === "true" ? 1 : 0 });
         }
-      } catch (err) {
         document.getElementById("bookingsBody").innerHTML = `
           <div class="empty-state"><div class="icon">⚠️</div><p>${err.message}</p></div>`;
       }

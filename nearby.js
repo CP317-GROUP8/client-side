@@ -5,6 +5,14 @@ const API_BASE_NEARBY = window.location.hostname === "localhost"
   : REMOTE_API_BASE_NEARBY;
 
 const IMAGE_ASSIGNMENTS_KEY = "carImageAssignments";
+const PNG_FIRST_MODEL_KEYS = new Set([
+  "dodge/challenger",
+  "nissan/kicks",
+  "toyota/corolla",
+  "toyota/corolla hybrid",
+  "toyota/highlander",
+  "toyota/highlander hybrid",
+]);
 
 const CAR_AREA_MAP = {
   "1": "Toronto",
@@ -33,6 +41,13 @@ function normalizeArea(value) {
   return safeStr(value).toLowerCase().replace(/\s+/g, " ");
 }
 
+function normalizeModelKeyPart(value) {
+  return String(value || "")
+    .toLowerCase()
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 function getAssignedImage(vehicleId, manufacturer, model, drivetrain) {
   try {
     const raw = localStorage.getItem(IMAGE_ASSIGNMENTS_KEY);
@@ -40,19 +55,10 @@ function getAssignedImage(vehicleId, manufacturer, model, drivetrain) {
     if (vehicleId && assignments[vehicleId]) return assignments[vehicleId];
   } catch {}
 
-  const fallbackMap = {
-    "Dodge Challenger | AWD": "challenger.png",
-    "KIA K4 | RWD": "kia.png",
-    "Honda Civic | RWD": "civic.png",
-    "Porsche 911 | AWD": "porsche.png",
-    "Toyota Highlander | AWD": "highlander-awd.png",
-    "Toyota Highlander | RWD": "highlander-rwd.png",
-    "Toyota Corolla | FWD": "corolla-fwd.png",
-    "Toyota Corolla | AWD": "corolla-awd.png",
-  };
-
-  const imgFile = fallbackMap[`${manufacturer} ${model} | ${drivetrain}`] || "dummy.png";
-  return `./assets/cars/${imgFile}`;
+  const modelKey = `${normalizeModelKeyPart(manufacturer)}/${normalizeModelKeyPart(model)}`;
+  if (modelKey === "/") return "./assets/cars/dummy.png";
+  const ext = PNG_FIRST_MODEL_KEYS.has(modelKey) ? "png" : "jpeg";
+  return `./assets/cars/${modelKey}/1.${ext}`;
 }
 
 function getInitialArea() {

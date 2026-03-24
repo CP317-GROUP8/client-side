@@ -80,17 +80,36 @@ const userEmail = requireSession();
 let selectedCar = null;
 let bookedRanges = [];
 
+const PNG_FIRST_MODEL_KEYS = new Set([
+  "dodge/challenger",
+  "nissan/kicks",
+  "toyota/corolla",
+  "toyota/corolla hybrid",
+  "toyota/highlander",
+  "toyota/highlander hybrid",
+]);
+
+function normalizeModelKeyPart(value) {
+  return String(value || "")
+    .toLowerCase()
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 function getCarImage(manufacturer, model, drivetrain) {
-  const name = `${manufacturer} ${model}`.trim();
-  const map = {
-    "Toyota Corolla": drivetrain === "AWD" ? "corolla-awd.png" : "corolla-fwd.png",
-    "Toyota Highlander": drivetrain === "AWD" ? "highlander-awd.png" : "highlander-rwd.png",
-    "Dodge Challenger": "challenger.png",
-    "Honda Civic": "civic.png",
-    "KIA K4": "kia.png",
-    "Porsche 911": "porsche.png",
-  };
-  return `./assets/cars/${map[name] || "placeholder.png"}`;
+  const vehicleId = safeStr(selectedCar?.id);
+  if (vehicleId) {
+    try {
+      const raw = localStorage.getItem("carImageAssignments");
+      const assignments = raw ? JSON.parse(raw) : {};
+      if (assignments[vehicleId]) return assignments[vehicleId];
+    } catch {}
+  }
+
+  const modelKey = `${normalizeModelKeyPart(manufacturer)}/${normalizeModelKeyPart(model)}`;
+  if (modelKey === "/") return "./assets/cars/dummy.png";
+  const ext = PNG_FIRST_MODEL_KEYS.has(modelKey) ? "png" : "jpeg";
+  return `./assets/cars/${modelKey}/1.${ext}`;
 }
 
 function todayISO() {

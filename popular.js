@@ -5,9 +5,24 @@ const API_BASE = window.location.hostname === "localhost"
   : REMOTE_API_BASE;
 const PAGE_SIZE = 9;
 const IMAGE_ASSIGNMENTS_KEY = "carImageAssignments";
+const PNG_FIRST_MODEL_KEYS = new Set([
+  "dodge/challenger",
+  "nissan/kicks",
+  "toyota/corolla",
+  "toyota/corolla hybrid",
+  "toyota/highlander",
+  "toyota/highlander hybrid",
+]);
 
 function safeStr(v) {
   return (v ?? "").toString().trim();
+}
+
+function normalizeModelKeyPart(value) {
+  return String(value || "")
+    .toLowerCase()
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 function getWeekKey(date = new Date()) {
@@ -42,20 +57,10 @@ function getAssignedImage(vehicleId, manufacturer, model) {
     }
   } catch {}
 
-  const fallbackMap = {
-    "Dodge Challenger | AWD": "challenger.png",
-    "KIA K4 | RWD": "kia.png",
-    "Honda Civic | RWD": "civic.png",
-    "Porsche 911 | AWD": "porsche.png",
-    "Toyota Highlander | AWD": "highlander-awd.png",
-    "Toyota Highlander | RWD": "highlander-rwd.png",
-    "Toyota Corolla | FWD": "corolla-fwd.png",
-    "Toyota Corolla | AWD": "corolla-awd.png",
-  };
-
-  const name = `${manufacturer} ${model}`.trim();
-  const mapped = fallbackMap[name] || "dummy.png";
-  return `./assets/cars/${mapped}`;
+  const modelKey = `${normalizeModelKeyPart(manufacturer)}/${normalizeModelKeyPart(model)}`;
+  if (modelKey === "/") return "./assets/cars/dummy.png";
+  const ext = PNG_FIRST_MODEL_KEYS.has(modelKey) ? "png" : "jpeg";
+  return `./assets/cars/${modelKey}/1.${ext}`;
 }
 
 function normalizeCar(car) {

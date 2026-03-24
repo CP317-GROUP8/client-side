@@ -90,7 +90,7 @@ const IMAGE_MANIFEST = {
   'toyota/highlander hybrid':    [{ num: 1, ext: 'png'  }, { num: 2, ext: 'png'  }, { num: 3, ext: 'jpeg' }],
   'toyota/hilux':                [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
   'toyota/rav4':                 [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
-  'toyota/rav4 plug-in hybrid':  [{ num: 1, ext: 'png'  }, { num: 2, ext: 'png'  }, { num: 3, ext: 'jpeg' }],
+  'toyota/rav4 plug-in hybrid':  [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
   'toyota/sienna':               [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
   'toyota/supra':                [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
   'toyota/tacoma':               [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
@@ -109,9 +109,16 @@ function saveImageAssignments(a) {
   localStorage.setItem(IMAGE_ASSIGNMENTS_KEY, JSON.stringify(a));
 }
 
+function normalizeModelKeyPart(value) {
+  return String(value || "")
+    .toLowerCase()
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 function getOrCreateImageAssignment(vehicleId, manufacturer, model) {
   if (!vehicleId || !manufacturer || !model) return './assets/cars/dummy.png';
-  const modelKey = `${manufacturer.toLowerCase().trim()}/${model.toLowerCase().trim()}`;
+  const modelKey = `${normalizeModelKeyPart(manufacturer)}/${normalizeModelKeyPart(model)}`;
 
   // Use cached assignment if it exists from the cars listing page
   const assignments = loadImageAssignments();
@@ -203,5 +210,4 @@ async function loadFeaturedCars() {
 }
 
 document.addEventListener("DOMContentLoaded", loadFeaturedCars);
-
 

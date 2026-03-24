@@ -132,10 +132,11 @@ const userEmail = isPreview ? (localStorage.getItem("userEmail") || "preview@exa
 
 function loadImageAssignments() { const raw = localStorage.getItem(IMAGE_ASSIGNMENTS_KEY); return raw ? JSON.parse(raw) : {}; }
 function saveImageAssignments(a) { localStorage.setItem(IMAGE_ASSIGNMENTS_KEY, JSON.stringify(a)); }
+function normalizeModelKeyPart(value) { return String(value || "").toLowerCase().replace(/\s+/g, " ").trim(); }
 
 function getOrCreateImageAssignment(vehicleId, manufacturer, model) {
   if (!vehicleId || !manufacturer || !model) return './assets/cars/dummy.png';
-  const modelKey = `${manufacturer.toLowerCase().trim()}/${model.toLowerCase().trim()}`;
+  const modelKey = `${normalizeModelKeyPart(manufacturer)}/${normalizeModelKeyPart(model)}`;
   const assignments = loadImageAssignments();
   if (assignments[vehicleId]) {
     const validPaths = new Set((IMAGE_MANIFEST[modelKey] || []).map(i => `./assets/cars/${modelKey}/${i.num}.${i.ext}`));
