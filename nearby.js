@@ -14,24 +14,16 @@ const PNG_FIRST_MODEL_KEYS = new Set([
   "toyota/highlander hybrid",
 ]);
 
-const CAR_AREA_MAP = {
-  "1": "Toronto",
-  "2": "North York",
-  "3": "Scarborough",
-  "4": "Mississauga",
-  "5": "Brampton",
-  "6": "Markham",
-  "7": "Etobicoke",
-  "8": "Vaughan",
-  "9": "Toronto",
-  "10": "North York",
-  "11": "Scarborough",
-  "12": "Mississauga",
-  "13": "Brampton",
-  "14": "Markham",
-  "15": "Etobicoke",
-  "16": "Vaughan"
-};
+const SUPPORTED_AREAS = [
+  "Toronto",
+  "North York",
+  "Scarborough",
+  "Mississauga",
+  "Brampton",
+  "Markham",
+  "Etobicoke",
+  "Vaughan",
+];
 
 function safeStr(value) {
   return (value ?? "").toString().trim();
@@ -71,6 +63,14 @@ function getInitialArea() {
   return "";
 }
 
+function getAreaForVehicle(id) {
+  const numericId = Number.parseInt(String(id || "").replace(/\D+/g, ""), 10);
+  if (Number.isFinite(numericId) && numericId > 0) {
+    return SUPPORTED_AREAS[(numericId - 1) % SUPPORTED_AREAS.length];
+  }
+  return SUPPORTED_AREAS[0];
+}
+
 function normalizeCar(car) {
   const id = safeStr(car.vehicleId ?? car["Vehicle ID"] ?? car.id);
   const manufacturer = safeStr(car.manufacturer ?? car["Manufacturer"]);
@@ -78,7 +78,7 @@ function normalizeCar(car) {
   const type = safeStr(car.vehicleType ?? car["Vehicle Type"]);
   const drivetrain = safeStr(car.drivetrain ?? car["Drivetrain"]);
   const priceNum = Number(car.price ?? car["Price"]);
-  const area = CAR_AREA_MAP[id] || "Toronto";
+  const area = getAreaForVehicle(id);
 
   return {
     id,
