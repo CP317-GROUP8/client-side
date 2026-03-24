@@ -5,208 +5,37 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Home</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet" />
-
   <style>
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      font-family: Inter, system-ui, sans-serif;
-    }
-
-    body {
-      min-height: 100vh;
-      background: #f8fafc;
-      color: #0f172a;
-    }
-
-    .navbar {
-      background: #4f46e5;
-      color: white;
-      padding: 18px 32px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      flex-wrap: wrap;
-      gap: 16px;
-    }
-
-    .brand {
-      font-size: 22px;
-      font-weight: 700;
-    }
-
-    .nav-links {
-      display: flex;
-      gap: 12px;
-      flex-wrap: wrap;
-    }
-
-    .nav-links a,
-    .nav-links button {
-      text-decoration: none;
-      border: none;
-      background: rgba(255,255,255,0.15);
-      color: white;
-      padding: 10px 16px;
-      border-radius: 12px;
-      font-size: 14px;
-      font-weight: 600;
-      cursor: pointer;
-    }
-
-    .nav-links a:hover,
-    .nav-links button:hover {
-      background: rgba(255,255,255,0.25);
-    }
-
-    .hero {
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 48px 24px 28px;
-    }
-
-    .hero-card {
-      background: linear-gradient(135deg, #4f46e5, #6366f1);
-      color: white;
-      border-radius: 28px;
-      padding: 40px;
-      box-shadow: 0 24px 60px rgba(79, 70, 229, 0.18);
-    }
-
-    .hero-card h1 {
-      font-size: 42px;
-      margin-bottom: 12px;
-    }
-
-    .hero-card p {
-      font-size: 18px;
-      color: rgba(255,255,255,0.92);
-      margin-bottom: 24px;
-      max-width: 700px;
-      line-height: 1.6;
-    }
-
-    .hero-actions {
-      display: flex;
-      gap: 12px;
-      flex-wrap: wrap;
-    }
-
-    .hero-actions a {
-      text-decoration: none;
-      padding: 12px 18px;
-      border-radius: 14px;
-      font-weight: 600;
-      font-size: 14px;
-    }
-
-    .primary-btn {
-      background: white;
-      color: #4338ca;
-    }
-
-    .secondary-btn {
-      background: rgba(255,255,255,0.14);
-      color: white;
-      border: 1px solid rgba(255,255,255,0.25);
-    }
-
-    .section {
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 0 24px 40px;
-    }
-
-    .section-title {
-      font-size: 28px;
-      font-weight: 700;
-      margin-bottom: 18px;
-    }
-
-    .featured-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-      gap: 20px;
-    }
-
-    .car-card {
-      background: white;
-      border-radius: 20px;
-      overflow: hidden;
-      box-shadow: 0 14px 30px rgba(15, 23, 42, 0.08);
-      border: 1px solid #e2e8f0;
-    }
-
-    .car-card img {
-      width: 100%;
-      height: 180px;
-      object-fit: cover;
-      display: block;
-    }
-
-    .car-body {
-      padding: 18px;
-    }
-
-    .car-body h3 {
-      font-size: 18px;
-      margin-bottom: 6px;
-    }
-
-    .meta {
-      color: #64748b;
-      font-size: 14px;
-      margin-bottom: 10px;
-    }
-
-    .price {
-      font-size: 18px;
-      font-weight: 700;
-      color: #4338ca;
-      margin-bottom: 14px;
-    }
-
-    .car-actions {
-      display: flex;
-      gap: 10px;
-    }
-
-    .car-actions a {
-      text-decoration: none;
-      padding: 10px 14px;
-      border-radius: 12px;
-      font-size: 14px;
-      font-weight: 600;
-    }
-
-    .view-btn {
-      background: #eef2ff;
-      color: #4338ca;
-    }
-
-    .book-btn {
-      background: #4f46e5;
-      color: white;
-    }
-
-    .welcome-bar {
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 0 24px 24px;
-      color: #475569;
-      font-size: 16px;
-    }
-
-    @media (max-width: 640px) {
-      .hero-card {
-        padding: 28px;
-      }
-
-      .hero-card h1 {
-        font-size: 32px;
-      }
-    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: Inter, system-ui, sans-serif; }
+    body { min-height: 100vh; background: #f8fafc; color: #0f172a; }
+    .navbar { background: #4f46e5; color: white; padding: 18px 32px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; }
+    .brand { font-size: 22px; font-weight: 700; }
+    .nav-links { display: flex; gap: 12px; flex-wrap: wrap; }
+    .nav-links a, .nav-links button { text-decoration: none; border: none; background: rgba(255,255,255,0.15); color: white; padding: 10px 16px; border-radius: 12px; font-size: 14px; font-weight: 600; cursor: pointer; }
+    .nav-links a:hover, .nav-links button:hover { background: rgba(255,255,255,0.25); }
+    .hero { max-width: 1200px; margin: 0 auto; padding: 48px 24px 28px; }
+    .hero-card { background: linear-gradient(135deg, #4f46e5, #6366f1); color: white; border-radius: 28px; padding: 40px; box-shadow: 0 24px 60px rgba(79,70,229,0.18); }
+    .hero-card h1 { font-size: 42px; margin-bottom: 12px; }
+    .hero-card p { font-size: 18px; color: rgba(255,255,255,0.92); margin-bottom: 24px; max-width: 700px; line-height: 1.6; }
+    .hero-actions { display: flex; gap: 12px; flex-wrap: wrap; }
+    .hero-actions a { text-decoration: none; padding: 12px 18px; border-radius: 14px; font-weight: 600; font-size: 14px; }
+    .primary-btn { background: white; color: #4338ca; }
+    .secondary-btn { background: rgba(255,255,255,0.14); color: white; border: 1px solid rgba(255,255,255,0.25); }
+    .section { max-width: 1200px; margin: 0 auto; padding: 0 24px 40px; }
+    .section-title { font-size: 28px; font-weight: 700; margin-bottom: 18px; }
+    .featured-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px; }
+    .car-card { background: white; border-radius: 20px; overflow: hidden; box-shadow: 0 14px 30px rgba(15,23,42,0.08); border: 1px solid #e2e8f0; }
+    .car-card img { width: 100%; height: 180px; object-fit: cover; display: block; }
+    .car-body { padding: 18px; }
+    .car-body h3 { font-size: 18px; margin-bottom: 6px; }
+    .meta { color: #64748b; font-size: 14px; margin-bottom: 10px; }
+    .price { font-size: 18px; font-weight: 700; color: #4338ca; margin-bottom: 14px; }
+    .car-actions { display: flex; gap: 10px; }
+    .car-actions a { text-decoration: none; padding: 10px 14px; border-radius: 12px; font-size: 14px; font-weight: 600; }
+    .view-btn { background: #eef2ff; color: #4338ca; }
+    .book-btn { background: #4f46e5; color: white; }
+    .welcome-bar { max-width: 1200px; margin: 0 auto; padding: 0 24px 24px; color: #475569; font-size: 16px; }
+    @media (max-width: 640px) { .hero-card { padding: 28px; } .hero-card h1 { font-size: 32px; } }
   </style>
 </head>
 <body>
@@ -215,7 +44,8 @@
     <div class="nav-links">
       <a href="home.html">Home</a>
       <a href="cars.html">Cars</a>
-      <a href="bookings.html">Bookings</a>
+      <a href="my-bookings.html">Bookings</a>
+      <a href="account.html">Account</a>
       <button id="logoutBtn" type="button">Logout</button>
     </div>
   </header>
@@ -223,19 +53,15 @@
   <div class="hero">
     <div class="hero-card">
       <h1>Find your perfect rental car</h1>
-      <p>
-        Browse reliable vehicles, compare options, and book the right car for your next trip in just a few clicks.
-      </p>
+      <p>Browse reliable vehicles, compare options, and book the right car for your next trip in just a few clicks.</p>
       <div class="hero-actions">
         <a href="cars.html" class="primary-btn">Browse Cars</a>
-        <a href="bookings.html" class="secondary-btn">My Bookings</a>
+        <a href="my-bookings.html" class="secondary-btn">My Bookings</a>
       </div>
     </div>
   </div>
 
-  <div class="welcome-bar" id="welcomeText">
-    Welcome back.
-  </div>
+  <div class="welcome-bar" id="welcomeText">Welcome back! 👋</div>
 
   <section class="section">
     <h2 class="section-title">Featured Vehicles</h2>
@@ -244,50 +70,47 @@
         <img src="./assets/cars/porsche/911/1.jpeg" alt="Porsche 911" onerror="this.src='./assets/cars/dummy.png'">
         <div class="car-body">
           <h3>Porsche 911</h3>
-          <div class="meta">Sports • AWD</div>
-          <div class="price">$210.00/day</div>
+          <div class="meta">Sport • RWD</div>
+          <div class="price">$250.00/day</div>
           <div class="car-actions">
-            <a href="car-details.html?id=1" class="view-btn">View</a>
-            <a href="car-details.html?id=1" class="book-btn">Book</a>
+            <a href="car-details.html?id=112" class="view-btn">View</a>
+            <a href="car-details.html?id=112" class="book-btn">Book</a>
           </div>
         </div>
       </div>
-
       <div class="car-card">
         <img src="./assets/cars/dodge/challenger/1.png" alt="Dodge Challenger" onerror="this.src='./assets/cars/dummy.png'">
         <div class="car-body">
           <h3>Dodge Challenger</h3>
-          <div class="meta">Coupe • AWD</div>
-          <div class="price">$175.00/day</div>
+          <div class="meta">Sport • AWD</div>
+          <div class="price">$350.00/day</div>
           <div class="car-actions">
-            <a href="car-details.html?id=2" class="view-btn">View</a>
-            <a href="car-details.html?id=2" class="book-btn">Book</a>
+            <a href="car-details.html?id=12" class="view-btn">View</a>
+            <a href="car-details.html?id=12" class="book-btn">Book</a>
           </div>
         </div>
       </div>
-
       <div class="car-card">
         <img src="./assets/cars/honda/civic/1.jpeg" alt="Honda Civic" onerror="this.src='./assets/cars/dummy.png'">
         <div class="car-body">
           <h3>Honda Civic</h3>
           <div class="meta">Sedan • FWD</div>
-          <div class="price">$72.00/day</div>
+          <div class="price">$70.00/day</div>
           <div class="car-actions">
-            <a href="car-details.html?id=3" class="view-btn">View</a>
-            <a href="car-details.html?id=3" class="book-btn">Book</a>
+            <a href="car-details.html?id=24" class="view-btn">View</a>
+            <a href="car-details.html?id=24" class="book-btn">Book</a>
           </div>
         </div>
       </div>
-
       <div class="car-card">
         <img src="./assets/cars/toyota/highlander/1.png" alt="Toyota Highlander" onerror="this.src='./assets/cars/dummy.png'">
         <div class="car-body">
           <h3>Toyota Highlander</h3>
           <div class="meta">SUV • AWD</div>
-          <div class="price">$120.00/day</div>
+          <div class="price">$95.00/day</div>
           <div class="car-actions">
-            <a href="car-details.html?id=4" class="view-btn">View</a>
-            <a href="car-details.html?id=4" class="book-btn">Book</a>
+            <a href="car-details.html?id=98" class="view-btn">View</a>
+            <a href="car-details.html?id=98" class="book-btn">Book</a>
           </div>
         </div>
       </div>
@@ -295,23 +118,34 @@
   </section>
 
   <script>
-    const storedProfile = JSON.parse(localStorage.getItem("userProfile") || "null");
-    const welcomeText = document.getElementById("welcomeText");
-    const logoutBtn = document.getElementById("logoutBtn");
-
-    if (storedProfile && welcomeText) {
-      const name = storedProfile.name || storedProfile.fullName || "User";
-      welcomeText.textContent = `Welcome back, ${name}.`;
+    function getProfile() {
+      try {
+        return JSON.parse(localStorage.getItem("userProfile") || "null")
+          || JSON.parse(localStorage.getItem("userData") || "null");
+      } catch { return null; }
     }
 
-    if (logoutBtn) {
-      logoutBtn.addEventListener("click", () => {
-        localStorage.removeItem("userProfile");
-        localStorage.removeItem("lastLoginAt");
-        localStorage.removeItem("userEmail");
-        window.location.href = "index.html";
-      });
+    function isSessionValid() {
+      const last = Number(localStorage.getItem("lastLoginAt") || localStorage.getItem("loggedInAt") || 0);
+      return last && Date.now() - last < 12 * 60 * 60 * 1000;
     }
+
+    const profile = getProfile();
+
+    if (!profile || !isSessionValid()) {
+      window.location.replace("index.html");
+    } else {
+      const firstName = profile.firstName || profile["First Name"] || profile.name || "";
+      const lastName  = profile.lastName  || profile["Last Name"]  || "";
+      const name = (firstName + " " + lastName).trim() || profile.email || "User";
+      const el = document.getElementById("welcomeText");
+      if (el) el.textContent = `Welcome back, ${name} 👋`;
+    }
+
+    document.getElementById("logoutBtn")?.addEventListener("click", () => {
+      ["userProfile","userEmail","userData","lastLoginAt","loggedInAt","isAdmin"].forEach(k => localStorage.removeItem(k));
+      window.location.href = "index.html";
+    });
   </script>
 </body>
 </html>

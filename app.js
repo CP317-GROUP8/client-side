@@ -2,7 +2,6 @@ const API_BASE = window.location.hostname === "localhost"
   ? "http://localhost:10000"
   : "https://server-side-zqaz.onrender.com";
 
-// Session duration for "must have logged in recently"
 const SESSION_MS = 12 * 60 * 60 * 1000;
 
 function getStatusEl() {
@@ -19,7 +18,6 @@ function setStatus(message, isError = false) {
 function showNav(showAdmin = false) {
   const nav = document.getElementById("navArea");
   const adminBtn = document.getElementById("adminBtn");
-
   if (nav) nav.style.display = "flex";
   if (adminBtn) adminBtn.style.display = showAdmin ? "inline-block" : "none";
 }
@@ -43,6 +41,12 @@ function saveSession(profile) {
   localStorage.setItem("userProfile", JSON.stringify(profile));
   localStorage.setItem("lastLoginAt", String(Date.now()));
   if (profile?.email) localStorage.setItem("userEmail", profile.email);
+  // Also save in the format expected by the rest of the site
+  if (profile) {
+    localStorage.setItem("userData", JSON.stringify(profile));
+    localStorage.setItem("loggedInAt", String(Date.now()));
+    localStorage.setItem("isAdmin", String(Number(profile.administrator) === 1 ? 1 : 0));
+  }
 }
 
 function getStoredProfile() {
@@ -80,30 +84,27 @@ async function handleCredentialResponse(response) {
   try {
     setStatus("Signing you in...");
 
+    // ✅ Fixed: use idToken not credential
     const data = await api("/auth/google", {
       method: "POST",
       body: JSON.stringify({
-        credential: response.credential
+        idToken: response.credential
       })
     });
 
     const profile = data.user || data.profile || data;
     saveSession(profile);
 
-    const displayName = profile.name || profile.fullName || "User";
-    const displayEmail = profile.email || "";
-
     const needsLocation = !profile.location || !String(profile.location).trim();
-    const isAdmin = !!profile.isAdmin;
+    const isAdmin = Number(profile.administrator) === 1;
 
     if (needsLocation) {
       hideNav();
       showLocationSetup();
-      setStatus(`Finish signup by adding your location.`);
+      setStatus("Finish signup by adding your location.");
     } else {
-      hideLocationSetup();
-      showNav(isAdmin);
-      setStatus(`Welcome, ${displayName}${displayEmail ? ` (${displayEmail})` : ""}`);
+      // ✅ Redirect to home after successful login
+      window.location.href = "home.html";
     }
   } catch (err) {
     setStatus(err.message || "Sign-in failed.", true);
@@ -120,10 +121,8 @@ async function saveLocation(location) {
 
   const data = await api("/me/profile", {
     method: "PUT",
-    body: JSON.stringify({
-      email: profile.email,
-      location
-    })
+    headers: { "X-User-Email": profile.email },
+    body: JSON.stringify({ location })
   });
 
   const updated = {
@@ -137,25 +136,22 @@ async function saveLocation(location) {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-  const form = document.getElementById("locationForm");
+  const form  = document.getElementById("locationForm");
   const input = document.getElementById("locationInput");
 
   if (form) {
     form.addEventListener("submit", async (e) => {
       e.preventDefault();
-
       const location = input?.value?.trim();
       if (!location) {
         setStatus("Please enter your location.", true);
         return;
       }
-
       try {
         setStatus("Saving your location...");
-        const updated = await saveLocation(location);
-        hideLocationSetup();
-        showNav(!!updated.isAdmin);
-        setStatus(`Welcome, ${updated.name || updated.fullName || "User"} (${updated.email || ""})`);
+        await saveLocation(location);
+        // ✅ Redirect to home after location saved
+        window.location.href = "home.html";
       } catch (err) {
         setStatus(err.message || "Could not save location.", true);
       }
@@ -165,15 +161,13 @@ document.addEventListener("DOMContentLoaded", () => {
   const profile = getStoredProfile();
   if (profile && isSessionFresh()) {
     const needsLocation = !profile.location || !String(profile.location).trim();
-
     if (needsLocation) {
       showLocationSetup();
       hideNav();
       setStatus("Finish signup by adding your location.");
     } else {
-      hideLocationSetup();
-      showNav(!!profile.isAdmin);
-      setStatus(`Welcome, ${profile.name || profile.fullName || "User"} (${profile.email || ""})`);
+      // Already logged in with location — go straight to home
+      window.location.href = "home.html";
     }
   }
 });
