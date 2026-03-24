@@ -45,21 +45,38 @@ function findMatchingColumnName(columns, aliases) {
 function ensureSalesColumns(columns) {
   if (currentTableKey !== "sales") return columns;
 
-  const next = [...(columns || [])];
-  const required = [
+  const aliasGroups = [
     {
       aliases: ["pickupLocation", "pickup_location", "pickup location", "Pickup Location"],
-      fallback: "pickupLocation",
+      canonical: "Pickup Location",
     },
     {
-      aliases: ["dropoffLocation", "dropoff_location", "drop off location", "Drop Off Location", "Dropoff Location"],
-      fallback: "dropoffLocation",
+      aliases: ["dropoffLocation", "dropOffLocation", "dropoff_location", "drop off location", "Drop Off Location", "Dropoff Location"],
+      canonical: "Drop Off Location",
     },
   ];
 
-  required.forEach(({ aliases, fallback }) => {
-    if (!findMatchingColumnName(next, aliases)) {
-      next.push(fallback);
+  const next = [];
+  const seen = new Set();
+
+  (columns || []).forEach((col) => {
+    const group = aliasGroups.find(({ aliases }) =>
+      aliases.some((alias) => normalizeColKey(alias) === normalizeColKey(col))
+    );
+
+    const normalized = group ? group.canonical : col;
+    const key = normalizeColKey(normalized);
+    if (!seen.has(key)) {
+      seen.add(key);
+      next.push(normalized);
+    }
+  });
+
+  aliasGroups.forEach(({ canonical }) => {
+    const key = normalizeColKey(canonical);
+    if (!seen.has(key)) {
+      seen.add(key);
+      next.push(canonical);
     }
   });
 
@@ -111,7 +128,7 @@ function isAvailability(col) {
 // ✅ NEW: detect date columns and format value for <input type="date">
 function isDateColumn(col) {
   const c = normalizeCol(col);
-  return c.includes("date") || c.includes("pickup") || c.includes("dropoff");
+  return c === "from date" || c === "to date";
 }
 
 function toDateInputValue(val) {
