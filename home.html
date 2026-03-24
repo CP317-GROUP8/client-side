@@ -57,7 +57,6 @@ button:hover { filter: brightness(0.95); }
 .testimonial-role { font-size: 14px; color: var(--muted, #6b7280); margin: 0; }
 .testimonials-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
 .promo-banner { background: linear-gradient(90deg, #4f46e5, #ec4899); color: white; text-align: center; padding: 12px 20px; font-size: 15px; font-weight: 600; display: none; position: relative; z-index: 10; }
-/* ── Calendar icon visible in dark mode ── */
 [data-theme="dark"] input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(1); }
 @media (max-width: 1100px) { .cards { grid-template-columns: repeat(2, 1fr); } .featured-grid { grid-template-columns: repeat(2, 1fr); } .testimonials-grid { grid-template-columns: repeat(2, 1fr); } }
 @media (max-width: 900px) { .inputs { grid-template-columns: 1fr; } .cards { grid-template-columns: 1fr; } .featured-grid { grid-template-columns: 1fr; } .testimonials-grid { grid-template-columns: 1fr; } .header-btns { flex-direction: column; gap: 6px; } }
@@ -103,27 +102,27 @@ button:hover { filter: brightness(0.95); }
 
   <div class="cards">
     <div class="card">
-      <img src="assets/car2.png">
+      <img src="assets/cars/toyota/camry/1.jpeg" onerror="this.src='assets/cars/dummy.png'" alt="Browse Cars">
       <div class="cardContent"><h3>Browse Cars</h3><p>View vehicles from database.</p><a href="cars.html?preview=1&v=5">Go to Cars →</a></div>
     </div>
     <div class="card">
-      <img src="assets/car3.png">
+      <img src="assets/cars/porsche/911/1.jpeg" onerror="this.src='assets/cars/dummy.png'" alt="Car of the Week">
       <div class="cardContent"><h3>Car of the week!</h3><p>See this week's popular cars.</p><a href="popular.html?preview=1&v=1">View Popular →</a></div>
     </div>
     <div class="card">
-      <img src="assets/car4.png">
+      <img src="assets/cars/toyota/rav4/1.jpeg" onerror="this.src='assets/cars/dummy.png'" alt="My Favourites">
       <div class="cardContent"><h3>My Favourites</h3><p>View Your Favourites</p><a href="Favourites.html?preview=1&v=2">Go to Favourites →</a></div>
     </div>
     <div class="card">
-      <img src="assets/car1.png">
+      <img src="assets/cars/mazda/cx-50/1.jpeg" onerror="this.src='assets/cars/dummy.png'" alt="Cars In Your Area">
       <div class="cardContent"><h3>Cars In Your Area</h3><p>Browse nearby vehicles by city.</p><a href="nearby.html?preview=1">See Nearby Cars →</a></div>
     </div>
     <div class="card">
-      <img src="assets/cars/porsche.png" onerror="this.src='assets/car2.png'">
+      <img src="assets/cars/bmw/x5/1.jpeg" onerror="this.src='assets/cars/dummy.png'" alt="My Bookings">
       <div class="cardContent"><h3>My Bookings</h3><p>View your rental history.</p><a href="my-bookings.html?preview=1">View Bookings →</a></div>
     </div>
     <div class="card">
-      <img src="assets/cars/challenger.png" onerror="this.src='assets/car2.png'">
+      <img src="assets/cars/tesla/model y/1.jpeg" onerror="this.src='assets/cars/dummy.png'" alt="My Account">
       <div class="cardContent"><h3>My Account</h3><p>View your profile and booking history.</p><a href="account.html?preview=1">Go to Account →</a></div>
     </div>
   </div>
