@@ -424,20 +424,90 @@
         .replace(/'/g, "&#39;");
     }
 
-    async function fetchVehicleReviews(vehicleId) {
-      const res = await fetch(`${API_BASE}/cars/${encodeURIComponent(vehicleId)}/reviews`);
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        if (res.status === 404) {
-          return { reviewCount: 0, averageRating: 0, rows: [] };
-        }
-        throw new Error(data.error || "Could not load reviews");
+    const LOCAL_REVIEW_STORAGE_KEY = "vehicleReviewsLocal";
+
+    function loadLocalReviewStore() {
+      try {
+        const raw = localStorage.getItem(LOCAL_REVIEW_STORAGE_KEY);
+        const parsed = raw ? JSON.parse(raw) : {};
+        return parsed && typeof parsed === "object" ? parsed : {};
+      } catch {
+        return {};
       }
+    }
+
+    function saveLocalReviewStore(store) {
+      localStorage.setItem(LOCAL_REVIEW_STORAGE_KEY, JSON.stringify(store));
+    }
+
+    function buildReviewData(rows) {
+      const safeRows = Array.isArray(rows) ? rows : [];
+      const averageRating = safeRows.length
+        ? safeRows.reduce((sum, row) => sum + Number(row.rating || 0), 0) / safeRows.length
+        : 0;
       return {
-        reviewCount: Number(data.reviewCount || 0),
-        averageRating: Number(data.averageRating || 0),
-        rows: Array.isArray(data.rows) ? data.rows : [],
+        reviewCount: safeRows.length,
+        averageRating,
+        rows: safeRows,
       };
+    }
+
+    function getLocalReviewData(vehicleId) {
+      const store = loadLocalReviewStore();
+      const rows = Array.isArray(store[String(vehicleId)]) ? store[String(vehicleId)] : [];
+      const sorted = rows.slice().sort((a, b) => String(b.updatedAt || "").localeCompare(String(a.updatedAt || "")));
+      return buildReviewData(sorted);
+    }
+
+    function saveLocalReview(vehicleId, rating, comment) {
+      const key = String(vehicleId || "");
+      const store = loadLocalReviewStore();
+      const rows = Array.isArray(store[key]) ? store[key] : [];
+      const timestamp = new Date().toISOString();
+      const userData = (() => {
+        try { return JSON.parse(localStorage.getItem("userData") || "{}"); } catch { return {}; }
+      })();
+      const authorName = [userData.firstName || userData["First Name"], userData.lastName || userData["Last Name"]]
+        .filter(Boolean)
+        .join(" ")
+        .trim() || String(userEmail || "Local User");
+      const nextRows = rows.filter((row) => String(row.userEmail || "") !== String(userEmail || ""));
+      nextRows.unshift({
+        rating,
+        comment,
+        authorName,
+        userEmail,
+        firstName: userData.firstName || userData["First Name"] || "",
+        lastName: userData.lastName || userData["Last Name"] || "",
+        createdAt: timestamp,
+        updatedAt: timestamp,
+      });
+      store[key] = nextRows;
+      saveLocalReviewStore(store);
+      return buildReviewData(nextRows);
+    }
+
+    async function fetchVehicleReviews(vehicleId) {
+      try {
+        const res = await fetch(`${API_BASE}/cars/${encodeURIComponent(vehicleId)}/reviews`);
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          if (res.status === 404) {
+            return getLocalReviewData(vehicleId);
+          }
+          throw new Error(data.error || "Could not load reviews");
+        }
+        return {
+          reviewCount: Number(data.reviewCount || 0),
+          averageRating: Number(data.averageRating || 0),
+          rows: Array.isArray(data.rows) ? data.rows : [],
+        };
+      } catch (err) {
+        if (err instanceof TypeError) {
+          return getLocalReviewData(vehicleId);
+        }
+        throw err;
+      }
     }
 
     function fillReviewPanel(panel, vehicleId, data) {
@@ -522,13 +592,29 @@
           body: JSON.stringify({ rating, comment }),
         });
         const data = await res.json().catch(() => ({}));
-        if (!res.ok) throw new Error(data.error || "Could not save review");
+        if (!res.ok) {
+          if (res.status === 404) {
+            const localData = saveLocalReview(vehicleId, rating, comment);
+            fillReviewPanel(panel, vehicleId, localData);
+            const nextStatus = panel.querySelector(".reviewStatus");
+            if (nextStatus) nextStatus.textContent = "Review saved locally.";
+            return;
+          }
+          throw new Error(data.error || "Could not save review");
+        }
 
         const refreshed = await fetchVehicleReviews(vehicleId);
         fillReviewPanel(panel, vehicleId, refreshed);
         const nextStatus = panel.querySelector(".reviewStatus");
         if (nextStatus) nextStatus.textContent = "Review saved.";
       } catch (err) {
+        if (err instanceof TypeError) {
+          const localData = saveLocalReview(vehicleId, rating, comment);
+          fillReviewPanel(panel, vehicleId, localData);
+          const nextStatus = panel.querySelector(".reviewStatus");
+          if (nextStatus) nextStatus.textContent = "Review saved locally.";
+          return;
+        }
         if (statusEl) statusEl.textContent = err.message;
       } finally {
         buttonEl.disabled = false;

@@ -569,6 +569,7 @@
     // ─────────────────────────────────────────────────────────────
     const reviewCache        = new Map();
     const openReviewSections = new Set();
+    const LOCAL_REVIEW_STORAGE_KEY = "vehicleReviewsLocal";
 
     function escapeHtml(value) {
       return String(value ?? "")
@@ -582,27 +583,96 @@
       return Number.isNaN(dt.getTime()) ? "" : dt.toLocaleDateString("en-CA", { year: "numeric", month: "short", day: "numeric" });
     }
 
+    function loadLocalReviewStore() {
+      try {
+        const raw = localStorage.getItem(LOCAL_REVIEW_STORAGE_KEY);
+        const parsed = raw ? JSON.parse(raw) : {};
+        return parsed && typeof parsed === "object" ? parsed : {};
+      } catch {
+        return {};
+      }
+    }
+
+    function saveLocalReviewStore(store) {
+      localStorage.setItem(LOCAL_REVIEW_STORAGE_KEY, JSON.stringify(store));
+    }
+
+    function buildLocalReviewPayload(rows) {
+      const safeRows = Array.isArray(rows) ? rows : [];
+      const averageRating = safeRows.length
+        ? safeRows.reduce((sum, row) => sum + Number(row.rating || 0), 0) / safeRows.length
+        : 0;
+      return {
+        reviewCount: safeRows.length,
+        averageRating,
+        rows: safeRows,
+      };
+    }
+
+    function getLocalReviewData(vehicleId) {
+      const store = loadLocalReviewStore();
+      const rows = Array.isArray(store[String(vehicleId)]) ? store[String(vehicleId)] : [];
+      const sorted = rows.slice().sort((a, b) => String(b.updatedAt || "").localeCompare(String(a.updatedAt || "")));
+      return buildLocalReviewPayload(sorted);
+    }
+
+    function saveLocalReview(vehicleId, rating, comment) {
+      const currentEmail = String(localStorage.getItem("userEmail") || "");
+      const key = String(vehicleId || "");
+      const store = loadLocalReviewStore();
+      const rows = Array.isArray(store[key]) ? store[key] : [];
+      const timestamp = new Date().toISOString();
+      const userData = (() => {
+        try { return JSON.parse(localStorage.getItem("userData") || "{}"); } catch { return {}; }
+      })();
+      const authorName = [userData.firstName || userData["First Name"], userData.lastName || userData["Last Name"]]
+        .filter(Boolean)
+        .join(" ")
+        .trim() || currentEmail || "Local User";
+      const nextRows = rows.filter((row) => String(row.userEmail || "") !== currentEmail);
+      nextRows.unshift({
+        rating,
+        comment,
+        authorName,
+        userEmail: currentEmail,
+        createdAt: timestamp,
+        updatedAt: timestamp,
+      });
+      store[key] = nextRows;
+      saveLocalReviewStore(store);
+      return buildLocalReviewPayload(nextRows);
+    }
+
     async function fetchVehicleReviews(vehicleId, { force = false } = {}) {
       const key = String(vehicleId || "");
       if (!key) return { reviewCount: 0, averageRating: 0, rows: [] };
       if (!force && reviewCache.has(key)) return reviewCache.get(key);
-      const res  = await fetch(`${API}/cars/${encodeURIComponent(vehicleId)}/reviews`);
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        if (res.status === 404) {
-          const normalized = { reviewCount: 0, averageRating: 0, rows: [] };
+      try {
+        const res  = await fetch(`${API}/cars/${encodeURIComponent(vehicleId)}/reviews`);
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          if (res.status === 404) {
+            const normalized = getLocalReviewData(vehicleId);
+            reviewCache.set(key, normalized);
+            return normalized;
+          }
+          throw new Error(data.error || "Could not load reviews");
+        }
+        const normalized = {
+          reviewCount:   Number(data.reviewCount   || 0),
+          averageRating: Number(data.averageRating || 0),
+          rows:          Array.isArray(data.rows) ? data.rows : [],
+        };
+        reviewCache.set(key, normalized);
+        return normalized;
+      } catch (err) {
+        if (err instanceof TypeError) {
+          const normalized = getLocalReviewData(vehicleId);
           reviewCache.set(key, normalized);
           return normalized;
         }
-        throw new Error(data.error || "Could not load reviews");
+        throw err;
       }
-      const normalized = {
-        reviewCount:   Number(data.reviewCount   || 0),
-        averageRating: Number(data.averageRating || 0),
-        rows:          Array.isArray(data.rows) ? data.rows : [],
-      };
-      reviewCache.set(key, normalized);
-      return normalized;
     }
 
     function buildReviewSectionHtml(vehicleId, data) {
@@ -693,12 +763,30 @@
           body: JSON.stringify({ rating, comment }),
         });
         const data = await res.json().catch(() => ({}));
-        if (!res.ok) throw new Error(data.error || "Could not post review");
+        if (!res.ok) {
+          if (res.status === 404) {
+            const localData = saveLocalReview(vehicleId, rating, comment);
+            reviewCache.set(String(vehicleId), localData);
+            renderReviewSection(sectionEl, vehicleId, localData);
+            const nextStatus = sectionEl.querySelector(".reviewStatus");
+            if (nextStatus) nextStatus.textContent = "Review saved locally.";
+            return;
+          }
+          throw new Error(data.error || "Could not post review");
+        }
         const refreshed = await fetchVehicleReviews(vehicleId, { force: true });
         renderReviewSection(sectionEl, vehicleId, refreshed);
         const nextStatus = sectionEl.querySelector(".reviewStatus");
         if (nextStatus) nextStatus.textContent = "Review saved.";
       } catch (err) {
+        if (err instanceof TypeError) {
+          const localData = saveLocalReview(vehicleId, rating, comment);
+          reviewCache.set(String(vehicleId), localData);
+          renderReviewSection(sectionEl, vehicleId, localData);
+          const nextStatus = sectionEl.querySelector(".reviewStatus");
+          if (nextStatus) nextStatus.textContent = "Review saved locally.";
+          return;
+        }
         if (statusEl) statusEl.textContent = err.message;
       } finally {
         buttonEl.disabled = false;
