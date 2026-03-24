@@ -37,7 +37,6 @@
 
     .wrap { width: 100%; max-width: 480px; position: relative; z-index: 1; }
 
-    /* Steps */
     .steps { display: flex; align-items: center; justify-content: center; gap: 0; margin-bottom: 36px; animation: fadeUp 0.4s ease both; }
     .step { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 500; color: var(--muted, #8891a0); }
     .step.active { color: var(--ink, #0d1117); }
@@ -54,7 +53,6 @@
     .step.done   .step-num { border-color: var(--success, #10b981); background: var(--success, #10b981); color: white; }
     .step-line { width: 40px; height: 1.5px; background: var(--border, #e4e8ee); margin: 0 4px; }
 
-    /* Card */
     .card {
       background: var(--surface, white);
       border: 1px solid var(--border, #e4e8ee);
@@ -63,7 +61,6 @@
       animation: fadeUp 0.4s 0.05s ease both;
     }
 
-    /* Summary */
     .summary {
       background: var(--surface2, #f4f6f9);
       border-bottom: 1px solid var(--border, #e4e8ee);
@@ -87,7 +84,6 @@
     }
     .summary-price span { font-size: 12px; font-weight: 400; color: var(--muted, #8891a0); font-family: 'DM Sans', sans-serif; }
 
-    /* Form */
     .form-body { padding: 28px; }
     .section-label {
       font-family: 'Syne', sans-serif; font-size: 11px; font-weight: 700;
@@ -137,7 +133,6 @@
     .pay-btn.loading .btn-text { display: none; }
     .pay-btn.loading .spinner { display: block; }
 
-    /* Success */
     .success-screen { display: none; padding: 40px 28px; text-align: center; animation: fadeUp 0.5s ease both; }
     .success-icon {
       width: 72px; height: 72px; border-radius: 50%;
@@ -171,7 +166,6 @@
     .success-btn.primary-btn:hover { opacity: 0.9; color: white; }
 
     .err-msg { font-size: 13px; color: var(--danger, #ef4444); margin-top: 12px; text-align: center; min-height: 18px; }
-
     .secure-note { text-align: center; font-size: 12px; color: var(--muted, #8891a0); margin-top: 16px; animation: fadeUp 0.4s 0.1s ease both; }
 
     @keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
@@ -199,7 +193,7 @@
 
     <div class="card">
       <div class="summary">
-        <img id="carImg" src="" alt="Car" onerror="this.src='./assets/cars/placeholder.png'">
+        <img id="carImg" src="./assets/cars/dummy.png" alt="Car" onerror="this.src='./assets/cars/dummy.png'">
         <div class="summary-info">
           <div class="summary-name" id="carName">Loading…</div>
           <div class="summary-meta" id="carDates">—</div>
@@ -259,22 +253,136 @@
     const KEERTHANA_TEMPLATE = "template_m5nti5o";
     const KEERTHANA_KEY      = "H3F1dxhmOW-hMSZij";
 
-    const imageMap = {
-      "Toyota Corolla AWD":    "corolla-awd.png",
-      "Toyota Corolla FWD":    "corolla-fwd.png",
-      "Toyota Highlander AWD": "highlander-awd.png",
-      "Toyota Highlander RWD": "highlander-rwd.png",
-      "Dodge Challenger AWD":  "challenger.png",
-      "Honda Civic RWD":       "civic.png",
-      "KIA K4 RWD":            "kia.png",
-      "Porsche 911 AWD":       "porsche.png",
+    // ── Image assignment system ───────────────────────────────────────────────
+    const IMAGE_ASSIGNMENTS_KEY = 'carImageAssignments';
+
+    const IMAGE_MANIFEST = {
+      'bmw/i4':                     [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'bmw/x5':                     [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'buick/envista':               [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'byd/dolphin surf':            [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'byd/seal':                    [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'byd/seagull':                 [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'byd/sealion 7':               [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'png'  }, { num: 3, ext: 'jpeg' }],
+      'chery/tiggo 4':               [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'chevrolet/colorado':          [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'chevrolet/equinox':           [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'chevrolet/silverado 1500':    [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'chevrolet/trailblazer':       [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'chevrolet/trax':              [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'dodge/challenger':            [{ num: 1, ext: 'png'  }, { num: 2, ext: 'png'  }, { num: 3, ext: 'jpeg' }],
+      'ford/bronco sport':           [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'ford/everest':                [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'ford/f-150':                  [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'ford/f-150 lightning':        [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'ford/maverick':               [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'ford/mustang':                [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'ford/mustang mach-e':         [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'ford/puma':                   [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'ford/ranger':                 [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'genesis/gv70':                [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'gmc/sierra 1500':             [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'gwm/haval jolion':            [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'honda/civic':                 [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'honda/civic hybrid':          [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'honda/cr-v':                  [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'honda/fit e:hev':             [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'honda/passport':              [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'honda/prelude':               [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'honda/ridgeline':             [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'hyundai/elantra':             [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'hyundai/kona':                [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'hyundai/kona electric':       [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'hyundai/palisade':            [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'hyundai/santa cruz':          [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'hyundai/tucson':              [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'hyundai/venue':               [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'isuzu/d-max':                 [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'jaecoo/7':                    [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'jeep/compass':                [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'kia/k4':                      [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'kia/niro hybrid':             [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'kia/seltos':                  [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'kia/soul':                    [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'kia/sportage':                [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'leapmotor/c10':               [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'lexus/es':                    [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'lexus/rx 350 hybrid':         [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'mazda/3':                     [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'mazda/cx-5':                  [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'mazda/cx-50':                 [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'mazda/mx-5 miata':            [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'mini/cooper':                 [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'mitsubishi/outlander':        [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'mitsubishi/outlander sport':  [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'mitsubishi/triton':           [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'nissan/frontier':             [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'nissan/kicks':                [{ num: 1, ext: 'png'  }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'nissan/qashqai':              [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'nissan/rogue':                [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'nissan/sentra':               [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'nissan/z':                    [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'porsche/911':                 [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'renault/twingo e-tech':       [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'rivian/r1s':                  [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'rivian/r1t':                  [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'saic-gm-wuling/bingo ev':     [{ num: 1, ext: 'png'  }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'subaru/brz':                  [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'subaru/crosstrek':            [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'subaru/forester':             [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'subaru/impreza':              [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'suzuki/swift hybrid':         [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'tesla/model y':               [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'toyota/camry':                [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'toyota/corolla':              [{ num: 1, ext: 'png'  }, { num: 2, ext: 'png'  }, { num: 3, ext: 'jpeg' }],
+      'toyota/corolla cross':        [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'toyota/corolla hybrid':       [{ num: 1, ext: 'png'  }, { num: 2, ext: 'png'  }, { num: 3, ext: 'jpeg' }],
+      'toyota/gr86':                 [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'toyota/highlander':           [{ num: 1, ext: 'png'  }, { num: 2, ext: 'png'  }, { num: 3, ext: 'jpeg' }],
+      'toyota/highlander hybrid':    [{ num: 1, ext: 'png'  }, { num: 2, ext: 'png'  }, { num: 3, ext: 'jpeg' }],
+      'toyota/hilux':                [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'toyota/rav4':                 [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'toyota/rav4 plug-in hybrid':  [{ num: 1, ext: 'png'  }, { num: 2, ext: 'png'  }, { num: 3, ext: 'jpeg' }],
+      'toyota/sienna':               [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'toyota/supra':                [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'toyota/tacoma':               [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'vauxhall/frontera electric':  [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'volkswagen/id.2all':          [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'volkswagen/jetta':            [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+      'volkswagen/tiguan':           [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
     };
 
-    function getImage(manufacturer, model, drivetrain) {
-      const key = `${manufacturer} ${model} ${drivetrain}`.trim();
-      return `./assets/cars/${imageMap[key] || "placeholder.png"}`;
+    function loadImageAssignments() {
+      const raw = localStorage.getItem(IMAGE_ASSIGNMENTS_KEY);
+      return raw ? JSON.parse(raw) : {};
     }
 
+    function saveImageAssignments(a) {
+      localStorage.setItem(IMAGE_ASSIGNMENTS_KEY, JSON.stringify(a));
+    }
+
+    function getOrCreateImageAssignment(vehicleId, manufacturer, model) {
+      if (!vehicleId || !manufacturer || !model) return './assets/cars/dummy.png';
+      const modelKey = `${manufacturer.toLowerCase().trim()}/${model.toLowerCase().trim()}`;
+      const assignments = loadImageAssignments();
+      if (assignments[vehicleId]) return assignments[vehicleId];
+      const available = IMAGE_MANIFEST[modelKey] || [];
+      if (!available.length) return './assets/cars/dummy.png';
+      const usedUrls = new Set(
+        Object.entries(assignments)
+          .filter(([vid]) => vid !== vehicleId)
+          .map(([, url]) => url)
+          .filter(url => url.includes(`/assets/cars/${modelKey}/`))
+      );
+      const pool = available.filter(i => !usedUrls.has(`./assets/cars/${modelKey}/${i.num}.${i.ext}`));
+      const chosen = (pool.length ? pool : available)[Math.floor(Math.random() * (pool.length || available.length))];
+      const url = `./assets/cars/${modelKey}/${chosen.num}.${chosen.ext}`;
+      assignments[vehicleId] = url;
+      saveImageAssignments(assignments);
+      return url;
+    }
+
+    // ── Session & params ──────────────────────────────────────────────────────
     function requireSession() {
       const email = localStorage.getItem("userEmail");
       const loggedInAt = Number(localStorage.getItem("loggedInAt") || "0");
@@ -295,25 +403,13 @@
     function normalizeLocation(value) {
       const raw = String(value || "").trim();
       if (!raw) return "";
-
-      const parts = raw
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, " ")
-        .trim()
-        .split(/\s+/)
-        .filter(Boolean);
-
+      const parts = raw.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim().split(/\s+/).filter(Boolean);
       if (!parts.length) return "";
-
-      return parts
-        .map((part, index) =>
-          index === 0 ? part : part.charAt(0).toUpperCase() + part.slice(1)
-        )
-        .join("");
+      return parts.map((part, index) => index === 0 ? part : part.charAt(0).toUpperCase() + part.slice(1)).join("");
     }
 
-    const pickup    = normalizeLocation(params.get("pickup") || "");
-    const dropoff   = normalizeLocation(params.get("dropoff") || "");
+    const pickup  = normalizeLocation(params.get("pickup")  || "");
+    const dropoff = normalizeLocation(params.get("dropoff") || "");
 
     if (!vehicleId || !fromDate || !toDate) {
       document.getElementById("errMsg").textContent = "Missing booking details. Please go back and try again.";
@@ -361,11 +457,19 @@
         const price = Number(car["Price"] || car.price || 0);
         const days  = daysBetween(fromDate, toDate);
         const total = price * days;
-        document.getElementById("carImg").src = getImage(mfr, model, drv);
-        document.getElementById("carName").textContent = `${mfr} ${model}`.trim();
-        document.getElementById("carDates").textContent = `${formatDate(fromDate)} → ${formatDate(toDate)} · ${days} day${days !== 1 ? "s" : ""}`;
-        document.getElementById("carPrice").innerHTML  = `$${price.toFixed(2)}<span>/day</span>`;
-        document.getElementById("totalDue").textContent = `$${total.toFixed(2)}`;
+
+        // Use the same image assignment system as cars.html
+        const imgUrl = getOrCreateImageAssignment(vehicleId, mfr, model);
+        document.getElementById("carImg").src = imgUrl;
+        document.getElementById("carImg").onerror = () => {
+          document.getElementById("carImg").src = './assets/cars/dummy.png';
+        };
+
+        document.getElementById("carName").textContent    = `${mfr} ${model}`.trim();
+        document.getElementById("carDates").textContent   = `${formatDate(fromDate)} → ${formatDate(toDate)} · ${days} day${days !== 1 ? "s" : ""}`;
+        document.getElementById("carPrice").innerHTML     = `$${price.toFixed(2)}<span>/day</span>`;
+        document.getElementById("totalDue").textContent   = `$${total.toFixed(2)}`;
+
         const userData = JSON.parse(localStorage.getItem("userData") || "{}");
         const fullName = `${userData.firstName || ""} ${userData.lastName || ""}`.trim();
         if (fullName) document.getElementById("cardName").value = fullName;
@@ -472,6 +576,6 @@
     }
   </script>
   <script src="navbar.js"></script>
-<script src="darkm.js"></script>
+  <script src="darkm.js"></script>
 </body>
 </html>
