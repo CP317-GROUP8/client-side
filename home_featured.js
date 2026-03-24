@@ -112,21 +112,22 @@ function saveImageAssignments(a) {
 function getOrCreateImageAssignment(vehicleId, manufacturer, model) {
   if (!vehicleId || !manufacturer || !model) return './assets/cars/dummy.png';
   const modelKey = `${manufacturer.toLowerCase().trim()}/${model.toLowerCase().trim()}`;
+
+  // Use cached assignment if it exists from the cars listing page
   const assignments = loadImageAssignments();
   if (assignments[vehicleId]) return assignments[vehicleId];
+
+  // Always use image 1 as fallback — no random, works without visiting cars page first
   const available = IMAGE_MANIFEST[modelKey] || [];
   if (!available.length) return './assets/cars/dummy.png';
-  const usedUrls = new Set(
-    Object.entries(assignments)
-      .filter(([vid]) => vid !== vehicleId)
-      .map(([, url]) => url)
-      .filter(url => url.includes(`/assets/cars/${modelKey}/`))
-  );
-  const pool = available.filter(i => !usedUrls.has(`./assets/cars/${modelKey}/${i.num}.${i.ext}`));
-  const chosen = (pool.length ? pool : available)[Math.floor(Math.random() * (pool.length || available.length))];
-  const url = `./assets/cars/${modelKey}/${chosen.num}.${chosen.ext}`;
+
+  const first = available[0];
+  const url = `./assets/cars/${modelKey}/${first.num}.${first.ext}`;
+
+  // Cache it so it stays consistent if user later visits cars page
   assignments[vehicleId] = url;
   saveImageAssignments(assignments);
+
   return url;
 }
 
@@ -202,4 +203,5 @@ async function loadFeaturedCars() {
 }
 
 document.addEventListener("DOMContentLoaded", loadFeaturedCars);
+
 
