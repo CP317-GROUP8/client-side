@@ -184,6 +184,10 @@ function resolveAssetModelKey(modelKey) {
   return aliases[modelKey] || modelKey;
 }
 
+function buildValidImageUrls(modelKey) {
+  return new Set((IMAGE_MANIFEST[modelKey] || []).map((img) => `./assets/cars/${modelKey}/${img.num}.${img.ext}`));
+}
+
 // Get or create an image assignment for a specific vehicle
 function getOrCreateImageAssignment(vehicleId, manufacturer, model) {
   if (!vehicleId || !manufacturer || !model) {
@@ -197,10 +201,15 @@ function getOrCreateImageAssignment(vehicleId, manufacturer, model) {
   
   // Get existing assignments
   const assignments = loadImageAssignments();
+  const validImageUrls = buildValidImageUrls(modelKey);
   
   // Check if this specific vehicle already has an assigned image
   if (assignments[vehicleId]) {
-    return assignments[vehicleId];
+    if (!validImageUrls.size || validImageUrls.has(assignments[vehicleId])) {
+      return assignments[vehicleId];
+    }
+    delete assignments[vehicleId];
+    saveImageAssignments(assignments);
   }
   
   // Get available images for this model from manifest
@@ -217,7 +226,7 @@ function getOrCreateImageAssignment(vehicleId, manufacturer, model) {
     // Only consider other vehicles
     if (vid !== vehicleId) {
       // Extract the path and check if it matches this model
-      if (imageUrl.includes(`/assets/cars/${modelKey}/`)) {
+      if (validImageUrls.has(imageUrl)) {
         assignedImagesForModel.add(imageUrl);
       }
     }

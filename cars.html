@@ -478,11 +478,20 @@
       return aliases[modelKey] || modelKey;
     }
 
+    function buildValidImageUrls(modelKey) {
+      return new Set((IMAGE_MANIFEST[modelKey] || []).map((img) => `./assets/cars/${modelKey}/${img.num}.${img.ext}`));
+    }
+
     function getOrCreateImageAssignment(vehicleId, manufacturer, model) {
       if (!vehicleId || !manufacturer || !model) return "./assets/cars/dummy.png";
       const modelKey    = resolveAssetModelKey(`${manufacturer.toLowerCase().trim()}/${model.toLowerCase().trim()}`);
       const assignments = loadImageAssignments();
-      if (assignments[vehicleId]) return assignments[vehicleId];
+      const validImageUrls = buildValidImageUrls(modelKey);
+      if (assignments[vehicleId]) {
+        if (!validImageUrls.size || validImageUrls.has(assignments[vehicleId])) return assignments[vehicleId];
+        delete assignments[vehicleId];
+        saveImageAssignments(assignments);
+      }
 
       const available = IMAGE_MANIFEST[modelKey] || [];
       if (!available.length) {
@@ -493,7 +502,7 @@
         Object.entries(assignments)
           .filter(([vid]) => vid !== vehicleId)
           .map(([, url]) => url)
-          .filter(url => url.includes(`/assets/cars/${modelKey}/`))
+          .filter(url => validImageUrls.has(url))
       );
       const pool   = available.filter(i => !usedUrls.has(`./assets/cars/${modelKey}/${i.num}.${i.ext}`));
       const chosen = (pool.length ? pool : available)[Math.floor(Math.random() * (pool.length || available.length))];
