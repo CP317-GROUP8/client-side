@@ -347,8 +347,36 @@ saveBtn?.addEventListener("click", async () => {
       if (currentTableKey === "vehicles" && (isOwnerId(col) || isAvailability(col))) return;
       payload[col] = inp.value;
     });
+    const existingRow = !creating
+      ? currentRows.find((row) => String(row?.[pkName] ?? "") === String(editingRowId))
+      : null;
     if (creating) { await api(`/admin/${currentTableKey}`, { method: "POST", body: JSON.stringify(payload) }); }
     else { await api(`/admin/${currentTableKey}/${editingRowId}`, { method: "PUT", body: JSON.stringify(payload) }); }
+
+    if (currentTableKey === "users") {
+      const sessionEmail = String(localStorage.getItem("userEmail") || "").trim();
+      const previousEmail = String(existingRow?.["Email Address"] ?? "").trim();
+      const nextEmail = String(payload["Email Address"] ?? previousEmail).trim();
+
+      if (sessionEmail && (sessionEmail === previousEmail || sessionEmail === nextEmail)) {
+        let cachedUser = {};
+        try { cachedUser = JSON.parse(localStorage.getItem("userData") || "{}"); } catch {}
+
+        const mergedUser = {
+          ...cachedUser,
+          firstName: payload["First Name"] ?? existingRow?.["First Name"] ?? cachedUser.firstName ?? cachedUser["First Name"] ?? "",
+          lastName: payload["Last Name"] ?? existingRow?.["Last Name"] ?? cachedUser.lastName ?? cachedUser["Last Name"] ?? "",
+          location: payload["Location"] ?? existingRow?.["Location"] ?? cachedUser.location ?? cachedUser["Location"] ?? "",
+          totalSpent: payload["Total Amount Spent"] ?? existingRow?.["Total Amount Spent"] ?? cachedUser.totalSpent ?? cachedUser["Total Amount Spent"] ?? 0,
+          administrator: payload["Administrator"] ?? existingRow?.["Administrator"] ?? cachedUser.administrator ?? cachedUser["Administrator"] ?? 0,
+          email: nextEmail || cachedUser.email || cachedUser["Email Address"] || sessionEmail,
+        };
+
+        localStorage.setItem("userData", JSON.stringify(mergedUser));
+        if (nextEmail && nextEmail !== sessionEmail) localStorage.setItem("userEmail", nextEmail);
+      }
+    }
+
     creating = false; editingRowId = null;
     updateButtons();
     await loadTable(currentTableKey, tableTitleEl.textContent || "");
@@ -573,4 +601,3 @@ async function loadMostBooked() {
     console.error("Most booked error:", err);
   }
 }
-
