@@ -14,19 +14,9 @@ const PNG_FIRST_MODEL_KEYS = new Set([
   "toyota/highlander hybrid",
 ]);
 
-const SUPPORTED_AREAS = [
-  "Toronto",
-  "North York",
-  "Scarborough",
-  "Mississauga",
-  "Brampton",
-  "Markham",
-  "Etobicoke",
-  "Vaughan",
-];
-
 const AREA_ALIASES = new Map([
   ["toronto", "Toronto"],
+  ["north york", "North York"],
   ["northyork", "North York"],
   ["scarborough", "Scarborough"],
   ["mississauga", "Mississauga"],
@@ -40,17 +30,31 @@ function safeStr(value) {
   return (value ?? "").toString().trim();
 }
 
+function readStoredObject(key) {
+  try {
+    return JSON.parse(localStorage.getItem(key) || "{}");
+  } catch {
+    return {};
+  }
+}
+
 function normalizeArea(value) {
   return safeStr(value).toLowerCase().replace(/\s+/g, " ");
 }
 
-function canonicalizeAreaKey(value) {
-  return safeStr(value).toLowerCase().replace(/[^a-z0-9]+/g, "");
+function formatAreaLabel(value) {
+  const normalized = normalizeArea(value);
+  if (!normalized) return "";
+  return normalized
+    .split(" ")
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
 }
 
-function resolveSupportedArea(value) {
-  const key = canonicalizeAreaKey(value);
-  return AREA_ALIASES.get(key) || "";
+function resolveAreaLabel(value) {
+  const normalized = normalizeArea(value);
+  return AREA_ALIASES.get(normalized) || formatAreaLabel(normalized);
 }
 
 function normalizeModelKeyPart(value) {
@@ -74,23 +78,28 @@ function getAssignedImage(vehicleId, manufacturer, model, drivetrain) {
 }
 
 function getInitialArea() {
-  try {
-    const userData = JSON.parse(localStorage.getItem("userData") || "{}");
-    const saved = safeStr(userData.location || userData.Location);
-    const resolved = resolveSupportedArea(saved);
-    if (resolved) return resolved;
-    if (saved) return saved;
-  } catch {}
-
-  return "";
+  const userData = readStoredObject("userData");
+  const userProfile = readStoredObject("userProfile");
+  const saved = safeStr(
+    userData.location
+    || userData.Location
+    || userProfile.location
+    || userProfile.Location
+  );
+  return resolveAreaLabel(saved);
 }
 
-function getAreaForVehicle(id) {
-  const numericId = Number.parseInt(String(id || "").replace(/\D+/g, ""), 10);
-  if (Number.isFinite(numericId) && numericId > 0) {
-    return SUPPORTED_AREAS[(numericId - 1) % SUPPORTED_AREAS.length];
-  }
-  return SUPPORTED_AREAS[0];
+function getAreaFromCar(car) {
+  return safeStr(
+    car.location
+    || car.Location
+    || car.city
+    || car.City
+    || car.area
+    || car.Area
+    || car.homeLocation
+    || car["Home Location"]
+  );
 }
 
 function normalizeCar(car) {
@@ -100,7 +109,8 @@ function normalizeCar(car) {
   const type = safeStr(car.vehicleType ?? car["Vehicle Type"]);
   const drivetrain = safeStr(car.drivetrain ?? car["Drivetrain"]);
   const priceNum = Number(car.price ?? car["Price"]);
-  const area = getAreaForVehicle(id);
+  const actualArea = getAreaFromCar(car);
+  const area = resolveAreaLabel(actualArea);
 
   return {
     id,
@@ -129,6 +139,7 @@ function render(cars, selectedArea) {
 
   if (!cars.length) {
     grid.innerHTML = "";
+    empty.textContent = `No nearby cars found for ${selectedArea}. Update your account location or browse all cars.`;
     empty.style.display = "block";
     return;
   }
@@ -182,10 +193,12 @@ async function loadNearbyCars() {
 
     if (!res.ok) throw new Error("Could not load cars");
 
-    const cars = (Array.isArray(data) ? data : []).map(normalizeCar);
-    const resolvedArea = resolveSupportedArea(selectedArea) || selectedArea;
-    const matches = cars.filter((car) => resolveSupportedArea(car.area) === resolveSupportedArea(resolvedArea));
-    render(matches, resolvedArea);
+    const cars = (Array.isArray(data) ? data : [])
+      .map(normalizeCar)
+      .filter((car) => car.area);
+    const normalizedSelectedArea = normalizeArea(selectedArea);
+    const matches = cars.filter((car) => normalizeArea(car.area) === normalizedSelectedArea);
+    render(matches, selectedArea);
   } catch (err) {
     summary.textContent = `Error: ${err.message}`;
     document.getElementById("nearbyGrid").innerHTML = "";
