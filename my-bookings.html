@@ -598,6 +598,11 @@
     }
 
     function fillReviewPanel(panel, vehicleId, data) {
+      if (data?.unavailable) {
+        panel.innerHTML = `<div class="reviewStatus">Reviews are temporarily unavailable. Please try again later.</div>`;
+        return;
+      }
+
       const existing = (data.rows || []).find((row) => {
         const fullName = `${row.firstName || ""} ${row.lastName || ""}`.trim();
         const userData = JSON.parse(localStorage.getItem("userData") || "{}");
@@ -648,7 +653,7 @@
         const data = await fetchVehicleReviews(vehicleId);
         fillReviewPanel(panel, vehicleId, data);
       } catch (err) {
-        panel.innerHTML = `<div class="reviewStatus">${escapeHtml(err.message)}</div>`;
+        fillReviewPanel(panel, vehicleId, { unavailable: true });
       }
     }
 
@@ -687,6 +692,10 @@
             if (nextStatus) nextStatus.textContent = "Review saved locally.";
             return;
           }
+          if (res.status === 404 || res.status >= 500) {
+            if (statusEl) statusEl.textContent = "Reviews are temporarily unavailable. Please try again later.";
+            return;
+          }
           throw new Error(data.error || "Could not save review");
         }
 
@@ -702,7 +711,7 @@
           if (nextStatus) nextStatus.textContent = "Review saved locally.";
           return;
         }
-        if (statusEl) statusEl.textContent = err.message;
+        if (statusEl) statusEl.textContent = "Reviews are temporarily unavailable. Please try again later.";
       } finally {
         buttonEl.disabled = false;
       }
