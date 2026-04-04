@@ -158,6 +158,24 @@ function highlightLink(linkEl, message) {
   setTimeout(() => { linkEl.style.background = "transparent"; linkEl.style.borderRadius = ""; linkEl.style.padding = ""; }, 2500);
 }
 
+function readStoredJson(key) {
+  try {
+    return JSON.parse(localStorage.getItem(key) || "{}");
+  } catch {
+    return {};
+  }
+}
+
+function syncStoredUserProfile(user) {
+  const existingData = readStoredJson("userData");
+  const existingProfile = readStoredJson("userProfile");
+  const mergedUser = { ...existingProfile, ...existingData, ...user };
+  localStorage.setItem("userData", JSON.stringify(mergedUser));
+  localStorage.setItem("userProfile", JSON.stringify(mergedUser));
+  if (mergedUser.email) localStorage.setItem("userEmail", mergedUser.email);
+  localStorage.setItem("isAdmin", Number(mergedUser.administrator) === 1 ? "1" : "0");
+}
+
 // ---------- PDF EXPORT ----------
 exportBtn?.addEventListener("click", () => {
   if (!currentRows.length || !currentTableKey) return;
@@ -359,8 +377,7 @@ saveBtn?.addEventListener("click", async () => {
       const nextEmail = String(payload["Email Address"] ?? previousEmail).trim();
 
       if (sessionEmail && (sessionEmail === previousEmail || sessionEmail === nextEmail)) {
-        let cachedUser = {};
-        try { cachedUser = JSON.parse(localStorage.getItem("userData") || "{}"); } catch {}
+        const cachedUser = readStoredJson("userData");
 
         const mergedUser = {
           ...cachedUser,
@@ -372,8 +389,7 @@ saveBtn?.addEventListener("click", async () => {
           email: nextEmail || cachedUser.email || cachedUser["Email Address"] || sessionEmail,
         };
 
-        localStorage.setItem("userData", JSON.stringify(mergedUser));
-        if (nextEmail && nextEmail !== sessionEmail) localStorage.setItem("userEmail", nextEmail);
+        syncStoredUserProfile(mergedUser);
       }
     }
 

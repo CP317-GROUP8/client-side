@@ -160,6 +160,8 @@ button:hover { filter: brightness(0.95); }
 <script>
 // ── Session check ────────────────────────────────────────────────────────────
 (function () {
+  const isPreview = new URLSearchParams(window.location.search).get("preview") === "1";
+
   function getProfile() {
     try {
       return JSON.parse(localStorage.getItem("userProfile") || "null")
@@ -174,8 +176,12 @@ button:hover { filter: brightness(0.95); }
 
   const profile = getProfile();
 
-  if (!profile || !isSessionValid()) {
+  if (!isPreview && (!profile || !isSessionValid())) {
     window.location.replace("index.html");
+    return;
+  }
+
+  if (isPreview) {
     return;
   }
 

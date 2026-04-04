@@ -651,7 +651,7 @@
         const res  = await fetch(`${API}/cars/${encodeURIComponent(vehicleId)}/reviews`);
         const data = await res.json().catch(() => ({}));
         if (!res.ok) {
-          if (res.status === 404) {
+          if (isPreview && res.status === 404) {
             const normalized = getLocalReviewData(vehicleId);
             reviewCache.set(key, normalized);
             return normalized;
@@ -666,7 +666,7 @@
         reviewCache.set(key, normalized);
         return normalized;
       } catch (err) {
-        if (err instanceof TypeError) {
+        if (isPreview && err instanceof TypeError) {
           const normalized = getLocalReviewData(vehicleId);
           reviewCache.set(key, normalized);
           return normalized;
@@ -764,7 +764,7 @@
         });
         const data = await res.json().catch(() => ({}));
         if (!res.ok) {
-          if (res.status === 404) {
+          if (isPreview && res.status === 404) {
             const localData = saveLocalReview(vehicleId, rating, comment);
             reviewCache.set(String(vehicleId), localData);
             renderReviewSection(sectionEl, vehicleId, localData);
@@ -779,7 +779,7 @@
         const nextStatus = sectionEl.querySelector(".reviewStatus");
         if (nextStatus) nextStatus.textContent = "Review saved.";
       } catch (err) {
-        if (err instanceof TypeError) {
+        if (isPreview && err instanceof TypeError) {
           const localData = saveLocalReview(vehicleId, rating, comment);
           reviewCache.set(String(vehicleId), localData);
           renderReviewSection(sectionEl, vehicleId, localData);

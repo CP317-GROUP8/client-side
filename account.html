@@ -476,6 +476,21 @@
       return raw.replace(/\s+/g, " ");
     }
 
+    function syncStoredProfile(user) {
+      const existingData = (() => {
+        try { return JSON.parse(localStorage.getItem("userData") || "{}"); } catch { return {}; }
+      })();
+      const existingProfile = (() => {
+        try { return JSON.parse(localStorage.getItem("userProfile") || "{}"); } catch { return {}; }
+      })();
+
+      const merged = { ...existingProfile, ...existingData, ...user };
+      localStorage.setItem("userData", JSON.stringify(merged));
+      localStorage.setItem("userProfile", JSON.stringify(merged));
+      if (merged.email) localStorage.setItem("userEmail", merged.email);
+      localStorage.setItem("isAdmin", Number(merged.administrator) === 1 ? "1" : "0");
+    }
+
     async function apiFetch(path, options = {}) {
       try {
         return await fetch(`${API_BASE}${path}`, options);
@@ -601,7 +616,7 @@
       // ✅ Update loyalty points card
       updateLoyaltyCard(spent);
 
-      localStorage.setItem("userData", JSON.stringify(user));
+      syncStoredProfile(user);
     }
 
     function populateBookings(rows) {

@@ -492,7 +492,7 @@
         const res = await fetch(`${API_BASE}/cars/${encodeURIComponent(vehicleId)}/reviews`);
         const data = await res.json().catch(() => ({}));
         if (!res.ok) {
-          if (res.status === 404) {
+          if (isLocalPreview && res.status === 404) {
             return getLocalReviewData(vehicleId);
           }
           throw new Error(data.error || "Could not load reviews");
@@ -503,7 +503,7 @@
           rows: Array.isArray(data.rows) ? data.rows : [],
         };
       } catch (err) {
-        if (err instanceof TypeError) {
+        if (isLocalPreview && err instanceof TypeError) {
           return getLocalReviewData(vehicleId);
         }
         throw err;
@@ -593,7 +593,7 @@
         });
         const data = await res.json().catch(() => ({}));
         if (!res.ok) {
-          if (res.status === 404) {
+          if (isLocalPreview && res.status === 404) {
             const localData = saveLocalReview(vehicleId, rating, comment);
             fillReviewPanel(panel, vehicleId, localData);
             const nextStatus = panel.querySelector(".reviewStatus");
@@ -608,7 +608,7 @@
         const nextStatus = panel.querySelector(".reviewStatus");
         if (nextStatus) nextStatus.textContent = "Review saved.";
       } catch (err) {
-        if (err instanceof TypeError) {
+        if (isLocalPreview && err instanceof TypeError) {
           const localData = saveLocalReview(vehicleId, rating, comment);
           fillReviewPanel(panel, vehicleId, localData);
           const nextStatus = panel.querySelector(".reviewStatus");
