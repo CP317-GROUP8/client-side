@@ -418,13 +418,18 @@
   fab.addEventListener("click", () => isOpen ? closeChat() : openChat());
   closeEl.addEventListener("click", closeChat);
 
-  sendEl.addEventListener("click", () => handleSend());
-  inputEl.addEventListener("keydown", e => { if (e.key === "Enter") handleSend(); });
+  sendEl.addEventListener("click", e => { e.stopPropagation(); handleSend(); });
+  inputEl.addEventListener("keydown", e => { if (e.key === "Enter") { e.stopPropagation(); handleSend(); } });
+
 
   // Close on outside click
   document.addEventListener("click", e => {
-    if (isOpen && !box.contains(e.target) && !fab.contains(e.target)) closeChat();
+    if (!isOpen) return;
+    if (box.contains(e.target)) return;
+    if (fab.contains(e.target)) return;
+    // Small delay to avoid closing immediately after opening
+    setTimeout(() => closeChat(), 10);
   });
 
-  
+
 })();
