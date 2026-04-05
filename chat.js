@@ -423,6 +423,8 @@
 
   // Close on outside click
   document.addEventListener("click", e => {
-    if (isOpen && !box.contains(e.target) && e.target !== fab) closeChat();
+    if (isOpen && !box.contains(e.target) && !fab.contains(e.target)) closeChat();
   });
+
+  
 })();
