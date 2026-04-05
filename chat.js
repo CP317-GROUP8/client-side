@@ -367,7 +367,10 @@
       const btn = document.createElement("button");
       btn.className = "cr-qr";
       btn.textContent = label;
-      btn.addEventListener("click", () => handleSend(label));
+      btn.addEventListener("click", e => { 
+        e.stopPropagation();
+        handleSend(label); 
+      });
       quickRepliesEl.appendChild(btn);
     });
   }
