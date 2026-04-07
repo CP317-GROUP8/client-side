@@ -244,6 +244,16 @@
       reply: "Thanks for chatting! Enjoy your rental. Safe travels! 🚙💨",
       quick: [],
     },
+    {
+      match: ["browse cars", "browse", "see cars", "view cars", "all cars"],
+      reply: "Head to the **Browse Cars** page to see all available vehicles! You can filter by type, drivetrain, and price, or search by make and model. 🚗",
+      quick: ["How do I book?", "Pricing info", "Cancel booking"],
+    },
+    {
+      match: ["contact support", "contact us", "email", "reach out", "get help"],
+      reply: "For support, email us at **support@cp317rentals.ca** 📧. You can also ask me anything about bookings, pricing, locations, or how the site works and I'll do my best to help!",
+      quick: ["How do I book?", "Cancel booking", "Pricing info"],
+    },
   ];
 
   const FALLBACK = {
