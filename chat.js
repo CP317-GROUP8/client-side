@@ -251,7 +251,7 @@
     },
     {
       match: ["contact support", "contact us", "email", "reach out", "get help"],
-      reply: "For support, email us at **support@cp317rentals.ca** 📧. You can also ask me anything about bookings, pricing, locations, or how the site works and I'll do my best to help!",
+      reply: "Thank you for reaching out! 🙏 One of our administrators will review your enquiry and get back to you shortly. In the meantime, feel free to ask me anything and I'll do my best to assist you.",
       quick: ["How do I book?", "Cancel booking", "Pricing info"],
     },
   ];
