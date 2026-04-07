@@ -198,22 +198,58 @@ button:hover { filter: brightness(0.95); }
   }
 })();
 
-// ── Promo banner ─────────────────────────────────────────────────────────────
+// ── Promo banner + Date validation setup ─────────────────────────────────────
 document.addEventListener("DOMContentLoaded", () => {
+  // Promo banner
   const promoText = localStorage.getItem("promoBanner");
   if (promoText && promoText.trim()) {
     const banner = document.getElementById("promoBanner");
     banner.textContent = promoText;
     banner.style.display = "block";
   }
+
+  // ── Set min dates so the picker blocks past dates ──────────────────────────
+  const today        = new Date().toISOString().split("T")[0];
+  const pickupInput  = document.getElementById("pickupDateInput");
+  const dropoffInput = document.getElementById("dropoffDateInput");
+
+  pickupInput.min  = today;
+  dropoffInput.min = today;
+
+  pickupInput.addEventListener("change", () => {
+    // dropoff must always be after pickup
+    dropoffInput.min = pickupInput.value || today;
+    if (dropoffInput.value && dropoffInput.value <= pickupInput.value) {
+      dropoffInput.value = "";
+    }
+  });
+  // ──────────────────────────────────────────────────────────────────────────
 });
 
-// ── Search ───────────────────────────────────────────────────────────────────
+// ── Search with date validation ───────────────────────────────────────────────
 function searchCars() {
-  const params  = new URLSearchParams();
   const city    = (document.getElementById("cityInput")?.value    || "").trim();
   const pickup  = document.getElementById("pickupDateInput")?.value  || "";
   const dropoff = document.getElementById("dropoffDateInput")?.value || "";
+
+  // ── Date validation ────────────────────────────────────────────────────────
+  const today = new Date().toISOString().split("T")[0];
+
+  if (pickup && pickup < today) {
+    alert("Pickup date cannot be in the past.");
+    return;
+  }
+  if (dropoff && dropoff < today) {
+    alert("Drop-off date cannot be in the past.");
+    return;
+  }
+  if (pickup && dropoff && dropoff <= pickup) {
+    alert("Drop-off date must be after the pickup date.");
+    return;
+  }
+  // ──────────────────────────────────────────────────────────────────────────
+
+  const params = new URLSearchParams();
   params.set("preview", "1");
   if (city)    params.set("where",   city);
   if (pickup)  params.set("pickup",  pickup);
