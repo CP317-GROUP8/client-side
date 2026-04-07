@@ -312,7 +312,6 @@
 
 
   <!-- ── Scripts ── -->
-  <!-- IMAGE_MANIFEST is defined in image_manifest.js -->
   <script>
     const IMAGE_MANIFEST = {
       'bmw/i4':                     [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
@@ -431,8 +430,6 @@
       drive:    (params.get("drive")    || "").trim(),
       maxPrice: (params.get("maxPrice") || "").trim(),
     };
-
-    const searchWhere = searchState.where.toLowerCase().replace(/,.*$/, "");
 
     const SESSION_MS = 12 * 60 * 60 * 1000;
     const PAGE_SIZE  = 24;
@@ -727,14 +724,20 @@
       }
     }
 
+    // ── FIX: toggle based on actual DOM visibility, not stale Set state ──
     async function toggleReviews(vehicleId, sectionEl) {
       const key = String(vehicleId || "");
       if (!key || !sectionEl) return;
-      if (openReviewSections.has(key)) {
+
+      // Check actual DOM visibility instead of relying on the Set
+      const isVisible = sectionEl.style.display === "block";
+
+      if (isVisible) {
         openReviewSections.delete(key);
         sectionEl.style.display = "none";
         return;
       }
+
       openReviewSections.add(key);
       sectionEl.style.display = "block";
       sectionEl.innerHTML = `<div class="reviewStatus">Loading reviews...</div>`;
@@ -990,6 +993,9 @@
     let currentPage = 1;
 
     function renderCars(cars) {
+      // ── FIX: clear stale open-review tracking on every re-render ──
+      openReviewSections.clear();
+
       const grid         = document.getElementById("carsGrid");
       const loadMoreWrap = document.getElementById("loadMoreWrap");
       const loadMoreBtn  = document.getElementById("loadMoreBtn");
@@ -1104,16 +1110,6 @@
         });
       });
 
-      // Re-render any open review sections
-      openReviewSections.forEach(vehicleId => {
-        const section = grid.querySelector(`.reviewsSection[data-review-section="${CSS.escape(vehicleId)}"]`);
-        if (section) {
-          const cached = reviewCache.get(vehicleId);
-          if (cached) renderReviewSection(section, vehicleId, cached);
-          else toggleReviews(vehicleId, section);
-        }
-      });
-
       // Load more controls
       if (loadMoreWrap && loadMoreBtn && resultsMeta) {
         const shown = cars.length;
@@ -1218,7 +1214,6 @@
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || "Could not load cars");
 
-        // Handle both plain array [] and paginated {rows, total, page} responses
         const rawCars = Array.isArray(data?.rows) ? data.rows
                       : Array.isArray(data)        ? data
                       : [];
@@ -1297,7 +1292,7 @@
     wireUI();
     loadCars();
   </script>
-  
+
   <script src="chat.js"></script>
   <script src="navbar.js"></script>
   <script src="darkm.js"></script>
