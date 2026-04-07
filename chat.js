@@ -175,9 +175,19 @@
       quick: ["How do I book?", "Browse cars", "Pricing info", "Cancel booking"],
     },
     {
+      match: ["contact support", "contact us", "reach out", "get help"],
+      reply: "Thank you for reaching out! 🙏 One of our administrators will review your enquiry and get back to you shortly. In the meantime, feel free to ask me anything and I'll do my best to assist you.",
+      quick: ["How do I book?", "Cancel booking", "Pricing info"],
+    },
+    {
       match: ["cancel", "cancellation", "refund", "undo booking", "cancel booking"],
       reply: "You can cancel a booking from **My Bookings** page. Find the booking you want to cancel and click Cancel. Please note cancellations may affect your total spent balance.",
       quick: ["How do I book?", "Contact support"],
+    },
+    {
+      match: ["browse cars", "browse", "see cars", "view cars", "all cars"],
+      reply: "Head to the **Browse Cars** page to see all available vehicles! You can filter by type, drivetrain, and price, or search by make and model. 🚗",
+      quick: ["How do I book?", "Pricing info", "Cancel booking"],
     },
     {
       match: ["book", "reserve", "rent", "how do i book", "how to book"],
@@ -231,7 +241,7 @@
     },
     {
       match: ["help", "support", "contact", "issue", "problem", "question"],
-      reply: "I'm here to help! You can ask me anything about bookings, pricing, locations, or how the site works. For urgent issues, please contact us at support@cp317rentals.ca 📧",
+      reply: "I'm here to help! You can ask me anything about bookings, pricing, locations, or how the site works. 😊",
       quick: ["How do I book?", "Cancel booking", "Pricing info"],
     },
     {
@@ -243,16 +253,6 @@
       match: ["bye", "goodbye", "see you", "later", "done", "nothing"],
       reply: "Thanks for chatting! Enjoy your rental. Safe travels! 🚙💨",
       quick: [],
-    },
-    {
-      match: ["browse cars", "browse", "see cars", "view cars", "all cars"],
-      reply: "Head to the **Browse Cars** page to see all available vehicles! You can filter by type, drivetrain, and price, or search by make and model. 🚗",
-      quick: ["How do I book?", "Pricing info", "Cancel booking"],
-    },
-    {
-      match: ["help", "issue", "problem", "question"],
-      reply: "Thank you for reaching out! 🙏 One of our administrators will review your enquiry and get back to you shortly. In the meantime, feel free to ask me anything and I'll do my best to assist you.",
-      quick: ["How do I book?", "Cancel booking", "Pricing info"],
     },
   ];
 
