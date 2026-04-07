@@ -175,14 +175,14 @@
       quick: ["How do I book?", "Browse cars", "Pricing info", "Cancel booking"],
     },
     {
+      match: ["cancel", "cancellation", "refund", "undo booking", "cancel booking"],
+      reply: "You can cancel a booking from **My Bookings** page. Find the booking you want to cancel and click Cancel. Please note cancellations may affect your total spent balance.",
+      quick: ["How do I book?", "Contact support"],
+    },
+    {
       match: ["book", "reserve", "rent", "how do i book", "how to book"],
       reply: "Booking is easy! Browse our cars, click **View** on any vehicle, pick your pickup and dropoff dates and locations, then click **Book**. You'll be taken to a secure payment page to confirm. 🚗",
       quick: ["Browse cars", "Payment info", "Cancel booking"],
-    },
-    {
-      match: ["cancel", "cancellation", "refund", "undo booking"],
-      reply: "You can cancel a booking from **My Bookings** page. Find the booking you want to cancel and click Cancel. Please note cancellations may affect your total spent balance.",
-      quick: ["How do I book?", "Contact support"],
     },
     {
       match: ["pay", "payment", "card", "charge", "cost", "price", "pricing", "how much"],
@@ -266,7 +266,6 @@
   styleEl.textContent = css;
   document.head.appendChild(styleEl);
 
-  // FAB button
   const fab = document.createElement("button");
   fab.id = "cr-chat-fab";
   fab.setAttribute("aria-label", "Open support chat");
@@ -278,7 +277,6 @@
   `;
   document.body.appendChild(fab);
 
-  // Chat box
   const box = document.createElement("div");
   box.id = "cr-chat-box";
   box.setAttribute("role", "dialog");
@@ -305,18 +303,16 @@
   `;
   document.body.appendChild(box);
 
-  const messagesEl    = box.querySelector("#cr-chat-messages");
-  const inputEl       = box.querySelector("#cr-chat-input");
-  const sendEl        = box.querySelector("#cr-chat-send");
-  const closeEl       = box.querySelector("#cr-chat-close");
+  const messagesEl     = box.querySelector("#cr-chat-messages");
+  const inputEl        = box.querySelector("#cr-chat-input");
+  const sendEl         = box.querySelector("#cr-chat-send");
+  const closeEl        = box.querySelector("#cr-chat-close");
   const quickRepliesEl = box.querySelector("#cr-quick-replies");
-  const badgeEl       = fab.querySelector("#cr-chat-badge");
+  const badgeEl        = fab.querySelector("#cr-chat-badge");
 
-  // ── State ────────────────────────────────────────────────────────────────────
   let isOpen = false;
   let typingEl = null;
 
-  // ── Helpers ──────────────────────────────────────────────────────────────────
   function getUserInitials() {
     try {
       const data = JSON.parse(localStorage.getItem("userData") || "{}");
@@ -367,9 +363,9 @@
       const btn = document.createElement("button");
       btn.className = "cr-qr";
       btn.textContent = label;
-      btn.addEventListener("click", e => { 
+      btn.addEventListener("click", e => {
         e.stopPropagation();
-        handleSend(label); 
+        handleSend(label);
       });
       quickRepliesEl.appendChild(btn);
     });
@@ -394,7 +390,6 @@
     }, delay);
   }
 
-  // ── Toggle ───────────────────────────────────────────────────────────────────
   function openChat() {
     isOpen = true;
     box.classList.add("open");
@@ -424,15 +419,11 @@
   sendEl.addEventListener("click", e => { e.stopPropagation(); handleSend(); });
   inputEl.addEventListener("keydown", e => { if (e.key === "Enter") { e.stopPropagation(); handleSend(); } });
 
-
-  // Close on outside click
   document.addEventListener("click", e => {
     if (!isOpen) return;
     if (box.contains(e.target)) return;
     if (fab.contains(e.target)) return;
-    // Small delay to avoid closing immediately after opening
     setTimeout(() => closeChat(), 10);
   });
-
 
 })();
