@@ -1189,7 +1189,7 @@
     function buildCarsEndpoint(page) {
       const p = new URLSearchParams();
       const q = getSearchQuery(), type = getSelectedType(), drive = getSelectedDrive(), maxPrice = getMaxPrice();
-      if (searchWhere)          p.set("where",    searchState.where);
+      if (searchState.where)    p.set("where",    searchState.where);
       if (searchState.pickup)   p.set("pickup",   searchState.pickup);
       if (searchState.dropoff)  p.set("dropoff",  searchState.dropoff);
       if (q)                    p.set("q",        q);
