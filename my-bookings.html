@@ -853,7 +853,6 @@
         if (!res.ok) throw new Error(data.error || "Could not load bookings");
 
         const rows = Array.isArray(data.rows) ? data.rows : [];
-        console.log("First booking keys:", rows[0]);
         const refs = JSON.parse(localStorage.getItem("bookingRefs") || "{}");
 
         if (!rows.length) {
@@ -873,8 +872,7 @@
           const name = `${manufacturer} ${model}`.trim() || "Unknown Vehicle";
           const imgSrc = getOrCreateImageAssignment(vehicleId, manufacturer, model);
           const pickupLocation  = normalizeLocation(getRowValue(booking, "pickupLocation",  "pickup_location",  "Pickup Location"));
-          const dropoffLocation = normalizeLocation(getRowValue(booking, "dropoffLocation", "dropoff_location", "Drop Off Location", "Dropoff Location"));
-          const refNum = refs[booking.saleId] || null;
+          const dropoffLocation = normalizeLocation(getRowValue(booking, "dropOffLocation", "dropoffLocation", "dropoff_location", "Drop Off Location", "Dropoff Location"));          const refNum = refs[booking.saleId] || null;
 
           return `
             <div class="bookingCard"
