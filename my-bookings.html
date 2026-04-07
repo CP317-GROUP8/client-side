@@ -853,6 +853,7 @@
         if (!res.ok) throw new Error(data.error || "Could not load bookings");
 
         const rows = Array.isArray(data.rows) ? data.rows : [];
+        console.log("First booking keys:", rows[0]);
         const refs = JSON.parse(localStorage.getItem("bookingRefs") || "{}");
 
         if (!rows.length) {
