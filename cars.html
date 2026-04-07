@@ -6,7 +6,6 @@
   <title>Cars</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet" />
   <style>
-
     * { box-sizing: border-box; font-family: Inter, system-ui; }
     body { margin: 0; background: var(--bg, #f4f6f9); color: var(--ink, #0d1117); transition: background 0.2s, color 0.2s; }
     .container { max-width: 1400px; margin: auto; padding: 40px; }
@@ -14,7 +13,6 @@
     h1 { font-size: 44px; margin: 0; color: var(--ink, #0d1117); }
     .sub { color: var(--muted, #555); font-size: 14px; }
 
-  
     button { padding: 12px 18px; border-radius: 14px; border: none; cursor: pointer; transition: filter 0.15s; }
     button:hover { filter: brightness(0.95); }
     .primary { background: var(--accent, #4f46e5); color: white; }
@@ -152,7 +150,6 @@
     .compareNowBtn:disabled { opacity: 0.4; cursor: not-allowed; }
     .compareClearBtn { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); border-radius: 12px; padding: 12px 18px; font-weight: 600; font-size: 14px; cursor: pointer; }
 
-    /* ── Compare Modal ── */
     #compareModal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 2000; align-items: center; justify-content: center; padding: 20px; }
     .compareModalInner { background: var(--surface); border-radius: 24px; width: 100%; max-width: 820px; max-height: 90vh; overflow-y: auto; box-shadow: 0 24px 80px rgba(0,0,0,0.3); position: relative; }
     .compareModalHeader {
@@ -561,6 +558,7 @@
       if (!sectionEl) return;
       sectionEl.innerHTML = buildReviewSectionHtml(vid, data);
       sectionEl.style.display = "block";
+
       const starPicker  = sectionEl.querySelector(".starPicker");
       const ratingInput = sectionEl.querySelector(".reviewRating");
       if (starPicker && ratingInput) {
@@ -695,7 +693,6 @@
     function carDetailsHref(vid) { if(!vid)return"#"; return `car-details.html?id=${encodeURIComponent(vid)}${isPreview?"&preview=1":""}`; }
     function carBookHref(vid) { return carDetailsHref(vid); }
 
-
     function openModal(car) {
       const name=`${car.manufacturer} ${car.model}`.trim();
       document.getElementById("modalImg").src=car.imgUrl; document.getElementById("modalImg").alt=name;
@@ -714,6 +711,7 @@
     document.getElementById("modalBookBtn").addEventListener("click",function(e){const vid=this.getAttribute("data-vehicle-id")||"";if(!vid)return;e.preventDefault();bumpPopularity(vid,4);postMetricInteraction(vid,"book_click");window.location.assign(carBookHref(vid));});
 
     let allCars=[], totalCars=0, currentPage=1;
+    let carsListAbort = null;
 
     function renderCars(cars) {
       openReviewSections.clear();
@@ -845,7 +843,6 @@
       const max=Number(s.max),val=Number(s.value); l.textContent=(!Number.isFinite(val)||!Number.isFinite(max)||val>=max)?"Any":`$${val}`;
     }
 
-    // ── Fetch cars ──
     function buildCarsEndpoint(page) {
       const p=new URLSearchParams(), q=getSearchQuery(),type=getSelectedType(),drive=getSelectedDrive(),maxPrice=getMaxPrice();
       if(searchState.where)p.set("where",searchState.where); if(searchState.pickup)p.set("pickup",searchState.pickup); if(searchState.dropoff)p.set("dropoff",searchState.dropoff);
@@ -857,10 +854,15 @@
 
     async function fetchCarsPage(page, {append=false}={}) {
       const grid=document.getElementById("carsGrid"), subtitle=document.getElementById("carsSubtitle"), loadMoreBtn=document.getElementById("loadMoreBtn");
-      if(!append){grid.innerHTML=`<div style="color:var(--muted,#555);">Loading cars…</div>`;}
-      else if(loadMoreBtn){loadMoreBtn.disabled=true;loadMoreBtn.textContent="Loading...";}
+      let signal;
+      if(!append){
+        if(carsListAbort)carsListAbort.abort();
+        carsListAbort=new AbortController();
+        signal=carsListAbort.signal;
+        grid.innerHTML=`<div style="color:var(--muted,#555);">Loading cars…</div>`;
+      } else if(loadMoreBtn){loadMoreBtn.disabled=true;loadMoreBtn.textContent="Loading...";}
       try {
-        const res=await fetch(buildCarsEndpoint(page)), data=await res.json();
+        const res=await fetch(buildCarsEndpoint(page),signal?{signal}:undefined), data=await res.json();
         if(!res.ok)throw new Error(data.error||"Could not load cars");
         const rawCars=Array.isArray(data?.rows)?data.rows:Array.isArray(data)?data:[];
         const nextCars=rawCars.map(normalizeCar);
@@ -876,6 +878,7 @@
         }
         updatePriceLabel(); renderCars(allCars);
       } catch(e) {
+        if(e?.name==="AbortError")return;
         console.error(e); document.getElementById("carsGrid").innerHTML=`<div style="color:var(--danger,#b91c1c);">Failed to load cars.</div>`;
       } finally { if(loadMoreBtn){loadMoreBtn.disabled=false;loadMoreBtn.textContent="Load More";} }
     }
@@ -887,7 +890,6 @@
       await fetchCarsPage(1);
     }
 
-    // ── Wire UI ──
     function wireUI() {
       document.getElementById("searchInput")?.addEventListener("input",  applyAllFilters);
       document.getElementById("filterType")?.addEventListener("change",  applyAllFilters);
