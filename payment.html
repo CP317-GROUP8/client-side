@@ -185,7 +185,6 @@
 
   <div class="wrap">
 
-
     <div class="steps">
       <div class="step done"><div class="step-num">✓</div><span>Details</span></div>
       <div class="step-line"></div>
@@ -389,7 +388,6 @@
       return url;
     }
 
-    // ── Session & params ──────────────────────────────────────────────────────
     function requireSession() {
       const email = localStorage.getItem("userEmail");
       const loggedInAt = Number(localStorage.getItem("loggedInAt") || "0");
@@ -460,12 +458,10 @@
         const car = await res.json();
         const mfr   = car["Manufacturer"] || car.manufacturer || "";
         const model = car["Model"]        || car.model        || "";
-        const drv   = car["Drivetrain"]   || car.drivetrain   || "";
         const price = Number(car["Price"] || car.price || 0);
         const days  = daysBetween(fromDate, toDate);
         const total = price * days;
 
-        // Use the same image assignment system as cars.html
         const imgUrl = getOrCreateImageAssignment(vehicleId, mfr, model);
         document.getElementById("carImg").src = imgUrl;
         document.getElementById("carImg").onerror = () => {
@@ -545,27 +541,39 @@
       } catch (err) { console.warn("Confirmation email failed:", err); }
     }
 
-    async function sendPickupEmail(carName, userName) {
+    async function sendPickupEmail(carName, userName, saleId) {
       try {
         await emailjs.send(KEERTHANA_SERVICE, KEERTHANA_TEMPLATE, {
-          user_name: userName, user_email: userEmail, car_name: carName,
-          pickup_date: formatDate(fromDate), dropoff_date: formatDate(toDate),
-          pickup_location: pickup || "—", email_type: "Booking Confirmed + Pickup Details",
-          email_message: "This is a reminder that your rental pickup is tomorrow!", location_label: "Pickup Location",
-          sale_id: "see booking confirmation",
+          user_name: userName,
+          user_email: userEmail,
+          car_name: carName,
+          pickup_date: formatDate(fromDate),
+          dropoff_date: formatDate(toDate),
+          pickup_location: pickup || "—",
+          email_type: "Booking Confirmation",
+          email_message: `your booking is confirmed! Your pickup is on ${formatDate(fromDate)}.`,
+          location_label: "Pickup Location",
+          sale_id: saleId || "—",
         }, KEERTHANA_KEY);
+        console.log("✅ Pickup email sent");
       } catch (err) { console.warn("Pickup email failed:", err); }
     }
 
-    async function sendReturnEmail(carName, userName) {
+    async function sendReturnEmail(carName, userName, saleId) {
       try {
         await emailjs.send(KEERTHANA_SERVICE, KEERTHANA_TEMPLATE, {
-          user_name: userName, user_email: userEmail, car_name: carName,
-          pickup_date: formatDate(fromDate), dropoff_date: formatDate(toDate),
-          pickup_location: dropoff || "—", email_type: "Return Details",
-          email_message: "This is a reminder that your rental return is tomorrow!", location_label: "Dropoff Location",
-          sale_id: "see booking confirmation",
+          user_name: userName,
+          user_email: userEmail,
+          car_name: carName,
+          pickup_date: formatDate(fromDate),
+          dropoff_date: formatDate(toDate),
+          pickup_location: dropoff || "—",
+          email_type: "Return Details",
+          email_message: `this is a reminder that your rental return is on ${formatDate(toDate)}.`,
+          location_label: "Dropoff Location",
+          sale_id: saleId || "—",
         }, KEERTHANA_KEY);
+        console.log("✅ Return email sent");
       } catch (err) { console.warn("Return email failed:", err); }
     }
 
@@ -577,9 +585,10 @@
       const userData = JSON.parse(localStorage.getItem("userData") || "{}");
       const userName = `${userData.firstName || ""} ${userData.lastName || ""}`.trim() || userEmail;
       const carName  = document.getElementById("carName")?.textContent || `Vehicle #${vehicleId}`;
+      const saleId   = data?.saleId || "—";
       await sendConfirmationEmail(ref);
-      await sendPickupEmail(carName, userName);
-      await sendReturnEmail(carName, userName);
+      await sendPickupEmail(carName, userName, saleId);
+      await sendReturnEmail(carName, userName, saleId);
     }
   </script>
   <script src="navbar.js"></script>
