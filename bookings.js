@@ -28,7 +28,7 @@ async function sendPickupEmail({ userName, userEmail, carName, pickupDate, dropo
       pickup_location: pickupLocation,
       sale_id:         saleId,
       email_type:      "Booking Confirmation",
-      email_message:   "your booking is confirmed! Here are your pickup details.",
+      email_message:   "your booking is confirmed! Here are your pickup details. Your pickup is on ${pickupDate}.",
       location_label:  "Pickup Location",
     });
   } catch (err) { console.warn("EmailJS pickup email failed:", err); }
@@ -45,7 +45,7 @@ async function sendReturnEmail({ userName, userEmail, carName, pickupDate, dropo
       pickup_location: dropoffLocation,
       sale_id:         saleId,
       email_type:      "Return Details",
-      email_message:   "this is a reminder of your return details.",
+      email_message:   "this is a reminder of your return details. Your rental return is on ${dropoffDate}.",
       location_label:  "Dropoff Location",
     });
   } catch (err) { console.warn("EmailJS return email failed:", err); }
