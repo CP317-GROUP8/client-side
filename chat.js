@@ -170,7 +170,7 @@
   // ── Response engine ──────────────────────────────────────────────────────────
   const RESPONSES = [
     {
-      match: ["hello", "hi", "hey", "howdy", "hiya", "sup"],
+      match: ["hello", "hi", "hey", "howdy", "hiya"],
       reply: "Hi there! 👋 Welcome to CP317 Car Rentals. How can I help you today?",
       quick: ["How do I book?", "Browse cars", "Pricing info", "Cancel booking"],
     },
