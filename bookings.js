@@ -28,12 +28,17 @@ async function sendPickupEmail({ userName, userEmail, carName, pickupDate, dropo
       pickup_location: pickupLocation,
       sale_id:         saleId,
       email_type:      "Booking Confirmation",
-      email_message:   "your booking is confirmed! Here are your pickup details. Your pickup is on ${pickupDate}.",
+      email_message:   `your booking is confirmed! Here are your pickup details. Your pickup is on ${pickupDate}.`,
       location_label:  "Pickup Location",
     });
+    console.log("✅ Pickup confirmation email sent");
   } catch (err) { console.warn("EmailJS pickup email failed:", err); }
 }
 
+/**
+ * Email 2 — Return Details
+ * Also fires immediately on booking confirmation.
+ */
 async function sendReturnEmail({ userName, userEmail, carName, pickupDate, dropoffDate, dropoffLocation, saleId }) {
   try {
     await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_PICKUP_TEMPLATE, {
@@ -45,9 +50,10 @@ async function sendReturnEmail({ userName, userEmail, carName, pickupDate, dropo
       pickup_location: dropoffLocation,
       sale_id:         saleId,
       email_type:      "Return Details",
-      email_message:   "this is a reminder of your return details. Your rental return is on ${dropoffDate}.",
+      email_message:   `this is a reminder of your return details. Your rental return is on ${dropoffDate}.`,
       location_label:  "Dropoff Location",
     });
+    console.log("✅ Return details email sent");
   } catch (err) { console.warn("EmailJS return email failed:", err); }
 }
 
