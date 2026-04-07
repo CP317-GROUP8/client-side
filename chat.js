@@ -250,7 +250,7 @@
       quick: ["How do I book?", "Pricing info", "Cancel booking"],
     },
     {
-      match: ["contact support", "contact us", "email", "reach out", "get help"],
+      match: ["help", "issue", "problem", "question"],
       reply: "Thank you for reaching out! 🙏 One of our administrators will review your enquiry and get back to you shortly. In the meantime, feel free to ask me anything and I'll do my best to assist you.",
       quick: ["How do I book?", "Cancel booking", "Pricing info"],
     },
