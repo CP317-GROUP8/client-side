@@ -1,588 +1,376 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Payment</title>
-  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+const isLocalPreview = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
+const API_BASE = isLocalPreview ? "http://localhost:10000" : "https://server-side-zqaz.onrender.com";
+const SESSION_MS = 12 * 60 * 60 * 1000;
+const SERVICE_FEE = 15;
+const TAX_RATE = 0.13;
 
-    body {
-      font-family: 'DM Sans', sans-serif;
-      background: var(--bg, #eef2ff);
-      color: var(--ink, #0d1117);
-      min-height: 100vh;
-      display: block;
-      padding: 0;
-      position: relative;
-      overflow-x: hidden;
-      transition: background 0.2s, color 0.2s;
-    }
+// ── EmailJS config ──────────────────────────────────────────────────────────
+const EMAILJS_PUBLIC_KEY      = "H3F1dxhmOW-hMSZij";
+const EMAILJS_SERVICE_ID      = "service_v914ueg";
+const EMAILJS_PICKUP_TEMPLATE = "template_m5nti5o";
 
-    .wrap {
-      width: 100%;
-      max-width: 480px;
-      margin: 0 auto;
-      padding: 24px;
-      position: relative;
-      z-index: 1;
-    }
-    
-    body::before {
-      content: '';
-      position: fixed;
-      width: 600px; height: 600px;
-      border-radius: 50%;
-      background: radial-gradient(circle, rgba(79,70,229,0.08) 0%, transparent 70%);
-      top: -200px; left: 50%;
-      transform: translateX(-50%);
-      pointer-events: none;
-    }
+function initEmailJS() {
+  if (window.emailjs) emailjs.init(EMAILJS_PUBLIC_KEY);
+}
 
-    .wrap { width: 100%; max-width: 480px; position: relative; z-index: 1; }
+/**
+ * Email 1 — Booking Confirmed + Pickup Details
+ * Fires immediately on booking confirmation.
+ */
+async function sendPickupEmail({ userName, userEmail, carName, pickupDate, dropoffDate, pickupLocation, saleId }) {
+  try {
+    await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_PICKUP_TEMPLATE, {
+      user_name:       userName,
+      user_email:      userEmail,
+      car_name:        carName,
+      pickup_date:     pickupDate,
+      dropoff_date:    dropoffDate,
+      pickup_location: pickupLocation,
+      sale_id:         saleId,
+      email_type:      "Booking Confirmation",
+      email_message:   `your booking is confirmed! Here are your pickup details. Your pickup is on ${pickupDate}.`,
+      location_label:  "Pickup Location",
+    });
+    console.log("✅ Pickup confirmation email sent");
+  } catch (err) { console.warn("EmailJS pickup email failed:", err); }
+}
 
-    .steps { display: flex; align-items: center; justify-content: center; gap: 0; margin-bottom: 36px; animation: fadeUp 0.4s ease both; }
-    .step { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 500; color: var(--muted, #8891a0); }
-    .step.active { color: var(--ink, #0d1117); }
-    .step.done   { color: var(--success, #10b981); }
-    .step-num {
-      width: 28px; height: 28px; border-radius: 50%;
-      border: 1.5px solid var(--border, #e4e8ee);
-      display: flex; align-items: center; justify-content: center;
-      font-size: 12px; font-weight: 700;
-      background: var(--surface, white);
-      color: var(--ink, #0d1117);
-    }
-    .step.active .step-num { border-color: var(--accent, #4f46e5); background: var(--accent, #4f46e5); color: white; }
-    .step.done   .step-num { border-color: var(--success, #10b981); background: var(--success, #10b981); color: white; }
-    .step-line { width: 40px; height: 1.5px; background: var(--border, #e4e8ee); margin: 0 4px; }
+/**
+ * Email 2 — Return Details
+ * Also fires immediately on booking confirmation.
+ */
+async function sendReturnEmail({ userName, userEmail, carName, pickupDate, dropoffDate, dropoffLocation, saleId }) {
+  try {
+    await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_PICKUP_TEMPLATE, {
+      user_name:       userName,
+      user_email:      userEmail,
+      car_name:        carName,
+      pickup_date:     pickupDate,
+      dropoff_date:    dropoffDate,
+      pickup_location: dropoffLocation,
+      sale_id:         saleId,
+      email_type:      "Return Details",
+      email_message:   `this is a reminder of your return details. Your rental return is on ${dropoffDate}.`,
+      location_label:  "Dropoff Location",
+    });
+    console.log("✅ Return details email sent");
+  } catch (err) { console.warn("EmailJS return email failed:", err); }
+}
 
-    .card {
-      background: var(--surface, white);
-      border: 1px solid var(--border, #e4e8ee);
-      border-radius: 24px;
-      overflow: hidden;
-      animation: fadeUp 0.4s 0.05s ease both;
-    }
+function requireSession() {
+  const email = localStorage.getItem("userEmail");
+  const loggedInAt = Number(localStorage.getItem("loggedInAt") || "0");
+  if (!email || !loggedInAt) {
+    if (isLocalPreview) return "";
+    window.location.replace("index.html"); throw new Error("No session");
+  }
+  if (Date.now() - loggedInAt > SESSION_MS) {
+    localStorage.removeItem("userEmail");
+    localStorage.removeItem("loggedInAt");
+    localStorage.removeItem("isAdmin");
+    if (isLocalPreview) return "";
+    window.location.replace("index.html");
+    throw new Error("Session expired");
+  }
+  return email;
+}
 
-    .summary {
-      background: var(--surface2, #f4f6f9);
-      border-bottom: 1px solid var(--border, #e4e8ee);
-      padding: 20px 28px;
-      display: flex; gap: 16px; align-items: center;
-    }
-    .summary img {
-      width: 80px; height: 60px; object-fit: cover;
-      border-radius: 10px; border: 1px solid var(--border, #e4e8ee); flex-shrink: 0;
-    }
-    .summary-info { flex: 1; min-width: 0; }
-    .summary-name {
-      font-family: 'Syne', sans-serif; font-size: 17px; font-weight: 700;
-      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-      color: var(--ink, #0d1117);
-    }
-    .summary-meta { font-size: 12px; color: var(--muted, #8891a0); margin-top: 3px; }
-    .summary-price {
-      font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 800;
-      color: var(--accent, #4f46e5); white-space: nowrap; flex-shrink: 0;
-    }
-    .summary-price span { font-size: 12px; font-weight: 400; color: var(--muted, #8891a0); font-family: 'DM Sans', sans-serif; }
+const params = new URLSearchParams(window.location.search);
+const carId = params.get("id");
+const userEmail = requireSession();
 
-    .form-body { padding: 28px; }
-    .section-label {
-      font-family: 'Syne', sans-serif; font-size: 11px; font-weight: 700;
-      text-transform: uppercase; letter-spacing: 0.1em;
-      color: var(--muted, #8891a0); margin-bottom: 16px;
-    }
-    .field { margin-bottom: 14px; }
-    .field label { display: block; font-size: 12px; font-weight: 500; color: var(--muted, #8891a0); margin-bottom: 6px; }
-    .field input {
-      width: 100%;
-      background: var(--surface2, #f4f6f9);
-      border: 1px solid var(--border, #e4e8ee);
-      border-radius: 12px; padding: 13px 16px;
-      font-family: 'DM Sans', sans-serif; font-size: 15px;
-      color: var(--ink, #0d1117); outline: none; transition: border-color 0.15s;
-    }
-    .field input:focus { border-color: var(--accent, #4f46e5); }
-    .field input::placeholder { color: var(--muted, #8891a0); }
-    .field input.mock { font-family: 'Courier New', monospace; letter-spacing: 0.05em; }
-    .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+let selectedCar = null;
+let bookedRanges = [];
 
-    .fake-badge {
-      display: inline-flex; align-items: center; gap: 6px;
-      background: var(--accent-light, rgba(79,70,229,0.08));
-      border: 1px solid rgba(79,70,229,0.2);
-      border-radius: 999px; padding: 4px 12px;
-      font-size: 11px; font-weight: 600; color: var(--accent, #4f46e5);
-      margin-bottom: 20px;
-    }
+const PNG_FIRST_MODEL_KEYS = new Set([
+  "dodge/challenger",
+  "nissan/kicks",
+  "toyota/corolla",
+  "toyota/corolla hybrid",
+  "toyota/highlander",
+  "toyota/highlander hybrid",
+]);
 
-    .divider { border: none; border-top: 1px solid var(--border, #e4e8ee); margin: 22px 0; }
+function normalizeModelKeyPart(value) {
+  return String(value || "")
+    .toLowerCase()
+    .replace(/\s+/g, " ")
+    .trim();
+}
 
-    .total-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-    .total-label { font-size: 14px; color: var(--muted, #8891a0); }
-    .total-value { font-family: 'Syne', sans-serif; font-size: 26px; font-weight: 800; color: var(--ink, #0d1117); }
+function getCarImage(manufacturer, model, drivetrain) {
+  const vehicleId = safeStr(selectedCar?.id);
+  if (vehicleId) {
+    try {
+      const raw = localStorage.getItem("carImageAssignments");
+      const assignments = raw ? JSON.parse(raw) : {};
+      if (assignments[vehicleId]) return assignments[vehicleId];
+    } catch {}
+  }
 
-    .pay-btn {
-      width: 100%; padding: 16px; border-radius: 14px; border: none;
-      background: linear-gradient(135deg, var(--accent, #4f46e5), #9333ea);
-      color: white; font-family: 'Syne', sans-serif; font-size: 16px; font-weight: 700;
-      cursor: pointer; letter-spacing: 0.02em; transition: all 0.2s; position: relative; overflow: hidden;
-    }
-    .pay-btn:hover { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(108,99,255,0.4); }
-    .pay-btn:active { transform: translateY(0); }
-    .pay-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
-    .pay-btn .spinner { display: none; width: 18px; height: 18px; border: 2.5px solid rgba(255,255,255,0.3); border-top-color: white; border-radius: 50%; animation: spin 0.7s linear infinite; margin: 0 auto; }
-    .pay-btn.loading .btn-text { display: none; }
-    .pay-btn.loading .spinner { display: block; }
+  const modelKey = `${normalizeModelKeyPart(manufacturer)}/${normalizeModelKeyPart(model)}`;
+  if (modelKey === "/") return "./assets/cars/dummy.png";
+  const ext = PNG_FIRST_MODEL_KEYS.has(modelKey) ? "png" : "jpeg";
+  return `./assets/cars/${modelKey}/1.${ext}`;
+}
 
-    .success-screen { display: none; padding: 40px 28px; text-align: center; animation: fadeUp 0.5s ease both; }
-    .success-icon {
-      width: 72px; height: 72px; border-radius: 50%;
-      background: rgba(16,185,129,0.12); border: 2px solid var(--success, #10b981);
-      display: flex; align-items: center; justify-content: center;
-      font-size: 32px; margin: 0 auto 20px; animation: popIn 0.4s 0.1s ease both;
-    }
-    .success-title { font-family: 'Syne', sans-serif; font-size: 26px; font-weight: 800; margin-bottom: 8px; color: var(--ink, #0d1117); }
-    .success-sub { font-size: 14px; color: var(--muted, #8891a0); margin-bottom: 28px; line-height: 1.6; }
+function todayISO() {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}-${String(now.getDate()).padStart(2,"0")}`;
+}
 
-    .ref-box {
-      background: var(--surface2, #f4f6f9);
-      border: 1px dashed var(--border, #e4e8ee);
-      border-radius: 16px; padding: 20px; margin-bottom: 28px;
-    }
-    .ref-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted, #8891a0); margin-bottom: 8px; }
-    .ref-number { font-family: 'Syne', sans-serif; font-size: 28px; font-weight: 800; color: var(--accent, #4f46e5); letter-spacing: 0.06em; }
-    .ref-hint { font-size: 12px; color: var(--muted, #8891a0); margin-top: 6px; }
+function formatMoney(value) {
+  return `$${Number(value || 0).toFixed(2)}`;
+}
 
-    .success-btns { display: flex; flex-direction: column; gap: 10px; }
-    .success-btn {
-      padding: 13px; border-radius: 12px;
-      border: 1px solid var(--border, #e4e8ee);
-      background: var(--surface2, #f4f6f9);
-      color: var(--ink, #0d1117);
-      font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600;
-      cursor: pointer; transition: all 0.15s; text-decoration: none; display: block;
-    }
-    .success-btn:hover { border-color: var(--accent, #4f46e5); color: var(--accent, #4f46e5); }
-    .success-btn.primary-btn { background: linear-gradient(135deg, var(--accent, #4f46e5), #9333ea); border-color: transparent; color: white; }
-    .success-btn.primary-btn:hover { opacity: 0.9; color: white; }
+function normalizeLocation(value) {
+  const raw = String(value || "").trim();
+  if (!raw) return "";
 
-    .err-msg { font-size: 13px; color: var(--danger, #ef4444); margin-top: 12px; text-align: center; min-height: 18px; }
-    .secure-note { text-align: center; font-size: 12px; color: var(--muted, #8891a0); margin-top: 16px; animation: fadeUp 0.4s 0.1s ease both; }
+  const parts = raw
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
 
-    @keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
-    @keyframes popIn  { from { opacity: 0; transform: scale(0.6); } to { opacity: 1; transform: scale(1); } }
-    @keyframes spin   { to { transform: rotate(360deg); } }
+  if (!parts.length) return "";
 
-    @media (max-width: 500px) { .summary { flex-wrap: wrap; } .row2 { grid-template-columns: 1fr; } }
-  </style>
-</head>
-<body>
+  return parts
+    .map((part, index) =>
+      index === 0 ? part : part.charAt(0).toUpperCase() + part.slice(1)
+    )
+    .join("");
+}
 
-  <div class="wrap">
+function formatDate(dateStr) {
+  if (!dateStr) return "—";
+  const [y, m, d] = dateStr.slice(0, 10).split("-");
+  return new Date(y, m - 1, d).toLocaleDateString("en-CA", { year: "numeric", month: "short", day: "numeric" });
+}
 
+function daysBetween(from, to) {
+  if (!from || !to) return 0;
+  const a = new Date(`${from}T00:00:00`);
+  const b = new Date(`${to}T00:00:00`);
+  const ms = b - a;
+  if (ms < 0) return 0;
+  if (ms === 0) return 1;
+  return Math.ceil(ms / 86400000);
+}
 
-    <div class="steps">
-      <div class="step done"><div class="step-num">✓</div><span>Details</span></div>
-      <div class="step-line"></div>
-      <div class="step active"><div class="step-num">2</div><span>Payment</span></div>
-      <div class="step-line"></div>
-      <div class="step" id="step3"><div class="step-num">3</div><span>Confirmed</span></div>
-    </div>
+function hasDateConflict(from, to) {
+  for (const r of bookedRanges) {
+    if (from <= r.toDate && to >= r.fromDate) return r;
+  }
+  return null;
+}
 
-    <div class="card">
-      <div class="summary">
-        <img id="carImg" src="./assets/cars/dummy.png" alt="Car" onerror="this.src='./assets/cars/dummy.png'">
-        <div class="summary-info">
-          <div class="summary-name" id="carName">Loading…</div>
-          <div class="summary-meta" id="carDates">—</div>
-        </div>
-        <div class="summary-price" id="carPrice">—<span>/day</span></div>
-      </div>
+function setMsg(msg, type = "") {
+  const el = document.getElementById("bookMsg");
+  el.className = type;
+  el.textContent = msg;
+}
 
-      <div class="form-body" id="paymentForm">
-        <div class="fake-badge">🔒 Simulated Payment — No real charge</div>
-        <div class="section-label">Card Details</div>
-        <div class="field"><label>Cardholder Name</label><input type="text" id="cardName" placeholder="Jane Smith" autocomplete="cc-name"></div>
-        <div class="field"><label>Card Number</label><input type="text" id="cardNumber" class="mock" placeholder="1234 5678 9012 3456" maxlength="19" autocomplete="cc-number"></div>
-        <div class="row2">
-          <div class="field"><label>Expiry Date</label><input type="text" id="cardExpiry" class="mock" placeholder="MM / YY" maxlength="7" autocomplete="cc-exp"></div>
-          <div class="field"><label>CVV</label><input type="text" id="cardCvv" class="mock" placeholder="•••" maxlength="3" autocomplete="cc-csc"></div>
-        </div>
-        <hr class="divider">
-        <div class="total-row">
-          <span class="total-label">Total Due</span>
-          <span class="total-value" id="totalDue">—</span>
-        </div>
-        <button class="pay-btn" id="payBtn" onclick="handlePay()">
-          <span class="btn-text">Pay & Confirm Booking</span>
-          <div class="spinner"></div>
-        </button>
-        <div class="err-msg" id="errMsg"></div>
-      </div>
+function setStatus(msg) {
+  document.getElementById("status").textContent = msg;
+}
 
-      <div class="success-screen" id="successScreen">
-        <div class="success-icon">✓</div>
-        <div class="success-title">Booking Confirmed!</div>
-        <div class="success-sub">Your payment was processed and your booking is confirmed. Save your reference number below.</div>
-        <div class="ref-box">
-          <div class="ref-label">Reference Number</div>
-          <div class="ref-number" id="refNumber">—</div>
-          <div class="ref-hint">Keep this for your records</div>
-        </div>
-        <div class="success-btns">
-          <a class="success-btn primary-btn" href="my-bookings.html">View My Bookings</a>
-          <a class="success-btn" href="cars.html">Browse More Cars</a>
-          <a class="success-btn" href="home.html">Back to Home</a>
-        </div>
-      </div>
-    </div>
+function computeAndShowBreakdown() {
+  const from = document.getElementById("fromDate").value;
+  const to = document.getElementById("toDate").value;
+  if (!from || !to || !selectedCar) return;
+  const days = daysBetween(from, to);
+  const rate = selectedCar.price;
+  const subtotal = rate * days;
+  const fee = SERVICE_FEE;
+  const tax = (subtotal + fee) * TAX_RATE;
+  const total = subtotal + fee + tax;
+  setMsg(`${days} day${days !== 1 ? "s" : ""} × ${formatMoney(rate)} + $${SERVICE_FEE} fee + tax = ${formatMoney(total)} total`);
+}
 
-    <div class="secure-note">🔒 This is a simulated payment for demo purposes only</div>
-  </div>
+function validateForm() {
+  const from = document.getElementById("fromDate").value;
+  const to = document.getElementById("toDate").value;
+  const pickup = normalizeLocation(document.getElementById("pickupLocation").value);
+  const dropoff = normalizeLocation(document.getElementById("dropoffLocation").value);
+  if (!from || !to) return { ok: false, message: "Please select both pickup and dropoff dates." };
+  if (from < todayISO()) return { ok: false, message: "Pickup date cannot be in the past." };
+  if (to < from) return { ok: false, message: "Dropoff date cannot be before pickup date." };
+  if (!pickup) return { ok: false, message: "Please enter a pickup location." };
+  if (!dropoff) return { ok: false, message: "Please enter a dropoff location." };
+  const conflict = hasDateConflict(from, to);
+  if (conflict) return { ok: false, message: `Car already booked ${conflict.fromDate} – ${conflict.toDate}. Pick different dates.` };
+  return { ok: true };
+}
 
-  <script>
-    const API_BASE   = "https://server-side-zqaz.onrender.com";
-    const SESSION_MS = 12 * 60 * 60 * 1000;
+function refreshForm() {
+  const from = document.getElementById("fromDate").value;
+  const to = document.getElementById("toDate").value;
+  const btn = document.getElementById("bookNowBtn");
+  const v = validateForm();
+  btn.disabled = !v.ok;
+  if (!v.ok) {
+    if (from || to) setMsg(v.message, "error");
+    return;
+  }
+  computeAndShowBreakdown();
+}
 
-    const HIERMONA_SERVICE  = "service_fvcm81h";
-    const HIERMONA_TEMPLATE = "template_vgeh0gt";
-    const HIERMONA_KEY      = "xKlqbLg8GDzQWAvbx";
-    const KEERTHANA_SERVICE  = "service_v914ueg";
-    const KEERTHANA_TEMPLATE = "template_m5nti5o";
-    const KEERTHANA_KEY      = "H3F1dxhmOW-hMSZij";
+async function loadBookedDates() {
+  try {
+    const res = await fetch(`${API_BASE}/cars/${carId}/booked-dates`);
+    const data = await res.json().catch(() => ({ ranges: [] }));
+    bookedRanges = Array.isArray(data.ranges) ? data.ranges : [];
+  } catch {
+    bookedRanges = [];
+  }
+}
 
-    // ── Image assignment system ───────────────────────────────────────────────
-    const IMAGE_ASSIGNMENTS_KEY = 'carImageAssignments';
+async function loadCarAndShowForm() {
+  document.getElementById("pageTitle").textContent = "Confirm Booking";
+  document.getElementById("bookLayout").style.display = "grid";
 
-    const IMAGE_MANIFEST = {
-      'bmw/i4':                     [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
-      'bmw/x5':                     [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
-      'buick/envista':               [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
-      'byd/dolphin surf':            [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
-      'byd/seal':                    [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
-      'byd/seagull':                 [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
-      'byd/sealion 7':               [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'png'  }, { num: 3, ext: 'jpeg' }],
-      'chery/tiggo 4':               [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
-      'chevrolet/colorado':          [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
-      'chevrolet/equinox':           [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
-      'chevrolet/silverado 1500':    [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
-      'chevrolet/trailblazer':       [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
-      'chevrolet/trax':              [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
-      'dodge/challenger':            [{ num: 1, ext: 'png'  }, { num: 2, ext: 'png'  }, { num: 3, ext: 'jpeg' }],
-      'ford/bronco sport':           [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
-      'ford/everest':                [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
-      'ford/f-150':                  [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
-      'ford/f-150 lightning':        [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
-      'ford/maverick':               [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
-      'ford/mustang':                [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
-      'ford/mustang mach-e':         [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
-      'ford/puma':                   [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
-      'ford/ranger':                 [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
-      'genesis/gv70':                [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
-      'gmc/sierra 1500':             [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
-      'gwm/haval jolion':            [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
-      'honda/civic':                 [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
-      'honda/civic hybrid':          [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
-      'honda/cr-v':                  [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
-      'honda/fit e:hev':             [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
-      'honda/passport':              [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
-      'honda/prelude':               [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
-      'honda/ridgeline':             [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
-      'hyundai/elantra':             [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
-      'hyundai/kona':                [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
-      'hyundai/kona electric':       [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
-      'hyundai/palisade':            [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
-      'hyundai/santa cruz':          [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
-      'hyundai/tucson':              [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
-      'hyundai/venue':               [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
-      'isuzu/d-max':                 [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
-      'jaecoo/7':                    [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
-      'jeep/compass':                [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
-      'kia/k4':                      [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
-      'kia/niro hybrid':             [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
-      'kia/seltos':                  [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
-      'kia/soul':                    [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
-      'kia/sportage':                [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
-      'leapmotor/c10':               [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
-      'lexus/es':                    [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
-      'lexus/rx 350 hybrid':         [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
-      'mazda/3':                     [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
-      'mazda/cx-5':                  [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
-      'mazda/cx-50':                 [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
-      'mazda/mx-5 miata':            [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
-      'mini/cooper':                 [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
-      'mitsubishi/outlander':        [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
-      'mitsubishi/outlander sport':  [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
-      'mitsubishi/triton':           [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
-      'nissan/frontier':             [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
-      'nissan/kicks':                [{ num: 1, ext: 'png'  }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
-      'nissan/qashqai':              [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
-      'nissan/rogue':                [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
-      'nissan/sentra':               [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
-      'nissan/z':                    [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
-      'porsche/911':                 [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
-      'renault/twingo e-tech':       [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
-      'rivian/r1s':                  [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
-      'rivian/r1t':                  [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
-      'saic-gm-wuling/bingo ev':     [{ num: 1, ext: 'png'  }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
-      'subaru/brz':                  [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
-      'subaru/crosstrek':            [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
-      'subaru/forester':             [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
-      'subaru/impreza':              [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
-      'suzuki/swift hybrid':         [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
-      'tesla/model y':               [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
-      'toyota/camry':                [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
-      'toyota/corolla':              [{ num: 1, ext: 'png'  }, { num: 2, ext: 'png'  }, { num: 3, ext: 'jpeg' }],
-      'toyota/corolla cross':        [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
-      'toyota/corolla hybrid':       [{ num: 1, ext: 'png'  }, { num: 2, ext: 'png'  }, { num: 3, ext: 'jpeg' }],
-      'toyota/gr86':                 [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
-      'toyota/highlander':           [{ num: 1, ext: 'png'  }, { num: 2, ext: 'png'  }, { num: 3, ext: 'jpeg' }],
-      'toyota/highlander hybrid':    [{ num: 1, ext: 'png'  }, { num: 2, ext: 'png'  }, { num: 3, ext: 'jpeg' }],
-      'toyota/hilux':                [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
-      'toyota/rav4':                 [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
-      'toyota/rav4 plug-in hybrid':  [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
-      'toyota/sienna':               [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
-      'toyota/supra':                [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
-      'toyota/tacoma':               [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
-      'vauxhall/frontera electric':  [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
-      'volkswagen/id.2all':          [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
-      'volkswagen/jetta':            [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
-      'volkswagen/tiguan':           [{ num: 1, ext: 'jpeg' }, { num: 2, ext: 'jpeg' }, { num: 3, ext: 'jpeg' }],
+  await Promise.all([
+    fetch(`${API_BASE}/cars/${carId}`).then(async (r) => {
+      const row = await r.json().catch(() => null);
+      if (!r.ok || !row) throw new Error("Car not found");
+      selectedCar = {
+        id: row["Vehicle ID"],
+        manufacturer: row["Manufacturer"] || "Unknown",
+        model: row["Model"] || "",
+        vehicleType: row["Vehicle Type"] || "-",
+        drivetrain: row["Drivetrain"] || "-",
+        price: Number(row["Price"] || 0),
+      };
+      const fullName = `${selectedCar.manufacturer} ${selectedCar.model}`.trim();
+      document.getElementById("carImg").src = getCarImage(selectedCar.manufacturer, selectedCar.model, selectedCar.drivetrain);
+      document.getElementById("carImgName").textContent = fullName;
+      document.getElementById("carImgPrice").textContent = `${formatMoney(selectedCar.price)}/day`;
+      document.getElementById("carImgPills").innerHTML = `
+        <span class="carPill">${selectedCar.vehicleType}</span>
+        <span class="carPill">${selectedCar.drivetrain}</span>
+        <span class="carPill" style="background:#dcfce7;border-color:#86efac;color:#166534;">Available</span>
+      `;
+      setStatus(`Booking for ${fullName} (ID ${selectedCar.id})`);
+    }),
+    loadBookedDates(),
+  ]);
+
+  if (bookedRanges.length > 0) {
+    setMsg(`⚠ Already booked: ${bookedRanges.map(r => `${r.fromDate} – ${r.toDate}`).join("  |  ")}`, "error");
+  }
+
+  const today = todayISO();
+  const fromEl = document.getElementById("fromDate");
+  const toEl = document.getElementById("toDate");
+  fromEl.min = today;
+  toEl.min = today;
+
+  fromEl.addEventListener("change", () => {
+    toEl.min = fromEl.value || today;
+    if (toEl.value && toEl.value < fromEl.value) toEl.value = fromEl.value;
+    refreshForm();
+  });
+  toEl.addEventListener("change", refreshForm);
+  document.getElementById("pickupLocation").addEventListener("input", refreshForm);
+  document.getElementById("dropoffLocation").addEventListener("input", refreshForm);
+  document.getElementById("pickupLocation").addEventListener("blur", () => {
+    const el = document.getElementById("pickupLocation");
+    el.value = normalizeLocation(el.value);
+    refreshForm();
+  });
+  document.getElementById("dropoffLocation").addEventListener("blur", () => {
+    const el = document.getElementById("dropoffLocation");
+    el.value = normalizeLocation(el.value);
+    refreshForm();
+  });
+  document.getElementById("bookNowBtn").addEventListener("click", submitBooking);
+  document.getElementById("bookNowBtn").disabled = true;
+}
+
+async function submitBooking() {
+  if (!userEmail) {
+    setMsg("Sign in is required to complete a booking. Local preview mode only shows the form.", "error");
+    return;
+  }
+
+  const v = validateForm();
+  if (!v.ok) { setMsg(v.message, "error"); return; }
+
+  const btn = document.getElementById("bookNowBtn");
+  btn.disabled = true;
+  btn.textContent = "Booking...";
+  setMsg("Submitting booking...");
+
+  try {
+    const payload = {
+      fromDate:        document.getElementById("fromDate").value,
+      toDate:          document.getElementById("toDate").value,
+      pickupLocation:  normalizeLocation(document.getElementById("pickupLocation").value),
+      dropoffLocation: normalizeLocation(document.getElementById("dropoffLocation").value),
     };
 
-    function loadImageAssignments() {
-      const raw = localStorage.getItem(IMAGE_ASSIGNMENTS_KEY);
-      return raw ? JSON.parse(raw) : {};
-    }
+    document.getElementById("pickupLocation").value = payload.pickupLocation;
+    document.getElementById("dropoffLocation").value = payload.dropoffLocation;
 
-    function saveImageAssignments(a) {
-      localStorage.setItem(IMAGE_ASSIGNMENTS_KEY, JSON.stringify(a));
-    }
-
-    function normalizeModelKeyPart(value) {
-      return String(value || "").toLowerCase().replace(/\s+/g, " ").trim();
-    }
-
-    function getOrCreateImageAssignment(vehicleId, manufacturer, model) {
-      if (!vehicleId || !manufacturer || !model) return './assets/cars/dummy.png';
-      const modelKey = `${normalizeModelKeyPart(manufacturer)}/${normalizeModelKeyPart(model)}`;
-      const assignments = loadImageAssignments();
-      if (assignments[vehicleId]) return assignments[vehicleId];
-      const available = IMAGE_MANIFEST[modelKey] || [];
-      if (!available.length) return './assets/cars/dummy.png';
-      const usedUrls = new Set(
-        Object.entries(assignments)
-          .filter(([vid]) => vid !== vehicleId)
-          .map(([, url]) => url)
-          .filter(url => url.includes(`/assets/cars/${modelKey}/`))
-      );
-      const pool = available.filter(i => !usedUrls.has(`./assets/cars/${modelKey}/${i.num}.${i.ext}`));
-      const chosen = (pool.length ? pool : available)[Math.floor(Math.random() * (pool.length || available.length))];
-      const url = `./assets/cars/${modelKey}/${chosen.num}.${chosen.ext}`;
-      assignments[vehicleId] = url;
-      saveImageAssignments(assignments);
-      return url;
-    }
-
-    // ── Session & params ──────────────────────────────────────────────────────
-    function requireSession() {
-      const email = localStorage.getItem("userEmail");
-      const loggedInAt = Number(localStorage.getItem("loggedInAt") || "0");
-      if (!email || !loggedInAt) { window.location.replace("index.html"); throw new Error("No session"); }
-      if (Date.now() - loggedInAt > SESSION_MS) {
-        ["userEmail","loggedInAt","isAdmin","userData"].forEach(k => localStorage.removeItem(k));
-        window.location.replace("index.html"); throw new Error("Session expired");
-      }
-      return email;
-    }
-
-    const userEmail = requireSession();
-    const params    = new URLSearchParams(window.location.search);
-    const vehicleId = params.get("id");
-    const fromDate  = params.get("from");
-    const toDate    = params.get("to");
-
-    function normalizeLocation(value) {
-      const raw = String(value || "").trim();
-      if (!raw) return "";
-      const parts = raw.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim().split(/\s+/).filter(Boolean);
-      if (!parts.length) return "";
-      return parts.map((part, index) => index === 0 ? part : part.charAt(0).toUpperCase() + part.slice(1)).join("");
-    }
-
-    const pickup  = normalizeLocation(params.get("pickup")  || "");
-    const dropoff = normalizeLocation(params.get("dropoff") || "");
-
-    if (!vehicleId || !fromDate || !toDate) {
-      document.getElementById("errMsg").textContent = "Missing booking details. Please go back and try again.";
-    }
-
-    function formatDate(d) {
-      if (!d) return "—";
-      const [y, m, day] = d.split("-");
-      return new Date(y, m - 1, day).toLocaleDateString("en-CA", { month: "short", day: "numeric", year: "numeric" });
-    }
-
-    function daysBetween(from, to) {
-      const a = new Date(from), b = new Date(to);
-      return Math.max(1, Math.round((b - a) / (1000 * 60 * 60 * 24)));
-    }
-
-    function generateRef() {
-      const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-      let ref = "CR-";
-      for (let i = 0; i < 8; i++) ref += chars[Math.floor(Math.random() * chars.length)];
-      return ref;
-    }
-
-    document.getElementById("cardNumber").addEventListener("input", function () {
-      let v = this.value.replace(/\D/g, "").slice(0, 16);
-      this.value = v.replace(/(.{4})/g, "$1 ").trim();
-    });
-    document.getElementById("cardExpiry").addEventListener("input", function () {
-      let v = this.value.replace(/\D/g, "").slice(0, 4);
-      if (v.length >= 3) v = v.slice(0, 2) + " / " + v.slice(2);
-      this.value = v;
-    });
-    document.getElementById("cardCvv").addEventListener("input", function () {
-      this.value = this.value.replace(/\D/g, "").slice(0, 3);
+    const res = await fetch(`${API_BASE}/cars/${encodeURIComponent(carId)}/book`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-User-Email": userEmail },
+      body: JSON.stringify(payload),
     });
 
-    async function loadCar() {
-      if (!vehicleId) return;
-      try {
-        const res = await fetch(`${API_BASE}/cars/${vehicleId}`);
-        const car = await res.json();
-        const mfr   = car["Manufacturer"] || car.manufacturer || "";
-        const model = car["Model"]        || car.model        || "";
-        const drv   = car["Drivetrain"]   || car.drivetrain   || "";
-        const price = Number(car["Price"] || car.price || 0);
-        const days  = daysBetween(fromDate, toDate);
-        const total = price * days;
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || "Booking failed");
 
-        // Use the same image assignment system as cars.html
-        const imgUrl = getOrCreateImageAssignment(vehicleId, mfr, model);
-        document.getElementById("carImg").src = imgUrl;
-        document.getElementById("carImg").onerror = () => {
-          document.getElementById("carImg").src = './assets/cars/dummy.png';
-        };
+    const saleId = data.saleId || "—";
+    const carName = `${selectedCar.manufacturer} ${selectedCar.model}`.trim();
+    const userData = JSON.parse(localStorage.getItem("userData") || "{}");
+    const userName = `${userData.firstName || ""} ${userData.lastName || ""}`.trim() || userEmail;
 
-        document.getElementById("carName").textContent    = `${mfr} ${model}`.trim();
-        document.getElementById("carDates").textContent   = `${formatDate(fromDate)} → ${formatDate(toDate)} · ${days} day${days !== 1 ? "s" : ""}`;
-        document.getElementById("carPrice").innerHTML     = `$${price.toFixed(2)}<span>/day</span>`;
-        document.getElementById("totalDue").textContent   = `$${total.toFixed(2)}`;
+    setMsg(`✅ Booked successfully! Sale ID #${saleId}.`, "success");
+    btn.textContent = "Booked ✓";
+    bookedRanges.push({ fromDate: payload.fromDate, toDate: payload.toDate });
 
-        const userData = JSON.parse(localStorage.getItem("userData") || "{}");
-        const fullName = `${userData.firstName || ""} ${userData.lastName || ""}`.trim();
-        if (fullName) document.getElementById("cardName").value = fullName;
-      } catch (e) {
-        document.getElementById("carName").textContent = `Vehicle #${vehicleId}`;
-      }
+    // 📧 Email 1: Booking Confirmed + Pickup Details
+    await sendPickupEmail({
+      userName, userEmail, carName,
+      pickupDate:     formatDate(payload.fromDate),
+      dropoffDate:    formatDate(payload.toDate),
+      pickupLocation: payload.pickupLocation,
+      saleId,
+    });
+
+    // 📧 Email 2: Return Details
+    await sendReturnEmail({
+      userName, userEmail, carName,
+      pickupDate:      formatDate(payload.fromDate),
+      dropoffDate:     formatDate(payload.toDate),
+      dropoffLocation: payload.dropoffLocation,
+      saleId,
+    });
+
+  } catch (err) {
+    setMsg(`Error: ${err.message}`, "error");
+    btn.disabled = false;
+    btn.textContent = "Book Now";
+  }
+}
+
+document.getElementById("backBtn").addEventListener("click", () => {
+  if (carId) history.back();
+  else window.location.href = "home.html";
+});
+
+(async function init() {
+  initEmailJS();
+  if (carId) {
+    try {
+      await loadCarAndShowForm();
+    } catch (err) {
+      setStatus(`Error: ${err.message}`);
     }
-    loadCar();
-
-    async function handlePay() {
-      const errEl  = document.getElementById("errMsg");
-      const btn    = document.getElementById("payBtn");
-      errEl.textContent = "";
-      const name   = document.getElementById("cardName").value.trim();
-      const number = document.getElementById("cardNumber").value.replace(/\s/g, "");
-      const expiry = document.getElementById("cardExpiry").value.trim();
-      const cvv    = document.getElementById("cardCvv").value.trim();
-      if (!name)              { errEl.textContent = "Please enter the cardholder name."; return; }
-      if (number.length < 16) { errEl.textContent = "Please enter a valid 16-digit card number."; return; }
-      if (!expiry)            { errEl.textContent = "Please enter the expiry date."; return; }
-      const expiryClean = expiry.replace(/\s/g, "");
-      const expiryMatch = expiryClean.match(/^(\d{2})\/(\d{2})$/);
-      if (!expiryMatch) { errEl.textContent = "Expiry must be in MM / YY format (e.g. 08 / 27)."; return; }
-      const expMonth = parseInt(expiryMatch[1], 10);
-      const expYear  = 2000 + parseInt(expiryMatch[2], 10);
-      if (expMonth < 1 || expMonth > 12) { errEl.textContent = "Expiry month must be between 01 and 12."; return; }
-      const now = new Date();
-      if (new Date(expYear, expMonth - 1, 1) < new Date(now.getFullYear(), now.getMonth(), 1)) { errEl.textContent = "Your card has expired."; return; }
-      if (cvv.length < 3) { errEl.textContent = "Please enter a valid CVV."; return; }
-      btn.disabled = true; btn.classList.add("loading");
-      await new Promise(r => setTimeout(r, 1800));
-      try {
-        const res = await fetch(`${API_BASE}/cars/${vehicleId}/book`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json", "X-User-Email": userEmail },
-          body: JSON.stringify({ fromDate, toDate, pickupLocation: pickup, dropoffLocation: dropoff }),
-        });
-        const data = await res.json().catch(() => ({}));
-        if (!res.ok) throw new Error(data.error || "Booking failed");
-        const ref  = generateRef();
-        const refs = JSON.parse(localStorage.getItem("bookingRefs") || "{}");
-        refs[data.saleId] = ref;
-        localStorage.setItem("bookingRefs", JSON.stringify(refs));
-        showSuccess(ref, data);
-      } catch (err) {
-        btn.disabled = false; btn.classList.remove("loading");
-        errEl.textContent = `Error: ${err.message}`;
-      }
-    }
-
-    async function sendConfirmationEmail(ref) {
-      try {
-        const userData  = JSON.parse(localStorage.getItem("userData") || "{}");
-        const firstName = userData.firstName || userData["First Name"] || "";
-        const lastName  = userData.lastName  || userData["Last Name"]  || "";
-        const toName    = `${firstName} ${lastName}`.trim() || "Valued Customer";
-        const days      = daysBetween(fromDate, toDate);
-        const priceText = document.getElementById("carPrice")?.textContent || "";
-        const priceNum  = parseFloat(priceText.replace(/[^0-9.]/g, "")) || 0;
-        const total     = `$${(priceNum * days).toFixed(2)}`;
-        await emailjs.send(HIERMONA_SERVICE, HIERMONA_TEMPLATE, {
-          to_name: toName, email: userEmail, ref_number: ref,
-          car_name: document.getElementById("carName")?.textContent || `Vehicle #${vehicleId}`,
-          from_date: fromDate, to_date: toDate, pickup: pickup || "—", dropoff: dropoff || "—", total,
-        }, HIERMONA_KEY);
-      } catch (err) { console.warn("Confirmation email failed:", err); }
-    }
-
-    async function sendPickupEmail(carName, userName) {
-      try {
-        await emailjs.send(KEERTHANA_SERVICE, KEERTHANA_TEMPLATE, {
-          user_name: userName, user_email: userEmail, car_name: carName,
-          pickup_date: formatDate(fromDate), dropoff_date: formatDate(toDate),
-          pickup_location: pickup || "—", email_type: "Booking Confirmed + Pickup Details",
-          email_message: "This is a reminder that your rental pickup is tomorrow!", location_label: "Pickup Location",
-          sale_id: "see booking confirmation",
-        }, KEERTHANA_KEY);
-      } catch (err) { console.warn("Pickup email failed:", err); }
-    }
-
-    async function sendReturnEmail(carName, userName) {
-      try {
-        await emailjs.send(KEERTHANA_SERVICE, KEERTHANA_TEMPLATE, {
-          user_name: userName, user_email: userEmail, car_name: carName,
-          pickup_date: formatDate(fromDate), dropoff_date: formatDate(toDate),
-          pickup_location: dropoff || "—", email_type: "Return Details",
-          email_message: "This is a reminder that your rental return is tomorrow!", location_label: "Dropoff Location",
-          sale_id: "see booking confirmation",
-        }, KEERTHANA_KEY);
-      } catch (err) { console.warn("Return email failed:", err); }
-    }
-
-    async function showSuccess(ref, data) {
-      document.getElementById("step3").classList.add("active");
-      document.getElementById("paymentForm").style.display = "none";
-      document.getElementById("refNumber").textContent = ref;
-      document.getElementById("successScreen").style.display = "block";
-      const userData = JSON.parse(localStorage.getItem("userData") || "{}");
-      const userName = `${userData.firstName || ""} ${userData.lastName || ""}`.trim() || userEmail;
-      const carName  = document.getElementById("carName")?.textContent || `Vehicle #${vehicleId}`;
-      await sendConfirmationEmail(ref);
-      await sendPickupEmail(carName, userName);
-      await sendReturnEmail(carName, userName);
-    }
-  </script>
-  <script src="navbar.js"></script>
-  <script src="darkm.js"></script>
-</body>
-</html>
+  } else {
+    window.location.href = "my-bookings.html";
+  }
+})();
